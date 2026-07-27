@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.artifacts/
+release-proof/
+proof/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+deployment/bulk-redirects.csv
+imports/inbox/*
+!imports/inbox/.gitkeep
+imports/reports/*
+!imports/reports/.gitkeep

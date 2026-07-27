@@ -1,0 +1,12 @@
+{
+  "articles": [
+    {
+      "title": "JSON Import Example",
+      "slug": "json-import-example",
+      "summary": "A JSON article imported through the reusable migration pipeline.",
+      "content": "## Structured input\n\nJSON arrays and wrapped article collections are supported.",
+      "date": "2024-06-01T10:00:00Z",
+      "tags": ["json", "migration"]
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "title": "A Written Story Template for Independent Publishing",
+  "slug": "sample-written-story",
+  "status": "published",
+  "article_type": "standard",
+  "kicker": "Written story example",
+  "excerpt": "A clean long-form template demonstrates headings, quotations, ordered steps, source links, author context, and topic labels without relying on a document attachment.",
+  "body": "## Start with the reader\n\nA written story should explain the central issue quickly, establish what is known, and give readers enough context to understand why the subject matters. The template keeps the reading column focused while the publication chrome stays out of the way.\n\n> Strong publishing separates verified facts, source material, analysis, and opinion so readers can understand what they are seeing.\n\n## Build the article in a clear sequence\n\n1. State the central finding or event.\n2. Explain the relevant history and context.\n3. Link to supporting material where readers can verify the work.\n\n## Keep the source record portable\n\nThe story is stored as a readable JSON record and rendered into static HTML. Editors can revise it through a browser-based CMS while Git preserves every change.",
+  "published_at": "2026-07-25T14:00:00-04:00",
+  "updated_at": "2026-07-26T09:30:00-04:00",
+  "author": "editorial-team",
+  "categories": [
+    "community-reporting"
+  ],
+  "tags": [
+    "sample",
+    "writing",
+    "editorial workflow"
+  ],
+  "hub": "primary-coverage",
+  "featured": false,
+  "featured_image": "",
+  "featured_image_alt": "",
+  "pdf_file": "",
+  "pdf_url": "",
+  "pdf_title": "",
+  "document_description": "",
+  "document_date": "",
+  "document_pages": 0,
+  "document_source": "",
+  "external_link_label": "",
+  "allow_download": false,
+  "show_author_bio": true,
+  "source_links": [
+    {
+      "label": "Example editorial reference",
+      "url": "https://example.com/editorial-reference",
+      "note": "A neutral placeholder link for template testing."
+    }
+  ],
+  "seo_title": "Written Story Template",
+  "seo_description": "A reusable written article template for a static independent publication.",
+  "canonical_url": "",
+  "noindex": false,
+  "review_content": true,
+  "review_rights": true,
+  "review_accessibility": true,
+  "editor_notes": "Sample content reviewed for starter validation. Replace or remove before launch.",
+  "legacy_urls": [
+    "/news/sample-written-story/",
+    "https://legacy.example.org/2026/07/sample-written-story/"
+  ]
+}

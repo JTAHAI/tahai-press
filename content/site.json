@@ -1,0 +1,58 @@
+{
+  "title": "TAHAI Press",
+  "short_title": "TAHAI Press",
+  "brand_mark": "TP",
+  "tagline": "Independent publishing, engineered for clarity.",
+  "description": "A formal, static-first publishing demonstration for articles, public records, PDFs, community reporting, and independent publications.",
+  "site_url": "https://example.pages.dev",
+  "locale": "en-US",
+  "timezone": "America/New_York",
+  "editor_email": "editor@example.org",
+  "logo": "/assets/tahai-press-logo.png",
+  "default_social_image": "/assets/tahai-press-social.png",
+  "masthead_kicker": "TAHAI Press \u00b7 Open-source publishing platform",
+  "standards_label": "Editorial standards",
+  "hero_kicker": "The open-source edition",
+  "hero_title": "A serious publishing desk. No database required.",
+  "hero_description": "Publish readable reporting, original source documents, and durable public records through GitHub, Pages CMS, and Cloudflare Pages - with revision history built in.",
+  "editorial_promise": "Readable reporting. Verifiable sources. Accessible documents. Publisher-owned files.",
+  "navigation_note": "Newsprint form. Static infrastructure. Publisher control.",
+  "submit_story_url": "/submit/",
+  "contact_url": "/contact/",
+  "footer_note": "",
+  "theme": {
+    "brand": "#123a5a",
+    "brand_deep": "#061b2d",
+    "brand_soft": "#d9e8f2",
+    "accent": "#345f7f",
+    "accent_dark": "#153f5e",
+    "highlight": "#9fbfd4",
+    "surface": "#f3efe5",
+    "surface_deep": "#e6ded0",
+    "paper": "#fffdf7"
+  },
+  "discovery": {
+    "archive_page_size": 12,
+    "search_result_limit": 50
+  },
+  "template_mode": true,
+  "default_social_image_alt": "TAHAI Press open-source static publishing platform.",
+  "seo": {
+    "publisher_type": "Organization",
+    "article_schema_type": "Article",
+    "twitter_site": "",
+    "social_profiles": [
+      "https://github.com/JTAHAI/tahai-press",
+      "https://tahai.net"
+    ],
+    "feed_title": "TAHAI Press Demo Edition",
+    "feed_description": "Sample stories and source documents demonstrating TAHAI Press.",
+    "feed_limit": 50
+  },
+  "accessibility": {
+    "statement_enabled": true,
+    "contact_email": "editor@example.org",
+    "statement_intro": "TAHAI Press is designed around readable type, keyboard access, resilient layouts, and direct alternatives when embedded documents are not supported by a reader's browser or assistive technology.",
+    "feedback_note": "When reporting a barrier, include the page address, the task you were trying to complete, and the browser or assistive technology involved when possible. Replace this sample address before launch."
+  }
+}

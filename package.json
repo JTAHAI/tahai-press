@@ -1,0 +1,57 @@
+{
+  "name": "tahai-press",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A database-free, static-first publishing platform for articles, public records, PDFs, community reporting, and independent publications. Built for GitHub, Pages CMS, and Cloudflare Pages.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:cloudflare": "npm run validate && npm test && npm run build && npm run audit:a11y && npm run verify:dist",
+    "validate:content": "node scripts/validate-content.mjs",
+    "validate:cms": "node scripts/validate-cms-config.mjs",
+    "validate": "npm run validate:content && npm run validate:cms && npm run validate:redirects",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "verify:dist": "node scripts/verify-dist.mjs",
+    "smoke": "node scripts/smoke-built-site.mjs",
+    "release:proof": "node scripts/create-release-proof.mjs",
+    "check": "npm run clean && npm run validate && npm test && npm run build && npm run audit:a11y && npm run verify:dist && npm run repo:check",
+    "ci": "npm run check && npm run smoke && npm run release:proof",
+    "preview": "node scripts/serve.mjs",
+    "import": "node scripts/import-content.mjs",
+    "import:help": "node scripts/import-content.mjs --help",
+    "validate:redirects": "node scripts/validate-redirects.mjs",
+    "redirects:bulk": "node scripts/export-bulk-redirects.mjs",
+    "audit:a11y": "node scripts/audit-accessibility.mjs --report .artifacts/accessibility-audit.json",
+    "clean": "node scripts/clean.mjs",
+    "repo:check": "node scripts/check-repository-cleanliness.mjs"
+  },
+  "author": {
+    "name": "Justin Tahai and TAHAI Web Services",
+    "url": "https://tahai.net"
+  },
+  "homepage": "https://JTAHAI.github.io/tahai-press/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JTAHAI/tahai-press.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JTAHAI/tahai-press/issues"
+  },
+  "keywords": [
+    "static-site-generator",
+    "publishing",
+    "journalism",
+    "newspaper",
+    "pdf",
+    "public-records",
+    "pages-cms",
+    "cloudflare-pages",
+    "github-pages",
+    "crossword",
+    "open-source"
+  ]
+}

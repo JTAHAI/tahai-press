@@ -1,0 +1,49 @@
+name: Quality checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publication-proof:
+    name: Validate, test, build, and smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run release proof
+        run: npm run ci
+
+      - name: Write workflow summary
+        if: always()
+        run: |
+          echo "## TAHAI Press proof" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: `${GITHUB_SHA}`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Branch or ref: `${GITHUB_REF_NAME}`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Result: `${{ job.status }}`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Build command: `npm run ci`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload generated site and proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: tahai-press-proof-${{ github.sha }}
+          path: |
+            dist
+            .artifacts/release-proof
+          if-no-files-found: error
+          retention-days: 14

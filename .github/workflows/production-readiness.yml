@@ -1,0 +1,51 @@
+name: Production readiness
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-readiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-proof:
+    name: Produce deployable main-branch artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PUBLICATION_PRODUCTION_BRANCH: main
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run production-equivalent build
+        run: npm run ci
+
+      - name: Write workflow summary
+        if: always()
+        run: |
+          echo "## TAHAI Press proof" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: `${GITHUB_SHA}`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Branch or ref: `${GITHUB_REF_NAME}`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Result: `${{ job.status }}`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Build command: `npm run ci`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload immutable release proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: tahai-press-production-${{ github.sha }}
+          path: |
+            dist
+            .artifacts/release-proof
+          if-no-files-found: error
+          retention-days: 30

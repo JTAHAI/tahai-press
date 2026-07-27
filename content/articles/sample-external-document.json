@@ -1,0 +1,43 @@
+{
+  "title": "Linking to a Document Hosted Elsewhere",
+  "slug": "sample-external-document",
+  "status": "published",
+  "article_type": "external",
+  "kicker": "External source example",
+  "excerpt": "When a source must remain on another service, the external-document template provides context and a clear outbound action without depending on iframe permissions.",
+  "body": "## Why use an external record?\n\nLarge files, institutional archives, or source-controlled repositories may need to remain outside the publication. This template keeps the article page stable while making the hosting boundary clear to readers.",
+  "published_at": "2026-07-23T10:00:00-04:00",
+  "updated_at": "",
+  "author": "editorial-team",
+  "categories": [
+    "public-records"
+  ],
+  "tags": [
+    "sample",
+    "external source",
+    "records"
+  ],
+  "hub": "primary-coverage",
+  "featured": false,
+  "featured_image": "",
+  "featured_image_alt": "",
+  "pdf_file": "",
+  "pdf_url": "https://example.com/sample-public-document.pdf",
+  "pdf_title": "Externally hosted sample document",
+  "document_description": "The source is maintained outside this publication. The destination opens in a new browser tab.",
+  "document_date": "2026-07-18",
+  "document_pages": 12,
+  "document_source": "Example external archive",
+  "external_link_label": "Open the source record",
+  "allow_download": false,
+  "show_author_bio": true,
+  "source_links": [],
+  "seo_title": "External Document Article Template",
+  "seo_description": "A safe external-document article template that does not assume iframe support.",
+  "canonical_url": "",
+  "noindex": false,
+  "review_content": true,
+  "review_rights": true,
+  "review_accessibility": true,
+  "editor_notes": "Sample content reviewed for starter validation. Replace or remove before launch."
+}

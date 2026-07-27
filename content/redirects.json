@@ -1,0 +1,11 @@
+{
+  "redirects": [
+    {
+      "from": "/sample-legacy-page/",
+      "to": "/about/",
+      "status": 301,
+      "preserve_query_string": true,
+      "note": "Neutral example showing a retired page mapped to its final destination. Remove or replace before launch."
+    }
+  ]
+}
