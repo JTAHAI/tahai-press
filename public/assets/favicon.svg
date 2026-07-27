@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TAHAI Press">
+  <rect width="64" height="64" rx="10" fill="#061b2d"/>
+  <path d="M14 12h32l6 6v34H14z" fill="#123a5a" stroke="#d9e8f2" stroke-width="2"/>
+  <path d="M46 12v8h8M20 25h26M20 32h26M20 39h18M20 46h22" stroke="#d9e8f2" stroke-width="2" stroke-linecap="round"/>
+  <text x="32" y="22" text-anchor="middle" fill="#fff" font-family="Georgia,serif" font-size="10" font-weight="700">TP</text>
+</svg>

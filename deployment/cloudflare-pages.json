@@ -1,0 +1,18 @@
+{
+  "provider": "Cloudflare Pages",
+  "integration": "GitHub or GitLab Git integration",
+  "framework_preset": "None",
+  "production_branch": "main",
+  "root_directory": ".",
+  "build_command": "npm run build:cloudflare",
+  "build_output_directory": "dist",
+  "environment_variables": {
+    "NODE_VERSION": "22",
+    "PUBLICATION_PRODUCTION_BRANCH": "main"
+  },
+  "preview_policy": {
+    "deploy_non_production_branches": true,
+    "automatic_noindex": true,
+    "automatic_robots_disallow": true
+  }
+}

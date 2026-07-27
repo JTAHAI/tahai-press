@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "Please cite TAHAI Press using this metadata."
+title: "TAHAI Press"
+version: "1.1.0"
+date-released: 2026-07-27
+license: Apache-2.0
+type: software
+authors:
+  - family-names: Tahai
+    given-names: Justin
+    affiliation: TAHAI Web Services
+repository-code: "https://github.com/JTAHAI/tahai-press"
+url: "https://tahai-press.tahai.net"
+abstract: "A database-free, static-first publishing platform for articles, public records, PDFs, community reporting, and independent publications."

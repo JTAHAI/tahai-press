@@ -1,0 +1,828 @@
+media:
+  - name: images
+    label: Images
+    input: public/uploads/images
+    output: /uploads/images
+    rename: safe
+    extensions: [avif, gif, jpeg, jpg, png, svg, webp]
+    categories: [image]
+    commit:
+      templates:
+        create: "media(image): add {filename}"
+        update: "media(image): update {filename}"
+        delete: "media(image): remove {filename}"
+        rename: "media(image): rename {oldFilename} to {newFilename}"
+  - name: documents
+    label: PDFs and documents
+    input: public/uploads/documents
+    output: /uploads/documents
+    rename: safe
+    extensions: [pdf]
+    categories: [document]
+    commit:
+      templates:
+        create: "media(document): add {filename}"
+        update: "media(document): update {filename}"
+        delete: "media(document): remove {filename}"
+        rename: "media(document): rename {oldFilename} to {newFilename}"
+
+components:
+  slug:
+    type: string
+    label: URL slug
+    required: true
+    description: "Permanent URL text. Use lowercase letters, numbers, and single hyphens. Changing this later changes the public address."
+    pattern:
+      regex: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      message: "Use lowercase letters, numbers, and single hyphens only."
+    options:
+      minlength: 1
+      maxlength: 120
+  hex_color:
+    type: string
+    pattern:
+      regex: "^#[0-9A-Fa-f]{6}$"
+      message: "Use a six-digit hex color such as #17324d."
+    options:
+      minlength: 7
+      maxlength: 7
+
+settings:
+  hide: true
+  content:
+    merge: true
+  commit:
+    identity: user
+    templates:
+      create: "content: create {path}"
+      update: "content: update {path}"
+      delete: "content: remove {path}"
+      rename: "content: rename {oldPath} to {newPath}"
+
+content:
+  - name: publishing
+    label: Publishing
+    type: group
+    items:
+      - name: articles
+        label: Articles
+        type: collection
+        path: content/articles
+        format: json
+        subfolders: false
+        filename:
+          template: "{fields.slug}.json"
+          field: false
+        view:
+          primary: title
+          fields: [status, published_at, article_type, author]
+          search: [title, slug, excerpt, author, tags]
+          sort: [published_at, title, status]
+          default:
+            sort: published_at
+            order: desc
+        fields:
+          - name: title
+            label: Headline
+            type: string
+            required: true
+            description: "The public headline and the name shown in the CMS article list."
+            options:
+              minlength: 1
+              maxlength: 180
+          - name: slug
+            component: slug
+          - name: status
+            label: Publishing status
+            type: select
+            required: true
+            default: draft
+            description: "Drafts and archived entries stay in Git but do not appear on the public site. Complete the publication checklist before switching to Published."
+            options:
+              values:
+                - name: draft
+                  label: Draft — private from the public build
+                - name: published
+                  label: Published — visible after deployment
+                - name: archived
+                  label: Archived — retained but not public
+          - name: article_type
+            label: Article format
+            type: select
+            required: true
+            default: standard
+            description: "Choose the format that matches the public page. Format-specific requirements are checked during the build."
+            options:
+              values:
+                - name: standard
+                  label: Written article
+                - name: pdf
+                  label: PDF-first document record
+                - name: mixed
+                  label: Written article with supporting PDF
+                - name: external
+                  label: Document hosted on another website
+          - name: kicker
+            label: Article eyebrow
+            type: string
+            description: "Optional short label above the headline, such as Public record or Analysis."
+            options:
+              maxlength: 100
+          - name: excerpt
+            label: Homepage and archive summary
+            type: text
+            description: "Required before publishing. Write a plain-language summary between 20 and 360 characters."
+            options:
+              minlength: 20
+              maxlength: 360
+          - name: body
+            label: Article text or document context
+            type: rich-text
+            default: ""
+            description: "Required for written and mixed articles. Optional context may also accompany a PDF-first or external record. Raw HTML is not published."
+            options:
+              format: markdown
+              switcher: true
+              media: images
+              rename: safe
+              categories: [image]
+          - name: author
+            label: Author or contributor
+            type: reference
+            description: "Required before publishing. Add contributors under Publication data when they are not listed."
+            options:
+              collection: authors
+              search: "name,role,slug"
+              value: "{fields.slug}"
+              label: "{fields.name}"
+          - name: categories
+            label: Categories
+            type: reference
+            description: "Required before publishing. Select one to five broad archive categories."
+            options:
+              collection: categories
+              multiple: true
+              min: 1
+              max: 5
+              search: "name,description,slug"
+              value: "{fields.slug}"
+              label: "{fields.name}"
+          - name: hub
+            label: Coverage hub
+            type: reference
+            description: "Optional recurring beat, region, project, organization, or case-file grouping."
+            options:
+              collection: hubs
+              search: "name,region,description,slug"
+              value: "{fields.slug}"
+              label: "{fields.name}"
+          - name: tags
+            label: Topic tags
+            type: string
+            description: "Optional specific topics. Keep tags short and reusable."
+            list:
+              max: 20
+            options:
+              maxlength: 60
+          - name: published_at
+            label: Publication date and time
+            type: date
+            description: "Required before publishing. Drafts may leave this empty."
+            options:
+              time: true
+              format: "yyyy-MM-dd'T'HH:mm:ssXXX"
+          - name: updated_at
+            label: Last updated
+            type: date
+            description: "Optional. Use only for a meaningful public update and never earlier than the publication time."
+            options:
+              time: true
+              format: "yyyy-MM-dd'T'HH:mm:ssXXX"
+          - name: featured
+            label: Feature on homepage
+            type: boolean
+            default: false
+            description: "Use sparingly. When several articles are featured, the newest published one becomes the homepage feature."
+          - name: featured_image
+            label: Featured image
+            type: image
+            description: "Optional article card and page image. Add a useful description in the next field."
+            options:
+              media: images
+              extensions: [avif, gif, jpeg, jpg, png, svg, webp]
+              categories: [image]
+              rename: safe
+          - name: featured_image_alt
+            label: Featured image description
+            type: string
+            description: "Required whenever a featured image is used. Describe the meaningful visual content; do not begin with Image of."
+            options:
+              maxlength: 240
+          - name: pdf_file
+            label: Upload a local PDF
+            type: file
+            description: "Use for PDF-first or mixed articles when the file belongs in this repository. Cloudflare Pages currently limits individual deployed files to 25 MiB."
+            options:
+              media: documents
+              extensions: [pdf]
+              categories: [document]
+              rename: safe
+          - name: pdf_url
+            label: External document URL
+            type: string
+            description: "Use a complete https:// address when the document must remain elsewhere. For an External document article, this is required and the local PDF field must stay empty."
+            pattern:
+              regex: "^$|^https?://.+$"
+              message: "Use a complete http:// or https:// address, or leave the field empty."
+            options:
+              maxlength: 2048
+          - name: pdf_title
+            label: Document title
+            type: string
+            description: "Required before publishing PDF-first, mixed, and external-document articles."
+            options:
+              maxlength: 180
+          - name: document_description
+            label: Document description
+            type: text
+            description: "Optional reader-facing note explaining what the document is and why it is included."
+            options:
+              maxlength: 600
+          - name: document_date
+            label: Document date
+            type: date
+            description: "Optional date printed on or associated with the source document."
+          - name: document_pages
+            label: Number of pages
+            type: number
+            default: 0
+            description: "Optional. Use 0 when unknown."
+            options:
+              min: 0
+              step: 1
+          - name: document_source
+            label: Document source
+            type: string
+            description: "Optional agency, court, organization, person, archive, or other source."
+            options:
+              maxlength: 180
+          - name: external_link_label
+            label: External link button text
+            type: string
+            description: "Optional button label for externally hosted documents."
+            options:
+              maxlength: 100
+          - name: allow_download
+            label: Show local PDF download button
+            type: boolean
+            default: true
+            description: "Applies to repository-hosted PDFs. The original file can still be opened directly."
+          - name: pdf_viewer_default
+            label: Default PDF view
+            type: select
+            default: fit-width
+            description: "Applies to PDF-first and mixed articles. Readers can change the view."
+            options:
+              values:
+                - name: fit-width
+                  label: Fit page width
+                - name: fit-page
+                  label: Fit whole page
+          - name: show_author_bio
+            label: Show contributor biography
+            type: boolean
+            default: true
+          - name: source_links
+            label: Sources and related links
+            type: object
+            description: "Optional public references. Add a clear label and a site-relative or https:// URL."
+            list:
+              max: 30
+              collapsible:
+                collapsed: true
+                summary: "{label}"
+            fields:
+              - name: label
+                label: Link label
+                type: string
+                required: true
+                options:
+                  maxlength: 160
+              - name: url
+                label: URL
+                type: string
+                required: true
+                pattern:
+                  regex: "^(?:/|https?://).+$"
+                  message: "Use a site-relative path beginning with / or a complete http(s) URL."
+                options:
+                  maxlength: 2048
+              - name: note
+                label: Reader note
+                type: text
+                options:
+                  maxlength: 500
+          - name: seo_title
+            label: SEO title override
+            type: string
+            description: "Optional. Leave empty to use the headline. Aim for 70 characters or fewer."
+            options:
+              maxlength: 70
+          - name: seo_description
+            label: SEO description override
+            type: text
+            description: "Optional. Leave empty to use the article summary. Aim for 170 characters or fewer."
+            options:
+              maxlength: 170
+          - name: canonical_url
+            label: Canonical URL override
+            type: string
+            description: "Advanced. Usually leave empty. Use only when another absolute URL is the preferred original."
+            pattern:
+              regex: "^$|^https?://.+$"
+              message: "Use a complete http:// or https:// address, or leave the field empty."
+            options:
+              maxlength: 2048
+          - name: legacy_urls
+            label: Previous article URLs
+            type: string
+            description: "Optional old paths or complete former URLs that should permanently redirect to this article. Do not include query strings or fragments."
+            list:
+              max: 30
+            pattern:
+              regex: "^(?:/|https?://).+$"
+              message: "Use a path beginning with / or a complete http(s) URL."
+            options:
+              maxlength: 900
+          - name: noindex
+            label: Hide from search engines
+            type: boolean
+            default: false
+            description: "Advanced. This does not make a published page private; it only asks search engines not to index it."
+          - name: review_content
+            label: Content and sources reviewed
+            type: boolean
+            default: false
+            description: "Required for Published status. Confirm the public text, dates, names, links, and source descriptions have been reviewed."
+          - name: review_rights
+            label: Rights and private information reviewed
+            type: boolean
+            default: false
+            description: "Required for Published status. Confirm the publication may share the text, images, and files and that unintended private information has been removed."
+          - name: review_accessibility
+            label: Reader access reviewed
+            type: boolean
+            default: false
+            description: "Required for Published status. Confirm image descriptions, PDF title, direct document links, and mobile reading fallbacks are appropriate."
+          - name: editor_notes
+            label: Private editor notes
+            type: text
+            description: "Optional internal notes stored in Git. The site generator never renders this field publicly."
+            options:
+              maxlength: 2000
+
+  - name: newsroom
+    label: Publication data
+    type: group
+    items:
+      - name: authors
+        label: Authors
+        type: collection
+        path: content/authors
+        format: json
+        subfolders: false
+        filename:
+          template: "{fields.slug}.json"
+          field: false
+        view:
+          primary: name
+          fields: [role, active]
+          search: [name, role, slug]
+          sort: [name, role]
+          default:
+            sort: name
+            order: asc
+        fields:
+          - name: name
+            label: Display name
+            type: string
+            required: true
+            options:
+              maxlength: 120
+          - name: slug
+            component: slug
+            description: "Stable internal author identifier. Changing it requires updating article references."
+          - name: role
+            label: Role or title
+            type: string
+            options:
+              maxlength: 120
+          - name: bio
+            label: Public biography
+            type: text
+            options:
+              maxlength: 1200
+          - name: avatar
+            label: Portrait or mark
+            type: image
+            options:
+              media: images
+              extensions: [avif, gif, jpeg, jpg, png, svg, webp]
+              categories: [image]
+              rename: safe
+          - name: active
+            label: Active contributor
+            type: boolean
+            default: true
+      - name: categories
+        label: Categories
+        type: collection
+        path: content/categories
+        format: json
+        subfolders: false
+        filename:
+          template: "{fields.slug}.json"
+          field: false
+        view:
+          primary: name
+          fields: [slug]
+          search: [name, description, slug]
+          sort: [name]
+          default:
+            sort: name
+            order: asc
+        fields:
+          - name: name
+            label: Category name
+            type: string
+            required: true
+            options:
+              maxlength: 100
+          - name: slug
+            component: slug
+            description: "Stable category identifier used by articles."
+          - name: description
+            label: Public description
+            type: text
+            options:
+              maxlength: 500
+      - name: hubs
+        label: Coverage hubs
+        type: collection
+        path: content/hubs
+        format: json
+        subfolders: false
+        filename:
+          template: "{fields.slug}.json"
+          field: false
+        view:
+          primary: name
+          fields: [region, active]
+          search: [name, region, description, slug]
+          sort: [name, region]
+          default:
+            sort: name
+            order: asc
+        fields:
+          - name: name
+            label: Hub name
+            type: string
+            required: true
+            options:
+              maxlength: 120
+          - name: slug
+            component: slug
+            description: "Stable hub identifier used by articles."
+          - name: region
+            label: Region or beat label
+            type: string
+            options:
+              maxlength: 120
+          - name: description
+            label: Public description
+            type: text
+            options:
+              maxlength: 700
+          - name: active
+            label: Show hub publicly
+            type: boolean
+            default: true
+
+  - name: settings_group
+    label: Site settings
+    type: group
+    items:
+      - name: site
+        label: Publication settings
+        type: file
+        path: content/site.json
+        format: json
+        fields:
+          - name: title
+            label: Publication name
+            type: string
+            required: true
+            options:
+              maxlength: 100
+          - name: short_title
+            label: Short publication name
+            type: string
+            required: true
+            description: "Used in browser titles when the full name would be too long."
+            options:
+              maxlength: 60
+          - name: brand_mark
+            label: Brand mark letters
+            type: string
+            description: "One or two letters or numbers used when no uploaded logo is configured."
+            pattern:
+              regex: "^[A-Za-z0-9]{1,2}$"
+              message: "Use one or two letters or numbers."
+            options:
+              maxlength: 2
+          - name: tagline
+            type: string
+            required: true
+            options:
+              maxlength: 140
+          - name: masthead_kicker
+            label: Top bar text
+            type: string
+            required: true
+            options:
+              maxlength: 160
+          - name: standards_label
+            label: Top bar link label
+            type: string
+            options:
+              maxlength: 80
+          - name: hero_kicker
+            label: Homepage eyebrow
+            type: string
+            options:
+              maxlength: 120
+          - name: hero_title
+            label: Homepage headline
+            type: string
+            required: true
+            options:
+              maxlength: 180
+          - name: hero_description
+            label: Homepage introduction
+            type: text
+            required: true
+            options:
+              maxlength: 600
+          - name: editorial_promise
+            label: Publication promise
+            type: text
+            required: true
+            options:
+              maxlength: 500
+          - name: navigation_note
+            label: Navigation note
+            type: string
+            options:
+              maxlength: 120
+          - name: description
+            label: Site description
+            type: text
+            required: true
+            options:
+              maxlength: 500
+          - name: template_mode
+            label: TAHAI Press demo mode
+            type: boolean
+            required: true
+            default: true
+            description: "Keep enabled for the branded first-deploy demonstration. Disable only after replacing the sample publication identity, email, content, URLs, and media. Visible TAHAI Press repository credit is removed from publisher pages when this is off."
+          - name: site_url
+            label: Production site URL
+            type: string
+            required: true
+            description: "Complete HTTPS public origin with no trailing path, such as https://example.pages.dev."
+            pattern:
+              regex: "^https://[^/]+/?$"
+              message: "Use a complete https:// origin without a path."
+            options:
+              maxlength: 2048
+          - name: locale
+            type: string
+            required: true
+            description: "BCP 47 locale used for date formatting, such as en-US."
+            options:
+              maxlength: 40
+          - name: timezone
+            type: string
+            required: true
+            description: "IANA time zone, such as America/New_York."
+            options:
+              maxlength: 80
+          - name: editor_email
+            label: Editor email
+            type: string
+            required: true
+            pattern:
+              regex: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+              message: "Enter a valid email address."
+            options:
+              maxlength: 254
+          - name: submit_story_url
+            label: Submission URL
+            type: string
+            description: "Site-relative path or complete http(s) URL."
+            options:
+              maxlength: 2048
+          - name: contact_url
+            label: Contact URL
+            type: string
+            description: "Site-relative path or complete http(s) URL."
+            options:
+              maxlength: 2048
+          - name: footer_note
+            label: Footer note
+            type: string
+            options:
+              maxlength: 240
+          - name: logo
+            type: image
+            options:
+              media: images
+              extensions: [avif, gif, jpeg, jpg, png, svg, webp]
+              categories: [image]
+              rename: safe
+          - name: default_social_image
+            label: Default social image
+            type: image
+            options:
+              media: images
+              extensions: [avif, gif, jpeg, jpg, png, webp]
+              categories: [image]
+              rename: safe
+          - name: default_social_image_alt
+            label: Default social image description
+            type: string
+            description: "Required when a default social image is configured. Describe the publication image for social previews."
+            options:
+              maxlength: 240
+          - name: accessibility
+            label: Accessibility statement
+            type: object
+            required: true
+            description: "Controls the publisher-facing accessibility page and feedback address. TAHAI Press does not add visible platform branding."
+            fields:
+              - name: statement_enabled
+                label: Publish accessibility page
+                type: boolean
+                required: true
+                default: true
+              - name: contact_email
+                label: Accessibility feedback email
+                type: string
+                description: "Leave blank to use the main editor email."
+                pattern:
+                  regex: "^$|^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+                  message: "Enter a valid email address or leave this blank."
+                options:
+                  maxlength: 254
+              - name: statement_intro
+                label: Accessibility commitment
+                type: text
+                description: "Plain-language introduction displayed on the accessibility page."
+                options:
+                  maxlength: 900
+              - name: feedback_note
+                label: Barrier-reporting guidance
+                type: text
+                description: "Tell readers what information will help the publisher investigate an accessibility problem."
+                options:
+                  maxlength: 700
+          - name: discovery
+            label: Search and archive settings
+            type: object
+            required: true
+            description: "Controls static archive pagination and the maximum number of browser search results."
+            fields:
+              - name: archive_page_size
+                label: Entries per archive page
+                type: number
+                required: true
+                default: 12
+                options:
+                  min: 1
+                  max: 100
+                  step: 1
+              - name: search_result_limit
+                label: Maximum search results
+                type: number
+                required: true
+                default: 50
+                options:
+                  min: 1
+                  max: 100
+                  step: 1
+          - name: theme
+            label: Theme colors
+            type: object
+            required: true
+            description: "Use six-digit hex colors. The build rejects combinations that fail required text, button, or control contrast thresholds."
+            fields:
+              - name: brand
+                label: Brand color
+                component: hex_color
+                required: true
+              - name: brand_deep
+                label: Deep brand color
+                component: hex_color
+                required: true
+              - name: brand_soft
+                label: Soft brand color
+                component: hex_color
+                required: true
+              - name: accent
+                label: Accent color
+                component: hex_color
+                required: true
+              - name: accent_dark
+                label: Dark accent color
+                component: hex_color
+                required: true
+              - name: highlight
+                label: Highlight color
+                component: hex_color
+                required: true
+              - name: surface
+                label: Surface color
+                component: hex_color
+                required: true
+              - name: surface_deep
+                label: Deep surface color
+                component: hex_color
+                required: true
+              - name: paper
+                label: Page color
+                component: hex_color
+                required: true
+      - name: redirects
+        label: Manual redirects
+        type: file
+        path: content/redirects.json
+        format: json
+        fields:
+          - name: redirects
+            label: Redirect rules
+            type: object
+            description: "Optional static aliases for retired pages. Article-specific previous URLs belong on the article itself."
+            list:
+              max: 2000
+              collapsible:
+                collapsed: true
+                summary: "{from} → {to}"
+            fields:
+              - name: from
+                label: Previous path or URL
+                type: string
+                required: true
+                description: "Use a path beginning with / or a complete former URL. Query strings, fragments, wildcards, and placeholders are rejected."
+                pattern:
+                  regex: "^(?:/|https?://).+$"
+                  message: "Use a path beginning with / or a complete http(s) URL."
+                options:
+                  maxlength: 900
+              - name: to
+                label: Final destination
+                type: string
+                required: true
+                description: "Usually a current site path beginning with /. External http(s) destinations are also supported."
+                pattern:
+                  regex: "^(?:/|https?://).+$"
+                  message: "Use a path beginning with / or a complete http(s) URL."
+                options:
+                  maxlength: 900
+              - name: status
+                label: Redirect status
+                type: select
+                required: true
+                default: 301
+                options:
+                  values:
+                    - name: 301
+                      label: 301 — permanent
+                    - name: 302
+                      label: 302 — temporary
+                    - name: 303
+                      label: 303 — see other
+                    - name: 307
+                      label: 307 — temporary, preserve method
+                    - name: 308
+                      label: 308 — permanent, preserve method
+              - name: preserve_query_string
+                label: Preserve query string in Bulk Redirect export
+                type: boolean
+                default: true
+                description: "Applies to the optional Cloudflare Bulk Redirect CSV export. Pages _redirects rules do not expose this switch."
+              - name: note
+                label: Private maintenance note
+                type: text
+                options:
+                  maxlength: 500

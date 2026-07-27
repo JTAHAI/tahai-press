@@ -1,0 +1,12 @@
+{
+  "articles": [
+    {
+      "title": "Example JSON article",
+      "slug": "example-json-article",
+      "summary": "A neutral JSON import example.",
+      "content": "## Main finding\n\nJSON may be a single article, an array, or an object containing articles, posts, or items.",
+      "date": "2024-01-15T15:00:00Z",
+      "tags": ["example", "migration"]
+    }
+  ]
+}

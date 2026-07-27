@@ -1,0 +1,9 @@
+{
+  "name": "Sample Editorial Team",
+  "slug": "editorial-team",
+  "role": "Editorial",
+  "bio": "Replace this sample author with the publication owner, newsroom, contributor, or organization.",
+  "avatar": "",
+  "active": true,
+  "entity_type": "Organization"
+}
