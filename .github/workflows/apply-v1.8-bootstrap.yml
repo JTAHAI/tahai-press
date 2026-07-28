@@ -41,7 +41,7 @@ jobs:
           git switch --force-create main origin/main
           git apply --check /tmp/v18-source.patch
           git apply /tmp/v18-source.patch
-          rm -f .github/workflows/apply-v1.8-bootstrap.yml
+          rm -rf .bootstrap .github/workflows/apply-v1.8-bootstrap.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
@@ -52,3 +52,5 @@ jobs:
         if: success()
         shell: bash
         run: git push origin --delete bootstrap-v1.8
+
+# bootstrap revision 2
