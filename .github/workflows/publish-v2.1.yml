@@ -30,13 +30,23 @@ jobs:
       - name: Reassemble and verify release patches
         shell: bash
         run: |
-          cat .bootstrap/v18-patch.part-* > /tmp/v18-patch.b64
-          base64 --ignore-garbage --decode /tmp/v18-patch.b64 > /tmp/v18-source.patch.xz
+          decode_parts() {
+            local pattern="$1"
+            local output="$2"
+            : > "$output"
+            for file in $pattern; do
+              while IFS= read -r chunk || [ -n "$chunk" ]; do
+                [ -z "$chunk" ] && continue
+                printf '%s' "$chunk" | base64 --decode >> "$output"
+              done < "$file"
+            done
+          }
+
+          decode_parts '.bootstrap/v18-patch.part-*' /tmp/v18-source.patch.xz
           echo "1e306a75da284728627656d7ff1e765dbb2a2b5e7755bb14a489f43d8dd037d3  /tmp/v18-source.patch.xz" | sha256sum --check -
           xz --decompress --stdout /tmp/v18-source.patch.xz > /tmp/v18-source.patch
 
-          cat .bootstrap/v21-patch.part-* > /tmp/v21-patch.b64
-          base64 --ignore-garbage --decode /tmp/v21-patch.b64 > /tmp/v21-source.patch.xz
+          decode_parts '.bootstrap/v21-patch.part-*' /tmp/v21-source.patch.xz
           echo "471aa1f6ccd41f90792d8662b2c91bc94cd01cf83bdc7955fd19437369387933  /tmp/v21-source.patch.xz" | sha256sum --check -
           xz --decompress --stdout /tmp/v21-source.patch.xz > /tmp/v21-source.patch
 
