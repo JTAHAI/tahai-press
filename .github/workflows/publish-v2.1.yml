@@ -1,82 +1,13 @@
 name: Publish verified TAHAI Press v2.1
 
 on:
-  pull_request:
-    branches: [main]
-    types: [opened, reopened, synchronize]
+  workflow_dispatch:
 
 permissions:
   contents: write
-  pull-requests: read
-
-concurrency:
-  group: publish-tahai-press-v2-1
-  cancel-in-progress: false
 
 jobs:
-  publish:
-    if: >-
-      github.head_ref == 'publish-v2.1' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+  staged:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - name: Check out current main and release payloads
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Reassemble and verify release patches
-        shell: bash
-        run: |
-          decode_parts() {
-            local pattern="$1"
-            local output="$2"
-            : > "$output"
-            for file in $pattern; do
-              while IFS= read -r chunk || [ -n "$chunk" ]; do
-                [ -z "$chunk" ] && continue
-                { printf '%s' "$chunk" | base64 --ignore-garbage --decode || true; } >> "$output"
-              done < "$file"
-            done
-          }
-
-          decode_parts '.bootstrap/v18-patch.part-*' /tmp/v18-source.patch.xz
-          echo "1e306a75da284728627656d7ff1e765dbb2a2b5e7755bb14a489f43d8dd037d3  /tmp/v18-source.patch.xz" | sha256sum --check -
-          xz --decompress --stdout /tmp/v18-source.patch.xz > /tmp/v18-source.patch
-
-          decode_parts '.bootstrap/v21-patch.part-*' /tmp/v21-source.patch.xz
-          echo "471aa1f6ccd41f90792d8662b2c91bc94cd01cf83bdc7955fd19437369387933  /tmp/v21-source.patch.xz" | sha256sum --check -
-          xz --decompress --stdout /tmp/v21-source.patch.xz > /tmp/v21-source.patch
-
-      - name: Use Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Reconstruct and validate cumulative v2.1 source
-        shell: bash
-        run: |
-          git apply --check /tmp/v18-source.patch
-          git apply /tmp/v18-source.patch
-          rm -rf .bootstrap .github/workflows/apply-v1.8-bootstrap.yml
-          git apply --check /tmp/v21-source.patch
-          git apply /tmp/v21-source.patch
-          test -f package.json
-          test -f public/assets/writer-desk.js
-          node -e "const p=require('./package.json'); if(p.name!=='tahai-press'||p.version!=='2.1.0') process.exit(1)"
-          for forbidden in node_modules dist .artifacts; do
-            test ! -e "$forbidden"
-          done
-          npm run validate
-          npm test
-
-      - name: Publish one coherent release commit
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Release TAHAI Press v2.1.0 — Writer Desk"
-          git push origin HEAD:main
+      - run: echo "The verified v2.1 payload is still being staged."
