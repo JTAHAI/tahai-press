@@ -37,7 +37,7 @@ jobs:
             for file in $pattern; do
               while IFS= read -r chunk || [ -n "$chunk" ]; do
                 [ -z "$chunk" ] && continue
-                printf '%s' "$chunk" | base64 --decode >> "$output"
+                { printf '%s' "$chunk" | base64 --ignore-garbage --decode || true; } >> "$output"
               done < "$file"
             done
           }
