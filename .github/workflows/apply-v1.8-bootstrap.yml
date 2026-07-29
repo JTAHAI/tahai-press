@@ -1,4 +1,4 @@
-name: Apply TAHAI Press v1.8 source update
+name: Apply TAHAI Press v2.1 source update
 
 on:
   pull_request_target:
@@ -7,51 +7,76 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
+  pull-requests: read
 
 concurrency:
-  group: apply-v1-8-bootstrap
+  group: apply-v2-1-bootstrap
   cancel-in-progress: false
 
 jobs:
   apply:
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.head_ref == 'bootstrap-v1.8' &&
+      (github.head_ref == 'bootstrap-v2.1' &&
        github.event.pull_request.head.repo.full_name == github.repository)
-    name: Replace main with verified v1.8 source
+    name: Replace main with verified v2.1 source
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - name: Check out bootstrap payload
+      - name: Check out verified bootstrap payload
         uses: actions/checkout@v4
         with:
-          ref: bootstrap-v1.8
+          ref: bootstrap-v2.1
           fetch-depth: 0
 
-      - name: Reassemble and verify source patch
+      - name: Reassemble and verify source ZIP
         shell: bash
         run: |
-          cat .bootstrap/v18-patch.part-* > /tmp/v18-patch.b64
-          base64 --decode /tmp/v18-patch.b64 > /tmp/v18-source.patch.xz
-          echo "1e306a75da284728627656d7ff1e765dbb2a2b5e7755bb14a489f43d8dd037d3  /tmp/v18-source.patch.xz" | sha256sum --check -
-          xz --decompress --stdout /tmp/v18-source.patch.xz > /tmp/v18-source.patch
+          cat .bootstrap/v21-source.part-* > /tmp/v21-source.b64
+          base64 --decode /tmp/v21-source.b64 > /tmp/v21-source.zip
+          echo "109a5cfd3264e421f1f4dbb566a642352006283d51dda7d1b69668dc00b29788  /tmp/v21-source.zip" | sha256sum --check -
+          rm -rf /tmp/v21-source
+          mkdir -p /tmp/v21-source
+          unzip -q /tmp/v21-source.zip -d /tmp/v21-source
 
-      - name: Apply v1.8 to main
+      - name: Verify package identity and boundaries
+        shell: bash
+        run: |
+          test -f /tmp/v21-source/tahai-press/package.json
+          test -f /tmp/v21-source/tahai-press/public/assets/writer-desk.js
+          node -e "const p=require('/tmp/v21-source/tahai-press/package.json'); if(p.name!=='tahai-press'||p.version!=='2.1.0') process.exit(1)"
+          for forbidden in .git node_modules dist .artifacts; do
+            test ! -e "/tmp/v21-source/tahai-press/$forbidden"
+          done
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate verified source before publication
+        working-directory: /tmp/v21-source/tahai-press
+        shell: bash
+        run: |
+          npm run validate
+          npm test
+
+      - name: Publish v2.1 to main
         shell: bash
         run: |
           git fetch origin main
           git switch --force-create main origin/main
-          git apply --check /tmp/v18-source.patch
-          git apply /tmp/v18-source.patch
-          rm -rf .bootstrap .github/workflows/apply-v1.8-bootstrap.yml
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/v21-source/tahai-press/. .
+          npm run validate
+          npm test
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Release TAHAI Press v1.8.0 — Launch Desk"
+          git commit -m "Release TAHAI Press v2.1.0 — Writer Desk"
           git push origin main
 
       - name: Remove bootstrap branch
         if: success()
         shell: bash
-        run: git push origin --delete bootstrap-v1.8
+        run: git push origin --delete bootstrap-v2.1
