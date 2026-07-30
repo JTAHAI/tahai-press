@@ -1,0 +1,67 @@
+{
+  "slug": "novice-the-testimony",
+  "title": "The Testimony",
+  "difficulty": "novice",
+  "deck": "A five-by-five word square with matching Across and Down answers.",
+  "active": true,
+  "rotation_order": 5,
+  "grid": [
+    "HEARD",
+    "ENTER",
+    "ATONE",
+    "RENTS",
+    "DRESS"
+  ],
+  "clues": [
+    {
+      "direction": "across",
+      "answer": "HEARD",
+      "clue": "Perceived by ear"
+    },
+    {
+      "direction": "down",
+      "answer": "HEARD",
+      "clue": "Received as testimony"
+    },
+    {
+      "direction": "across",
+      "answer": "ENTER",
+      "clue": "Come inside"
+    },
+    {
+      "direction": "down",
+      "answer": "ENTER",
+      "clue": "Record information in a field"
+    },
+    {
+      "direction": "across",
+      "answer": "ATONE",
+      "clue": "Make amends"
+    },
+    {
+      "direction": "down",
+      "answer": "ATONE",
+      "clue": "Seek to repair a wrong"
+    },
+    {
+      "direction": "across",
+      "answer": "RENTS",
+      "clue": "Payments to a landlord"
+    },
+    {
+      "direction": "down",
+      "answer": "RENTS",
+      "clue": "Tears apart"
+    },
+    {
+      "direction": "across",
+      "answer": "DRESS",
+      "clue": "Put on formal clothing"
+    },
+    {
+      "direction": "down",
+      "answer": "DRESS",
+      "clue": "A garment for an occasion"
+    }
+  ]
+}

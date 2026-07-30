@@ -86,7 +86,11 @@ export function accessibilityStatement(site) {
     enabled: settings.statement_enabled !== false,
     contactEmail: settings.contact_email || site.editor_email,
     intro: settings.statement_intro || 'This publication aims to provide a readable, keyboard-accessible experience and practical alternatives when embedded documents are not supported by a reader’s browser or assistive technology.',
-    feedbackNote: settings.feedback_note || 'When reporting a barrier, include the page address, the task you were trying to complete, and the browser or assistive technology involved when possible.'
+    feedbackNote: settings.feedback_note || 'When reporting a barrier, include the page address, the task you were trying to complete, and the browser or assistive technology involved when possible.',
+    readerToolsEnabled: settings.reader_tools_enabled !== false,
+    simplifiedReadingEnabled: settings.simplified_reading_enabled !== false,
+    defaultLinkUnderlines: settings.default_link_underlines === true,
+    documentSummaryRequired: settings.document_summary_required !== false
   };
 }
 

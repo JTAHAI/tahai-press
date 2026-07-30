@@ -1,10 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
+import sharp from 'sharp';
 import { DIST, relativeFile, loadContent } from './lib/content.mjs';
 import { deploymentContext } from './lib/deployment.mjs';
 import { createRedirectPlan, pagesRedirectText, readRedirectConfig } from './lib/redirects.mjs';
 import { TAHAI_PRESS_PROVENANCE, humansText, sourceProvenanceComment } from './lib/provenance.mjs';
 import { accessibilityStatement } from './lib/accessibility.mjs';
+import { readerReachConfig } from './lib/reader-reach.mjs';
 
 const errors = [];
 const required = [
@@ -16,9 +19,17 @@ const required = [
   'assets/pdf-reader.js',
   'assets/search.js',
   'assets/crossword.js',
+  'assets/crosswords.json',
+  'assets/professional-desk.js',
+  'assets/reader-reach.js',
+  'site.webmanifest',
   'puzzles/index.html',
+  'publisher/index.html',
+  'admin/index.html',
+  'admin/config.yml',
   '.well-known/publication-build.json',
   '.well-known/publication-health.json',
+  '.well-known/media-asset-manifest.json',
   '.well-known/publication-redirects.json',
   '.well-known/tahai-press.json',
   'humans.txt'
@@ -26,6 +37,10 @@ const required = [
 
 function fail(message) {
   errors.push(message);
+}
+
+function sha256(file) {
+  return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
 function walk(directory) {
@@ -58,10 +73,30 @@ function publicRouteForHtml(file) {
   return `/${relative}`;
 }
 
+function variantSourceUrl(url) {
+  return url.replace(/-\d+w(?=\.[^.]+$)/, '');
+}
+
+async function imageWidth(file) {
+  const metadata = await sharp(file, { failOn: 'error' }).metadata();
+  return [5, 6, 7, 8].includes(metadata.orientation || 0) ? metadata.height || 0 : metadata.width || 0;
+}
+
+const run = async () => {
 if (!fs.existsSync(DIST)) fail('dist/ does not exist. Run the build first.');
 else {
   for (const item of required) {
     if (!fs.existsSync(path.join(DIST, item))) fail(`Missing deployment file: ${item}`);
+  }
+
+  const gitCmsConfigPath = path.join(DIST, 'admin', 'config.yml');
+  if (fs.existsSync(gitCmsConfigPath)) {
+    const gitCmsConfig = fs.readFileSync(gitCmsConfigPath, 'utf8');
+    if (!/^backend:\n  name: github\n  repo: [A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\n  branch: [A-Za-z0-9._/-]+/m.test(gitCmsConfig)) fail('Generated Git CMS configuration is missing a valid repository or branch.');
+    if (!/folder: content\/inbox/.test(gitCmsConfig)) fail('Git CMS must write to the safe content/inbox boundary.');
+    if (/folder: content\/articles/.test(gitCmsConfig)) fail('Git CMS must not directly edit production articles until full schema parity is implemented.');
+    if (/__TAHAI_PRESS_/.test(gitCmsConfig)) fail('Generated Git CMS configuration still contains an unresolved placeholder.');
+    if (/gh[pousr]_[A-Za-z0-9_]{20,}|-----BEGIN .*PRIVATE KEY-----/.test(gitCmsConfig)) fail('Generated Git CMS configuration contains secret material.');
   }
 
   const files = walk(DIST);
@@ -70,6 +105,12 @@ else {
 
   const { site, articles } = loadContent();
   const accessibility = accessibilityStatement(site);
+  const readerReach = readerReachConfig(site);
+  if (readerReach.enabled && readerReach.offlineEnabled) {
+    for (const item of ['service-worker.js', 'offline/index.html']) if (!fs.existsSync(path.join(DIST, item))) fail(`Reader Reach offline output is missing: ${item}`);
+  }
+  if (readerReach.enabled && readerReach.savedArticlesEnabled && !fs.existsSync(path.join(DIST, 'saved/index.html'))) fail('Reader Reach saved-story route is missing.');
+  if (readerReach.enabled && readerReach.currentEditionEnabled && !fs.existsSync(path.join(DIST, 'edition/index.html'))) fail('Reader Reach current-edition route is missing.');
   if (accessibility.enabled && !fs.existsSync(path.join(DIST, 'accessibility/index.html'))) fail('Accessibility statement is enabled but dist/accessibility/index.html is missing.');
   const redirectPlan = createRedirectPlan({ site, articles, config: readRedirectConfig(), dist: DIST, checkTargets: true });
   for (const error of redirectPlan.errors) fail(`Redirect contract: ${error}`);
@@ -135,9 +176,15 @@ else {
         if (!['http:', 'https:'].includes(canonical.protocol)) fail(`Canonical URL must use HTTP(S): ${path.relative(DIST, file)}`);
         if (canonical.username || canonical.password) fail(`Canonical URL contains credentials: ${path.relative(DIST, file)}`);
         if (canonical.search || canonical.hash) fail(`Canonical URL contains a query string or fragment: ${path.relative(DIST, file)}`);
-        if (canonicalOwners.has(canonical.href)) fail(`Duplicate canonical URL in ${path.relative(DIST, file)} and ${canonicalOwners.get(canonical.href)}`);
-        else canonicalOwners.set(canonical.href, path.relative(DIST, file));
-        if (canonical.origin === siteOrigin && canonical.pathname !== route) fail(`Same-site canonical does not match its generated route in ${path.relative(DIST, file)} (${canonical.pathname} != ${route})`);
+        const noindexAlternateReader = route.endsWith('/reader/') && /<meta\s+name=["']robots["']\s+content=["'][^"']*noindex/i.test(html);
+        if (noindexAlternateReader) {
+          const expectedCanonicalPath = route.replace(/reader\/$/, '');
+          if (canonical.origin !== siteOrigin || canonical.pathname !== expectedCanonicalPath) fail(`Simplified reader canonical must point to its standard article in ${path.relative(DIST, file)} (${canonical.pathname} != ${expectedCanonicalPath})`);
+        } else {
+          if (canonicalOwners.has(canonical.href)) fail(`Duplicate canonical URL in ${path.relative(DIST, file)} and ${canonicalOwners.get(canonical.href)}`);
+          else canonicalOwners.set(canonical.href, path.relative(DIST, file));
+          if (canonical.origin === siteOrigin && canonical.pathname !== route) fail(`Same-site canonical does not match its generated route in ${path.relative(DIST, file)} (${canonical.pathname} != ${route})`);
+        }
         if (canonical.origin === siteOrigin && redirectSources.has(canonical.pathname)) fail(`Canonical path is also a redirect source in ${path.relative(DIST, file)}: ${canonical.pathname}`);
       } catch (error) {
         fail(`Invalid canonical URL in ${path.relative(DIST, file)}: ${error.message}`);
@@ -147,6 +194,23 @@ else {
     for (const match of html.matchAll(/\b(?:href|src)=["']([^"']+)["']/gi)) {
       const target = routeTarget(match[1]);
       if (target && !fs.existsSync(target)) fail(`Broken internal asset or route in ${path.relative(DIST, file)}: ${match[1]}`);
+    }
+    for (const match of html.matchAll(/\bsrcset=["']([^"']+)["']/gi)) {
+      for (const candidate of match[1].split(',')) {
+        const [url, descriptor] = candidate.trim().split(/\s+/);
+        const target = routeTarget(url);
+        if (target && !fs.existsSync(target)) fail(`Broken responsive image asset in ${path.relative(DIST, file)}: ${url}`);
+        if (target && descriptor?.endsWith('w')) {
+          const expectedWidth = Number(descriptor.slice(0, -1));
+          const actualWidth = await imageWidth(target);
+          if (expectedWidth !== actualWidth) fail(`Responsive image width mismatch in ${path.relative(DIST, file)}: ${url} is ${actualWidth}w but was advertised as ${expectedWidth}w`);
+          const sourceUrl = variantSourceUrl(url);
+          const sourceTarget = routeTarget(sourceUrl);
+          if (sourceTarget && fs.existsSync(sourceTarget) && expectedWidth < actualWidth && sha256(target) === sha256(sourceTarget)) {
+            fail(`Responsive image variant is byte-identical to its source in ${path.relative(DIST, file)}: ${url}`);
+          }
+        }
+      }
     }
   }
 
@@ -173,11 +237,12 @@ else {
   if (fs.existsSync(path.join(DIST, '.well-known/publication-build.json'))) {
     try {
       const metadata = JSON.parse(fs.readFileSync(path.join(DIST, '.well-known/publication-build.json'), 'utf8'));
-      for (const key of ['schema_version', 'environment', 'provider', 'branch', 'production_branch', 'commit', 'article_count', 'search_index_count', 'topic_count', 'redirect_count', 'redirect_sha256']) {
+      for (const key of ['schema_version', 'environment', 'provider', 'branch', 'production_branch', 'commit', 'article_count', 'crossword_count', 'publisher_studio_enabled', 'git_cms_repository', 'git_cms_branch', 'git_cms_version', 'search_index_count', 'topic_count', 'redirect_count', 'redirect_sha256', 'supported_node_major']) {
         if (!(key in metadata)) fail(`Build metadata is missing ${key}.`);
       }
       if (metadata.environment !== context.environment) fail('Build metadata environment does not match the active deployment context.');
       if (metadata.redirect_count !== redirectPlan.counts.total) fail('Build metadata redirect_count does not match the validated redirect plan.');
+      if (metadata.supported_node_major !== 22) fail('Build metadata supported_node_major must remain pinned to Node 22.');
       const searchIndexFile = path.join(DIST, 'search-index.json');
       if (!fs.existsSync(searchIndexFile)) fail('Static search index is missing.');
       else {
@@ -187,6 +252,7 @@ else {
         if (metadata.search_index_count !== searchIndex.count) fail('Build metadata search_index_count does not match search-index.json.');
       }
       if (metadata.redirect_sha256 !== redirectPlan.sha256) fail('Build metadata redirect_sha256 does not match the validated redirect plan.');
+      if ('node' in metadata) fail('Build metadata must not record the runtime Node version.');
     } catch (error) {
       fail(`Build metadata is invalid JSON: ${error.message}`);
     }
@@ -202,6 +268,9 @@ else {
     }
   }
 }
+};
+
+await run();
 
 if (errors.length) {
   console.error(`Deployment verification failed with ${errors.length} issue(s):`);

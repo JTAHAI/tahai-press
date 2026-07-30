@@ -94,6 +94,11 @@ export function pageHead({
       publisher,
       image: resolvedImage ? [resolvedImage] : undefined,
       articleSection: categories,
+      genre: article.classification,
+      isPartOf: article.series_slug ? { '@type': 'CreativeWorkSeries', name: article.series_title, url: new URL(`/series/${article.series_slug}/`, site.site_url).href } : undefined,
+      backstory: article.methodology || undefined,
+      correction: Array.isArray(article.corrections) && article.corrections.length ? article.corrections.map((entry) => `${entry.date}: ${entry.body}`) : undefined,
+      copyrightNotice: article.rights_and_reuse || undefined,
       keywords: tags,
       isAccessibleForFree: true
     }));

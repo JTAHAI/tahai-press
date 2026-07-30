@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-labelledby="title desc">
+  <title id="title">Source records illustration</title>
+  <desc id="desc">Three layered public-record pages with highlighted lines and a magnifying glass.</desc>
+  <rect width="900" height="900" fill="#f3efe5"/>
+  <rect x="180" y="145" width="450" height="570" fill="#d9e8f2" stroke="#123a5a" stroke-width="12" transform="rotate(-8 405 430)"/>
+  <rect x="230" y="115" width="450" height="570" fill="#fffdf7" stroke="#123a5a" stroke-width="12" transform="rotate(3 455 400)"/>
+  <rect x="285" y="170" width="310" height="34" fill="#123a5a"/>
+  <g fill="#345f7f"><rect x="285" y="245" width="300" height="16"/><rect x="285" y="285" width="270" height="16"/><rect x="285" y="325" width="290" height="16"/><rect x="285" y="405" width="245" height="16"/><rect x="285" y="445" width="280" height="16"/><rect x="285" y="525" width="260" height="16"/></g>
+  <rect x="275" y="355" width="330" height="25" fill="#9fbfd4" opacity=".75"/>
+  <circle cx="650" cy="640" r="115" fill="none" stroke="#061b2d" stroke-width="30"/><line x1="735" y1="725" x2="830" y2="820" stroke="#061b2d" stroke-width="38" stroke-linecap="round"/>
+</svg>

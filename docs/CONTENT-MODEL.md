@@ -154,3 +154,142 @@ PDF-folder intake creates `pdf` articles and stores copied files under content-h
 - `legacy_urls`: optional list of previous site paths or complete old HTTP(S) URLs. Published records generate permanent redirects from each normalized path.
 
 Legacy sources cannot include query strings, fragments, credentials, wildcards, or placeholders. The same normalized path may appear only once across all article and manual redirect records.
+
+## Scheduled publishing
+
+`scheduled` is a stored editorial state for a complete article with a future `published_at` timestamp. Scheduled articles are excluded from generated public routes, feeds, search, and archives until the repository record becomes `published`.
+
+The included `scripts/publish-due.mjs` command changes due records to Published only when run with `--write`:
+
+```bash
+npm run publish:due -- --write
+```
+
+The GitHub Actions schedule runs this command hourly. The validator applies the same completeness, media-description, source-review, rights-review, and accessibility-review requirements to Scheduled and Published records.
+
+## Structured story blocks
+
+`story_blocks` is an ordered array of typed editorial components. Blocks are rendered after the ordinary article body, allowing the fast Markdown path and structured layouts to coexist.
+
+Supported `type` values are:
+
+- `text`: additional Markdown section with an optional heading;
+- `key_points`: a heading and two or more concise takeaways;
+- `pull_quote`: a quotation with optional attribution;
+- `fact_box`: a heading plus label/value rows;
+- `image`: one editorial image with layout metadata;
+- `gallery`: two or more editorial images;
+- `timeline`: dated or labeled chronological entries;
+- `callout`: a heading, body, and informational, important, or warning tone;
+- `document`: a title, description, and public HTTP(S) or site-relative source link.
+
+Pages CMS exposes these as a block editor. The saved `type` key selects the renderer; editors never select template code.
+
+### Editorial image object
+
+Structured image and gallery records support:
+
+- `src`: site-relative or absolute HTTP(S) image URL;
+- `alt`: required description of meaningful content;
+- `caption`: optional visible explanation;
+- `credit`: optional creator or source credit;
+- `rights`: optional internal/public rights note, rendered with the caption when supplied;
+- `aspect`: `original`, `landscape`, `portrait`, or `square`;
+- `focal_point`: `center`, `top`, `bottom`, `left`, or `right`;
+- `layout`: `standard`, `wide`, or `full` for standalone image blocks.
+
+Local PNG, JPEG, GIF, WebP, and SVG files receive intrinsic `width` and `height` attributes during the build. The dimensions reserve layout space and reduce movement while images load. Remote images retain safe lazy-loading behavior but cannot be measured without introducing a network fetch into the build.
+
+A Published or Scheduled article containing a meaningful image without `alt` fails validation. Draft records receive a warning so incomplete reporting work can remain in Git without blocking unrelated builds.
+
+### Gallery behavior
+
+Gallery markup is useful before JavaScript runs: every image, caption, and credit appears in the document. The optional `media-gallery.js` enhancement opens the selected image in a native dialog, traps browser focus through the dialog's native behavior, supports Escape, returns focus to the triggering image, and closes from its explicit control or backdrop.
+
+## Featured-image metadata
+
+The original `featured_image` and `featured_image_alt` fields remain supported. The following optional fields provide professional presentation without changing the article type:
+
+- `featured_image_caption`
+- `featured_image_credit`
+- `featured_image_rights`
+- `featured_image_aspect`
+- `featured_image_focal_point`
+
+The featured image description remains mandatory for Published and Scheduled entries.
+
+## Accessibility Edition fields
+
+Document-led articles support:
+
+```json
+{
+  "document_description": "A concise description of the source record and its relevance.",
+  "document_accessible_summary": "A substantial plain-language HTML alternative to the source document.",
+  "document_accessibility_note": "Optional information about known barriers or another available format."
+}
+```
+
+Published and Scheduled `pdf`, `mixed`, and `external` records require `document_description` and `document_accessible_summary`. The summary is rendered on the standard article and simplified reader route, indexed with the article, and remains available when the browser cannot display the source document.
+
+Site-level accessibility settings are stored under `content/site.json`:
+
+- `reader_tools_enabled`
+- `simplified_reading_enabled`
+- `default_link_underlines`
+- `document_summary_required`
+
+Reader preferences are not part of the content model. They remain local to each visitor's browser.
+
+## Professional Desk fields
+
+Released articles may use the following professional editorial fields:
+
+- `classification` — required for Scheduled and Published articles; one of news, analysis, opinion, investigation, public-record, explainer, interview, announcement, or developing.
+- `series_slug`, `series_title`, `series_description`, and `series_order` — optional as a group for continuing coverage.
+- `related_articles` — article slugs for directly useful related coverage.
+- `methodology` — how reporting, records review, interviews, or analysis were conducted.
+- `disclosure` — relevant relationships, limitations, or editorial context.
+- `rights_and_reuse` — publication-specific reuse guidance.
+- `what_changed` — a concise summary of a material current revision.
+- `update_history` — dated public update entries.
+- `corrections` — dated correction entries.
+
+The build rejects unknown classifications, incomplete or conflicting series metadata, duplicate series order numbers, unresolved related-article references, self-references, and malformed history entries. See [PROFESSIONAL-DESK.md](PROFESSIONAL-DESK.md).
+
+## Crossword records
+
+Crossword records are stored separately from articles in `content/crosswords/`:
+
+- `slug` — permanent filename and puzzle identifier;
+- `title` — reader-facing edition title;
+- `difficulty` — `novice` or `expert`;
+- `deck` — short introduction;
+- `active` — whether the edition participates in public rotation;
+- `rotation_order` — unique positive order within its difficulty;
+- `grid` — square array of uppercase rows using `#` for black cells;
+- `clues` — number, direction, answer, and clue text for every generated entry.
+
+Crossword validation derives entries from the grid rather than trusting the clue list alone. See [CROSSWORD.md](CROSSWORD.md).
+
+## Operational settings
+
+`content/site.json` may contain:
+
+```json
+{
+  "operations": {
+    "stale_article_days": 730,
+    "performance_budgets": {
+      "homepage_html_bytes": 307200,
+      "stylesheet_bytes": 256000,
+      "javascript_total_bytes": 512000,
+      "search_index_bytes": 2097152,
+      "generated_file_count": 20000,
+      "individual_file_bytes": 26214400
+    }
+  }
+}
+```
+
+These values affect private build reports and deployment gates only. They do not add reader tracking or a public administration endpoint.

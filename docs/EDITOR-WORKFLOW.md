@@ -68,3 +68,69 @@ Change the status to **Archived** or **Draft** and save. The file remains in Git
 **A PDF is too large.** Use an external public document URL or a deliberate object-storage workflow such as Cloudflare R2.
 
 **A redirect build failed.** Read the first redirect error. Remove duplicate aliases, point chains directly to their final destination, and confirm internal targets are Published routes or existing public files.
+
+## Draft quickly in Editorial Studio
+
+1. Open `/studio/` on the deployed site.
+2. Enter the headline, contributor, category, summary, and article text.
+3. Add a featured image only when it improves the story.
+4. Describe what the image communicates to a reader who cannot see it.
+5. Resolve the plain-language checklist items.
+6. Download the article JSON.
+7. Add the file under `content/articles/`.
+8. Open it in Pages CMS for source, rights, accessibility, and publication review.
+
+The studio saves in the local browser and never publishes directly. See [EDITORIAL-STUDIO.md](EDITORIAL-STUDIO.md).
+
+## Add structured newspaper blocks
+
+In the full article editor, open **Structured story blocks** and choose the block needed for the reporting:
+
+- use **Key points** for a concise reader briefing;
+- use **Pull quote** for an important attributed statement;
+- use **Fact box** for compact label/value context;
+- use **Image** for an inline, wide, or full-width visual;
+- use **Gallery** for two or more related images;
+- use **Timeline** for a sequence of events;
+- use **Callout** for important context or a warning;
+- use **Document card** for a source file or record that should open separately.
+
+Keep blocks in reading order. Do not use a decorative block where an ordinary heading and paragraph would be clearer.
+
+## Image checklist
+
+Before releasing an article with images:
+
+1. Confirm the image may be published.
+2. Write an image description for meaningful content.
+3. Add a factual caption when the context is not obvious.
+4. Credit the photographer, agency, public body, or source when appropriate.
+5. Record rights or reuse information when useful.
+6. Choose an aspect treatment only when the crop does not hide important content.
+7. Set a focal point when the subject is not centered.
+8. Preview the article at desktop and narrow mobile widths.
+
+## Schedule an article
+
+1. Complete the article exactly as if publishing immediately.
+2. Set the status to **Scheduled**.
+3. Choose the intended future publication time.
+4. Complete all three publication review confirmations.
+5. Save the commit.
+6. Confirm the **Scheduled publishing** GitHub Action is enabled.
+
+The workflow checks hourly and changes due records to Published. Scheduled work remains absent from public pages, search, feeds, and sitemaps until that commit occurs. GitHub's scheduler may run later than the exact minute, so do not use it for a deadline that cannot tolerate a delay.
+
+## Professional Desk release review
+
+Before scheduling or publishing an article:
+
+1. Select the classification that accurately describes the work.
+2. Add series metadata only when the article belongs to a named continuing package.
+3. Add only directly relevant public article slugs under related coverage.
+4. Add methodology or disclosure language when readers need it to assess the reporting.
+5. Add `what_changed` and a dated update entry for a material revision.
+6. Record a factual correction in the corrections list rather than silently replacing it.
+7. Preview the citation, section front, series page, and simplified reading view.
+
+Git retains every file revision, while the public history fields explain meaningful changes to readers. See [PROFESSIONAL-DESK.md](PROFESSIONAL-DESK.md).

@@ -1,0 +1,46 @@
+name: Scheduled publishing
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scheduled-publishing
+  cancel-in-progress: false
+
+jobs:
+  publish-due:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out publication
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Publish due articles
+        run: npm run publish:due -- --write
+
+      - name: Validate changed content
+        run: npm run validate
+
+      - name: Commit scheduled publication
+        shell: bash
+        run: |
+          if git diff --quiet -- content/articles; then
+            echo "No scheduled articles became due."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add content/articles
+          git commit -m "publish: release scheduled articles"
+          git push

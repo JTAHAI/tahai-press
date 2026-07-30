@@ -41,5 +41,28 @@
   "review_content": true,
   "review_rights": true,
   "review_accessibility": true,
-  "editor_notes": "Sample content reviewed for starter validation. Replace or remove before launch."
+  "editor_notes": "Sample content reviewed for starter validation. Replace or remove before launch.",
+  "document_accessible_summary": "This sample source document is a one-page demonstration file used to show how written context and an original PDF can share one article page. It does not contain real public records or personal information. Readers can use the written article above as the complete explanation of what the file demonstrates.",
+  "document_accessibility_note": "The HTML summary is provided so readers can understand the purpose and essential context without relying on the embedded PDF viewer.",
+  "classification": "analysis",
+  "series_slug": "transparent-local-record",
+  "series_title": "Building a Transparent Local Record",
+  "series_description": "A three-part demonstration of reporting, context, and primary-source publishing in TAHAI Press.",
+  "series_order": 2,
+  "related_articles": [
+    "sample-written-story",
+    "sample-pdf-record"
+  ],
+  "methodology": "The demonstration pairs a written explanation with a local PDF fixture so editors can test the relationship between narrative context and an original document.",
+  "disclosure": "This is neutral template content. The attached PDF is a generated sample file.",
+  "rights_and_reuse": "The sample content and document are included for testing and may be replaced by the publisher.",
+  "what_changed": "Added series navigation and document-context trust fields.",
+  "update_history": [
+    {
+      "date": "2026-07-27T12:05:00-04:00",
+      "title": "Professional Desk update",
+      "body": "Added series placement, analysis classification, and methodology."
+    }
+  ],
+  "corrections": []
 }

@@ -7,7 +7,7 @@
   "excerpt": "A document-first page keeps the original record prominent while preserving essential publication, source, and download context around it.",
   "body": "## Context and notes\n\nUse this optional space for a concise explanation, transcription note, correction, or update that belongs beside the record without pushing the PDF below a long article.",
   "published_at": "2026-07-24T11:00:00-04:00",
-  "updated_at": "",
+  "updated_at": "2026-07-27T12:15:00-04:00",
   "author": "editorial-team",
   "categories": [
     "public-records"
@@ -40,5 +40,34 @@
   "review_content": true,
   "review_rights": true,
   "review_accessibility": true,
-  "editor_notes": "Sample content reviewed for starter validation. Replace or remove before launch."
+  "editor_notes": "Sample content reviewed for starter validation. Replace or remove before launch.",
+  "document_accessible_summary": "This one-page demonstration record shows a simple meeting document layout. The sample contains a title, a short explanatory paragraph, and neutral placeholder content used only to prove the PDF viewer, direct-open link, download option, and static publication workflow.",
+  "document_accessibility_note": "The HTML summary is provided so readers can understand the purpose and essential context without relying on the embedded PDF viewer.",
+  "classification": "public-record",
+  "series_slug": "transparent-local-record",
+  "series_title": "Building a Transparent Local Record",
+  "series_description": "A three-part demonstration of reporting, context, and primary-source publishing in TAHAI Press.",
+  "series_order": 3,
+  "related_articles": [
+    "sample-written-story",
+    "sample-pdf-story"
+  ],
+  "methodology": "The PDF-first record demonstrates a source-centered page with file metadata, an accessible HTML summary, direct access, and permanent citation information.",
+  "disclosure": "The attached PDF is a generated fixture for testing the publication workflow.",
+  "rights_and_reuse": "Publishers are responsible for the rights status of source documents they upload.",
+  "what_changed": "Added public-record classification, series context, and a correction-history example.",
+  "update_history": [
+    {
+      "date": "2026-07-27T12:10:00-04:00",
+      "title": "Professional Desk update",
+      "body": "Added source-centered trust information and series navigation."
+    }
+  ],
+  "corrections": [
+    {
+      "date": "2026-07-27T12:15:00-04:00",
+      "title": "Demonstration correction",
+      "body": "Clarified that the attached PDF is a generated sample document rather than an authentic public record."
+    }
+  ]
 }

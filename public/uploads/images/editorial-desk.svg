@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Editorial desk illustration</title>
+  <desc id="desc">A newspaper, notebook, pencil, camera, and coffee cup arranged on a dark blue desk.</desc>
+  <rect width="1200" height="675" fill="#123a5a"/>
+  <rect x="95" y="70" width="690" height="535" rx="8" fill="#fffdf7" transform="rotate(-2 440 337)"/>
+  <rect x="135" y="115" width="610" height="36" fill="#061b2d"/>
+  <rect x="135" y="180" width="275" height="210" fill="#d9e8f2"/>
+  <g fill="#345f7f"><rect x="435" y="180" width="270" height="18"/><rect x="435" y="220" width="240" height="14"/><rect x="435" y="255" width="260" height="14"/><rect x="435" y="290" width="225" height="14"/></g>
+  <g fill="#9fbfd4"><rect x="135" y="425" width="570" height="12"/><rect x="135" y="458" width="540" height="12"/><rect x="135" y="491" width="555" height="12"/><rect x="135" y="524" width="495" height="12"/></g>
+  <rect x="830" y="120" width="250" height="330" rx="12" fill="#f3efe5" transform="rotate(5 955 285)"/>
+  <g stroke="#345f7f" stroke-width="10" fill="none"><line x1="875" y1="190" x2="1035" y2="205"/><line x1="870" y1="240" x2="1025" y2="255"/><line x1="865" y1="290" x2="1015" y2="305"/><line x1="860" y1="340" x2="1005" y2="355"/></g>
+  <path d="M990 500h115v90H990z" fill="#fffdf7"/><path d="M1105 520h25a28 28 0 0 1 0 55h-25" fill="none" stroke="#fffdf7" stroke-width="18"/>
+  <path d="M760 555 1050 75" stroke="#9fbfd4" stroke-width="22" stroke-linecap="round"/><path d="m1042 88 22-36 7 42z" fill="#fffdf7"/>
+</svg>

@@ -46,3 +46,9 @@ test('search and archive discovery have dedicated responsive treatments', () => 
   }
   assert.match(css, /grid-template-columns: minmax\(18rem, 2fr\)/);
 });
+
+test('mobile masthead preserves the publication name instead of squeezing it beside reader actions', () => {
+  assert.match(css, /@media \(max-width: 45rem\)[\s\S]*?\.masthead-row\s*\{[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(css, /\.brand-copy strong\s*\{[\s\S]*?white-space: nowrap;[\s\S]*?word-break: normal;/);
+  assert.match(css, /\.masthead-actions\s*\{[\s\S]*?width: 100%;[\s\S]*?flex-wrap: wrap;/);
+});

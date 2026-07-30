@@ -1,0 +1,67 @@
+{
+  "slug": "novice-the-assignment",
+  "title": "The Assignment",
+  "difficulty": "novice",
+  "deck": "A five-by-five word square with matching Across and Down answers.",
+  "active": true,
+  "rotation_order": 3,
+  "grid": [
+    "GREAT",
+    "RIDGE",
+    "EDGES",
+    "AGENT",
+    "TESTS"
+  ],
+  "clues": [
+    {
+      "direction": "across",
+      "answer": "GREAT",
+      "clue": "Excellent"
+    },
+    {
+      "direction": "down",
+      "answer": "GREAT",
+      "clue": "Large in degree or importance"
+    },
+    {
+      "direction": "across",
+      "answer": "RIDGE",
+      "clue": "Long narrow crest"
+    },
+    {
+      "direction": "down",
+      "answer": "RIDGE",
+      "clue": "Raised line on a roof or mountain"
+    },
+    {
+      "direction": "across",
+      "answer": "EDGES",
+      "clue": "Outer boundaries"
+    },
+    {
+      "direction": "down",
+      "answer": "EDGES",
+      "clue": "Sharp sides of a blade"
+    },
+    {
+      "direction": "across",
+      "answer": "AGENT",
+      "clue": "Representative acting for another"
+    },
+    {
+      "direction": "down",
+      "answer": "AGENT",
+      "clue": "Person who gets things moving"
+    },
+    {
+      "direction": "across",
+      "answer": "TESTS",
+      "clue": "Examinations"
+    },
+    {
+      "direction": "down",
+      "answer": "TESTS",
+      "clue": "Checks whether something works"
+    }
+  ]
+}

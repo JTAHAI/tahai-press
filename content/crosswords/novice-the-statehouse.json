@@ -1,0 +1,67 @@
+{
+  "slug": "novice-the-statehouse",
+  "title": "The Statehouse",
+  "difficulty": "novice",
+  "deck": "A five-by-five word square with matching Across and Down answers.",
+  "active": true,
+  "rotation_order": 4,
+  "grid": [
+    "STATE",
+    "TIMID",
+    "AMONG",
+    "TINGE",
+    "EDGES"
+  ],
+  "clues": [
+    {
+      "direction": "across",
+      "answer": "STATE",
+      "clue": "Condition or political territory"
+    },
+    {
+      "direction": "down",
+      "answer": "STATE",
+      "clue": "Declare formally"
+    },
+    {
+      "direction": "across",
+      "answer": "TIMID",
+      "clue": "Lacking confidence"
+    },
+    {
+      "direction": "down",
+      "answer": "TIMID",
+      "clue": "Easily frightened"
+    },
+    {
+      "direction": "across",
+      "answer": "AMONG",
+      "clue": "In the company of"
+    },
+    {
+      "direction": "down",
+      "answer": "AMONG",
+      "clue": "Surrounded by"
+    },
+    {
+      "direction": "across",
+      "answer": "TINGE",
+      "clue": "A slight trace of color"
+    },
+    {
+      "direction": "down",
+      "answer": "TINGE",
+      "clue": "Flavor something faintly"
+    },
+    {
+      "direction": "across",
+      "answer": "EDGES",
+      "clue": "Borders and margins"
+    },
+    {
+      "direction": "down",
+      "answer": "EDGES",
+      "clue": "Moves gradually toward"
+    }
+  ]
+}

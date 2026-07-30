@@ -39,3 +39,23 @@ The default generated letter mark requires no image asset and is appropriate for
 ## Public attribution
 
 The Apache 2.0 license applies to the software source and redistributed source distributions. TAHAI Press does not require publishers to display a public banner, powered-by line, footer credit, logo, backlink, hidden link, or other visible project attribution on generated publication pages. When `template_mode` is disabled, the public surface is the publisher's own.
+
+## Accessible presets first
+
+TAHAI Press puts tested presets ahead of raw color fields. Set `theme_preset` to one of:
+
+```text
+classic-broadsheet
+community-weekly
+civic-record
+modern-daily
+investigative-journal
+arts-culture
+high-contrast
+warm-reading
+custom
+```
+
+When a built-in preset is selected, the generator uses its complete color system. The `theme` object remains in the source as an advanced custom palette and is used only when `theme_preset` is `custom`. All stored custom colors are still validated so an inaccessible palette cannot wait silently in the repository.
+
+Layout choices live under `layout` and are deliberately limited to safe combinations for density, reading width, masthead alignment, headline family, panel shape, and default reading surface.

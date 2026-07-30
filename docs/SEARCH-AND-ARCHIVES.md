@@ -61,3 +61,12 @@ Both values must be integers from 1 through 100. The same controls are available
 - Removing a tag can retire its generated topic route; preserve an externally used topic URL through `content/redirects.json` when needed.
 - Changing a category, author, or hub slug changes its archive URL and requires reference updates plus a redirect if the old route was public.
 - Search data is public because it is downloaded by readers. Do not place secrets or private information in Published content fields.
+
+## Sections and series
+
+Professional Desk adds two static discovery systems:
+
+- `/sections/` groups public articles by their explicit editorial classification.
+- `/series/` groups continuing packages and links to ordered series fronts.
+
+Classification, series title, methodology, disclosures, corrections, and update summaries contribute to the local search index when publicly rendered. Draft and Scheduled records remain absent until they become Published.

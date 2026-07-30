@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { ROOT, DIST, loadContent, escapeHtml } from './lib/content.mjs';
+import { createRedirectPlan, readRedirectConfig } from './lib/redirects.mjs';
+import { launchReadiness } from './lib/launch-readiness.mjs';
+import { mediaHealth, newsroomHealth, performanceHealth } from './lib/operations.mjs';
+
+const content = loadContent();
+const media = await mediaHealth(content);
+const performance = performanceHealth({ dist: DIST, budgets: content.site.operations?.performance_budgets });
+const redirectPlan = createRedirectPlan({ site: content.site, articles: content.articles, config: readRedirectConfig(), dist: DIST, checkTargets: true });
+const launch = launchReadiness(content);
+const report = newsroomHealth({ site: content.site, articles: content.articles, redirects: redirectPlan.counts.total, media, performance, launch });
+const directory = path.join(ROOT, '.artifacts', 'newsroom-health');
+fs.mkdirSync(directory, { recursive: true });
+fs.writeFileSync(path.join(directory, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
+const rows = report.attention.length ? report.attention.map((item) => `<li>${escapeHtml(item)}</li>`).join('') : '<li>No operational attention items were found.</li>';
+const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TAHAI Press newsroom health</title><style>body{max-width:70rem;margin:auto;padding:2rem;font:1rem/1.6 system-ui;color:#161616;background:#faf8f2}h1,h2{font-family:Georgia,serif}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:1rem}.card{border:1px solid #555;padding:1rem;background:#fff}.number{font-size:2rem;font-weight:800}.good{color:#176b35}.attention{color:#8b2b12}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:.6rem;text-align:left}</style></head><body><header><p>Private build artifact</p><h1>Newsroom health</h1><p>${escapeHtml(report.publication)} · ${escapeHtml(report.generated_at)}</p></header><section class="cards" aria-label="Summary"><article class="card"><span class="number">${report.summary.published}</span><h2>Published</h2></article><article class="card"><span class="number">${report.summary.drafts}</span><h2>Drafts</h2></article><article class="card"><span class="number">${report.summary.scheduled}</span><h2>Scheduled</h2></article><article class="card"><span class="number ${report.summary.media_warnings ? 'attention' : 'good'}">${report.summary.media_warnings}</span><h2>Media warnings</h2></article><article class="card"><span class="number ${report.summary.performance_budgets_passed ? 'good' : 'attention'}">${report.summary.performance_budgets_passed ? 'PASS' : 'FAIL'}</span><h2>Performance</h2></article><article class="card"><span class="number ${report.summary.launch_ready ? 'good' : 'attention'}">${report.summary.launch_ready ? 'READY' : 'SETUP'}</span><h2>Launch state</h2></article></section><section><h2>Attention list</h2><ul>${rows}</ul></section><section><h2>Performance metrics</h2><table><tbody>${Object.entries(report.performance.metrics || {}).map(([key,value])=>`<tr><th>${escapeHtml(key.replaceAll('_',' '))}</th><td>${value}</td></tr>`).join('')}</tbody></table></section><p>This report is written to <code>.artifacts/</code> and is never copied to the public site.</p></body></html>`;
+fs.writeFileSync(path.join(directory, 'index.html'), html);
+console.log(`Newsroom health: ${report.summary.attention_items} attention item(s).`);
+console.log(`Dashboard: ${path.relative(ROOT, path.join(directory, 'index.html'))}`);

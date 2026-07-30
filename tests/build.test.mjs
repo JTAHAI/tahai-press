@@ -39,6 +39,7 @@ test('static build creates all release routes, PDF reader assets, and media', ()
     'archive/index.html',
     '_redirects',
     '.well-known/publication-redirects.json',
+    '.well-known/media-asset-manifest.json',
     '.well-known/tahai-press.json',
     'humans.txt',
     'sitemap.xml',

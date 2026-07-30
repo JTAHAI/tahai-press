@@ -5,11 +5,12 @@ import path from 'node:path';
 import { ROOT } from '../scripts/lib/content.mjs';
 
 const TEXT_EXTENSIONS = new Set(['.json', '.md', '.mjs', '.yml', '.yaml', '.css', '.html', '.txt']);
-const EXCLUDED_DIRECTORIES = new Set(['dist', '.git']);
+const EXCLUDED_DIRECTORIES = new Set(['dist', '.git', 'node_modules']);
 
 function collectTextFiles(directory, files = []) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     if (EXCLUDED_DIRECTORIES.has(entry.name)) continue;
+    if (entry.name === 'package-lock.json') continue;
     const full = path.join(directory, entry.name);
     if (entry.isDirectory()) collectTextFiles(full, files);
     else if (TEXT_EXTENSIONS.has(path.extname(entry.name))) files.push(full);
@@ -29,7 +30,7 @@ test('source uses a branded demo identity while retaining placeholder production
   assert.match(combined, /https:\/\/example\.pages\.dev/);
   assert.match(combined, /editor@example\.org/);
   const urls = combined.match(/https:\/\/[^\s\"'`)]+/gi) || [];
-  const allowedHosts = new Set(['example.pages.dev', 'example.org', 'news.example.org', 'legacy.example.org', 'old.example', 'old.example.org', 'example.com', 'json-schema.org', 'jsonfeed.org', 'schema.org', 'github.com', 'tahai.net', 'tahai-press.tahai.net', 'purl.org', 'jtahai.github.io', 'img.shields.io']);
+  const allowedHosts = new Set(['example.pages.dev', 'example.org', 'news.example.org', 'legacy.example.org', 'old.example', 'old.example.org', 'example.com', 'json-schema.org', 'jsonfeed.org', 'schema.org', 'github.com', 'tahai.net', 'tahai-press.tahai.net', 'purl.org', 'jtahai.github.io', 'img.shields.io', 'pagescms.org', 'unpkg.com', 'registry.npmjs.org', 'opencollective.com', 'npmjs.com', 'www.npmjs.com']);
   for (const raw of urls) {
     const value = raw.replace(/[.,;:]+$/, '');
     let parsed;

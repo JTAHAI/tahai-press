@@ -1,0 +1,77 @@
+{
+  "slug": "expert-the-local-desk",
+  "title": "The Local Desk",
+  "difficulty": "expert",
+  "deck": "A civic-news grid built around community reporting and public institutions.",
+  "active": true,
+  "rotation_order": 2,
+  "grid": [
+    "###############",
+    "#MUNICIPAL#####",
+    "#######R####W##",
+    "#J##FREEDOM#A##",
+    "#O#B###S####T##",
+    "#U#Y###S####C##",
+    "#R#L###R####H##",
+    "#NEIGHBORHOOD##",
+    "#A#N###O#E##O##",
+    "#L#E###M#A##G##",
+    "#I#######D#####",
+    "#S#######L#####",
+    "#M#COMMUNITY###",
+    "#########N#####",
+    "#####STATEHOUSE"
+  ],
+  "clues": [
+    {
+      "direction": "across",
+      "answer": "MUNICIPAL",
+      "clue": "Relating to a city or town government"
+    },
+    {
+      "direction": "down",
+      "answer": "PRESSROOM",
+      "clue": "Workspace where reporters gather and file stories"
+    },
+    {
+      "direction": "down",
+      "answer": "WATCHDOG",
+      "clue": "Person or organization monitoring those in power"
+    },
+    {
+      "direction": "down",
+      "answer": "JOURNALISM",
+      "clue": "The work of gathering, verifying, and publishing news"
+    },
+    {
+      "direction": "across",
+      "answer": "FREEDOM",
+      "clue": "Liberty protected by the First Amendment"
+    },
+    {
+      "direction": "down",
+      "answer": "BYLINE",
+      "clue": "Line identifying the author of a story"
+    },
+    {
+      "direction": "across",
+      "answer": "NEIGHBORHOOD",
+      "clue": "A local area whose residents share a community"
+    },
+    {
+      "direction": "down",
+      "answer": "HEADLINE",
+      "clue": "Title set above a news article"
+    },
+    {
+      "direction": "across",
+      "answer": "COMMUNITY",
+      "clue": "People connected by place, interest, or civic life"
+    },
+    {
+      "direction": "across",
+      "answer": "STATEHOUSE",
+      "clue": "Building where a state legislature meets"
+    }
+  ]
+}

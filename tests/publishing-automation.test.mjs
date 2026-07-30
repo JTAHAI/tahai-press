@@ -155,5 +155,5 @@ test('release proof records an exact SHA-256 manifest for the generated site', (
 
 test('built site passes an HTTP-level route, PDF, health, and 404 smoke proof', () => {
   const output = runNode('scripts/smoke-built-site.mjs');
-  assert.match(output, /HTTP smoke proof passed for 18 routes/);
+  assert.match(output, /HTTP smoke proof passed for 24 routes/);
 });

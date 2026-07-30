@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tahai-press.tahai.net/schemas/crossword.schema.json",
+  "title": "TAHAI Press crossword",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["slug", "title", "difficulty", "deck", "active", "rotation_order", "grid", "clues"],
+  "properties": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 120
+    },
+    "difficulty": {
+      "enum": ["novice", "expert"]
+    },
+    "deck": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 240
+    },
+    "active": {
+      "type": "boolean"
+    },
+    "rotation_order": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "grid": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z#]+$"
+      }
+    },
+    "clues": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["number", "direction", "answer", "clue"],
+        "properties": {
+          "number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "direction": {
+            "enum": ["across", "down"]
+          },
+          "answer": {
+            "type": "string",
+            "pattern": "^[A-Z]+$",
+            "minLength": 2
+          },
+          "clue": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 240
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "slug": "expert-the-copy-desk",
+  "title": "The Copy Desk",
+  "difficulty": "expert",
+  "deck": "A publication-workflow crossword featuring reporting, editing, and public records.",
+  "active": true,
+  "rotation_order": 3,
+  "grid": [
+    "########RECORDS",
+    "#DEADLINE######",
+    "########P######",
+    "##N####SOURCING",
+    "##E#####R######",
+    "##W##TESTIMONY#",
+    "##S#####E######",
+    "#TRANSPARENCY##",
+    "##O####R#######",
+    "##O##DOCUMENT##",
+    "##M####H#######",
+    "#####EDITORIAL#",
+    "#######V#######",
+    "###CORRECTION##",
+    "###############"
+  ],
+  "clues": [
+    {
+      "direction": "across",
+      "answer": "RECORDS",
+      "clue": "Documents preserved as evidence of activity or decisions"
+    },
+    {
+      "direction": "down",
+      "answer": "REPORTER",
+      "clue": "Journalist who gathers and verifies information"
+    },
+    {
+      "direction": "across",
+      "answer": "DEADLINE",
+      "clue": "Latest time by which copy must be filed"
+    },
+    {
+      "direction": "down",
+      "answer": "NEWSROOM",
+      "clue": "Editorial workplace of a publication"
+    },
+    {
+      "direction": "across",
+      "answer": "SOURCING",
+      "clue": "Process of establishing where information comes from"
+    },
+    {
+      "direction": "across",
+      "answer": "TESTIMONY",
+      "clue": "Statement given by a witness"
+    },
+    {
+      "direction": "across",
+      "answer": "TRANSPARENCY",
+      "clue": "Openness that allows decisions and records to be examined"
+    },
+    {
+      "direction": "down",
+      "answer": "ARCHIVE",
+      "clue": "Collection maintained for long-term access"
+    },
+    {
+      "direction": "across",
+      "answer": "DOCUMENT",
+      "clue": "Written or recorded item supporting the public record"
+    },
+    {
+      "direction": "across",
+      "answer": "EDITORIAL",
+      "clue": "Article expressing an institutional opinion"
+    },
+    {
+      "direction": "across",
+      "answer": "CORRECTION",
+      "clue": "Published repair of a factual error"
+    }
+  ]
+}

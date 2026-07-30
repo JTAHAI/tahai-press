@@ -1,85 +1,158 @@
 # Accessibility and readability
 
-TAHAI Press is a reusable publishing template. Accessibility behavior belongs to the publisher-facing site and remains configurable; TAHAI Press does not add visible platform branding, a powered-by notice, or a TAHAI backlink.
+TAHAI Press is built around a simple product rule: **make it easy, make it fast, and make it accessible**. Accessibility is enforced in the editor, the static build, and the reader experience. All features remain static-first and require no user account, analytics service, preference database, or public TAHAI Press attribution.
 
-## Generated accessibility contract
+## Three-layer accessibility model
+
+### 1. Authoring guidance
+
+Editorial Studio reports each check as:
+
+- **Ready** — the item is complete enough for handoff;
+- **Needs attention** — an editor should review it;
+- **Publication blocker** — export or release should stop until corrected.
+
+The browser-only checks cover missing image descriptions, vague or empty links, identical link labels pointing to different destinations, heading-order problems, overly long headings and paragraphs, all-capital headlines, likely Markdown tables without headers, and unexplained abbreviations. The checks are advisory except for explicit blockers; source verification, rights, privacy, and editorial judgment still belong to the publisher.
+
+Pages CMS also presents plain-language accessibility fields for images and source documents. Published and Scheduled content is validated more strictly than Draft content so unfinished reporting can remain in Git without blocking unrelated work.
+
+### 2. Build-time enforcement
 
 Every generated HTML route is expected to provide:
 
-- a declared document language and non-empty browser title;
-- one `main` landmark with `id="main"` and programmatic focus support;
+- a declared language and non-empty browser title;
+- one `main` landmark with `id="main"` and focus support;
 - a visible-on-focus skip link;
-- exactly one `h1` page heading;
-- unique IDs and resolvable `aria-labelledby` and `aria-describedby` references;
-- alternative text attributes for images and descriptive titles for PDF iframes;
-- accessible names for buttons and associated labels for form controls;
-- `noopener noreferrer` plus an assistive-technology notice on links that open a new tab;
-- direct open/download fallbacks when embedded PDF support fails.
+- exactly one `h1`;
+- unique IDs and resolvable ARIA references;
+- accessible names for controls and dialogs;
+- labels for form fields;
+- useful image alternative text;
+- table headers when tables are present;
+- meaningful summaries for native disclosures;
+- safe notices for links that open new tabs;
+- direct document access when embedded PDF support fails.
 
-The dependency-free auditor checks these contracts against every generated HTML file:
+Run the audits locally:
 
 ```bash
 npm run build
 npm run audit:a11y
+npm run audit:reader
 ```
 
-The Cloudflare production command runs the audit automatically. A failure stops the deployment.
+`audit:a11y` inspects all generated HTML. `audit:reader` verifies the reader-tools asset, local-only preference behavior, simplified article routes, noindex and canonical handling, document summaries, minimum target sizing, and 400% zoom fallback. The Cloudflare production build runs both audits and stops on failure.
 
-## Configurable accessibility statement
+## Reader tools
 
-`content/site.json` contains an `accessibility` object:
+When `reader_tools_enabled` is true, the masthead provides a native **Reading tools** disclosure. Preferences are stored only in the reader's browser and never sent to the publisher or TAHAI Press.
+
+Available controls:
+
+- smaller, default, or larger text;
+- normal, relaxed, or open line spacing;
+- narrow, standard, or wide reading measure;
+- publication, paper, sepia, dark, or high-contrast surfaces;
+- underline all links;
+- reduce visual decoration;
+- reduce motion;
+- reset all preferences.
+
+The underlying article remains ordinary HTML. When JavaScript is disabled, the site keeps the publisher's accessible default styles and all content remains available.
+
+## Simplified reading view
+
+Every public article can generate a simplified route at:
+
+```text
+/stories/<slug>/reader/
+```
+
+The simplified view:
+
+- removes nonessential publication furniture;
+- preserves the headline, summary, byline, article body, structured reporting blocks, and sources;
+- omits embedded PDF frames;
+- provides direct document links;
+- keeps reader tools available;
+- uses `noindex` and canonicalizes to the standard article.
+
+This route is an alternative presentation of the same content, not a second indexed article.
+
+## Document-led publishing
+
+A source PDF can be inaccessible even when the surrounding webpage is excellent. Published and Scheduled PDF, mixed, and external-document articles therefore require:
+
+- a plain-language `document_description`; and
+- a substantial `document_accessible_summary` rendered as HTML.
+
+The summary should explain the document's purpose, key findings, parties, dates, and limitations in language a reader can understand without opening the file. `document_accessibility_note` can describe known barriers, remediation status, or the availability of another format.
+
+The native PDF viewer remains an optional convenience. Direct open and download links, the HTML summary, print-safe URLs, and the simplified view remain available independently.
+
+## Configurable accessibility settings
+
+`content/site.json` contains:
 
 ```json
 {
-  "statement_enabled": true,
-  "contact_email": "editor@example.org",
-  "statement_intro": "This publication aims to provide a readable experience...",
-  "feedback_note": "When reporting a barrier, include the page address..."
+  "accessibility": {
+    "statement_enabled": true,
+    "contact_email": "editor@example.org",
+    "statement_intro": "This publication aims to provide a readable experience...",
+    "feedback_note": "When reporting a barrier, include the page address...",
+    "reader_tools_enabled": true,
+    "simplified_reading_enabled": true,
+    "default_link_underlines": false,
+    "document_summary_required": true
+  }
 }
 ```
 
-When enabled, the build creates `/accessibility/` and links it from the publication footer. Leaving `contact_email` empty falls back to the main editor email. Pages CMS exposes these settings under **Site settings → Publication settings → Accessibility statement**.
+Pages CMS exposes these under **Publication settings → Accessibility**. The setup assistant preserves these values when it generates a replacement `site.json`.
 
-## Theme contrast enforcement
+## Theme and layout enforcement
 
-Publisher colors remain editable, but the build rejects color combinations that would make ordinary text, links, buttons, or control boundaries unreadable. The checks cover:
+Publisher colors remain configurable, but the build rejects combinations that make ordinary text, links, buttons, or control boundaries unreadable. Ordinary text combinations require at least `4.5:1`; core body text is held to a `7:1` enhanced threshold; non-text control boundaries require at least `3:1`.
 
-- white text on primary accent, brand, and deep-brand backgrounds;
-- accent and brand text on paper and surface backgrounds;
-- fixed body, secondary, and muted text on configurable backgrounds;
-- visible control boundaries against the page background.
-
-Ordinary text combinations require at least `4.5:1`; core body text is held to a `7:1` enhanced threshold; non-text control boundaries require at least `3:1`.
-
-## Reader behavior
-
-The stylesheet includes:
+The stylesheet also includes:
 
 - browser text-size adjustment support;
-- readable article line lengths;
-- minimum 44-pixel-equivalent interactive targets;
+- readable article measures;
+- minimum 44-pixel-equivalent targets;
 - long-word and long-URL wrapping;
-- responsive behavior down to 320–360 CSS pixels;
+- responsive behavior through narrow mobile and high zoom;
 - `prefers-reduced-motion`, `prefers-contrast: more`, and `forced-colors` handling;
-- print-specific document links.
+- print-specific document alternatives.
 
-Search results announce through an atomic live region. Explicit form submission moves focus to the result summary, while live typing and filter updates do not repeatedly move the reader’s focus.
+## Editorial responsibilities
 
-The PDF reader returns focus to the full-screen trigger after the reader exits full-screen mode. Native PDF rendering still depends on the browser and operating system, so direct document links always remain available.
+The platform cannot determine whether every sentence, image, table, audio clip, video, or source document is accessible and appropriate. Publishers should:
 
-## Publisher responsibilities
-
-The template cannot make an inaccessible source PDF accessible by itself. Publishers should:
-
-- provide useful context in the article body;
-- upload tagged, searchable PDFs when they control the source;
-- add meaningful image descriptions;
-- avoid image-only documents when a text version can be provided;
-- review headings and link labels for meaning in context;
-- test real content with keyboard navigation, browser zoom, and at least one screen reader before launch.
-
-Each publication remains responsible for reviewing its final identity, content, documents, live deployment, and third-party destinations.
+- describe meaningful images by purpose and content;
+- keep decorative images out of editorial content or mark them appropriately;
+- use headings in a logical order;
+- give links descriptive text;
+- use real table headers;
+- provide captions and transcripts for time-based media;
+- remediate documents they control;
+- provide an HTML summary for every public record;
+- test real content at 200%, 300%, and 400% zoom;
+- test keyboard operation and at least one screen reader before launch.
 
 ## Public attribution
 
-The Apache 2.0 license applies to the software source and redistributed source distributions. TAHAI Press does not require publishers to display a public banner, powered-by line, footer credit, logo, backlink, hidden link, or other visible project attribution on generated publication pages. When `template_mode` is disabled, the public surface is the publisher's own.
+Apache License 2.0 obligations apply to software source and redistributed source distributions. TAHAI Press does not require a public banner, powered-by line, footer credit, logo, backlink, hidden link, or other visible project attribution on generated publisher pages. When `template_mode` is disabled, the public surface is the publisher's own.
+
+## Reader Reach accessibility
+
+Reader Reach is progressive enhancement over normal links and pages:
+
+- Save controls expose an `aria-pressed` state and announce save or removal results.
+- Share controls announce whether the share sheet opened or the link was copied.
+- Install controls are hidden until the browser exposes a valid installation prompt.
+- `/saved/` has a real no-JavaScript explanation and supports removing one record or clearing the list.
+- `/offline/` provides clear recovery routes and a connection-status message.
+- `/edition/` uses an ordered list, remains readable without JavaScript, and has a grayscale-safe print layout.
+
+Browser-local data is not synchronized. Clearing site data removes saved stories and reader preferences; the interface should never imply otherwise.

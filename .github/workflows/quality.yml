@@ -45,5 +45,8 @@ jobs:
           path: |
             dist
             .artifacts/release-proof
+            .artifacts/newsroom-health
+            .artifacts/media-health.json
+            .artifacts/performance-audit.json
           if-no-files-found: error
           retention-days: 14

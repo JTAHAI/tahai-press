@@ -1,0 +1,82 @@
+{
+  "slug": "expert-the-data-desk",
+  "title": "The Data Desk",
+  "difficulty": "expert",
+  "deck": "A blocked fifteen-by-fifteen newsroom crossword with longer entries.",
+  "active": true,
+  "rotation_order": 1,
+  "grid": [
+    "#FOOTNOTE######",
+    "####I##########",
+    "##E#M##########",
+    "##V#E##PRIMARY#",
+    "##I#L#F####T###",
+    "##D#I#A#CONTEXT",
+    "##E#N#C####R###",
+    "#INVESTIGATION#",
+    "##C###C##N#B###",
+    "##E###H##A#U###",
+    "######E##L#T###",
+    "##SOURCE#Y#I###",
+    "######K##S#O###",
+    "#########I#N###",
+    "###DATABASE####"
+  ],
+  "clues": [
+    {
+      "direction": "across",
+      "answer": "FOOTNOTE",
+      "clue": "Citation or explanatory note attached to the record"
+    },
+    {
+      "direction": "down",
+      "answer": "TIMELINE",
+      "clue": "Events arranged in chronological order"
+    },
+    {
+      "direction": "down",
+      "answer": "EVIDENCE",
+      "clue": "Material offered to establish a fact"
+    },
+    {
+      "direction": "across",
+      "answer": "PRIMARY",
+      "clue": "Firsthand, as a source document"
+    },
+    {
+      "direction": "down",
+      "answer": "FACTCHECK",
+      "clue": "Verification performed before publication"
+    },
+    {
+      "direction": "down",
+      "answer": "ATTRIBUTION",
+      "clue": "Identification of where a statement or fact came from"
+    },
+    {
+      "direction": "across",
+      "answer": "CONTEXT",
+      "clue": "Surrounding facts that give a statement meaning"
+    },
+    {
+      "direction": "across",
+      "answer": "INVESTIGATION",
+      "clue": "Sustained inquiry into a matter of public importance"
+    },
+    {
+      "direction": "down",
+      "answer": "ANALYSIS",
+      "clue": "Detailed examination of information or evidence"
+    },
+    {
+      "direction": "across",
+      "answer": "SOURCE",
+      "clue": "Origin of information used in reporting"
+    },
+    {
+      "direction": "across",
+      "answer": "DATABASE",
+      "clue": "Structured collection of searchable information"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "name": "tahai-press",
-  "version": "1.1.0",
+  "version": "2.2.1",
   "private": true,
   "type": "module",
   "description": "A database-free, static-first publishing platform for articles, public records, PDFs, community reporting, and independent publications. Built for GitHub, Pages CMS, and Cloudflare Pages.",
@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "build:cloudflare": "npm run validate && npm test && npm run build && npm run audit:a11y && npm run verify:dist",
+    "build:cloudflare": "npm run validate && npm test && npm run audit:media && npm run build && npm run audit:a11y && npm run audit:reader && npm run audit:performance && npm run newsroom:health && npm run verify:dist",
     "validate:content": "node scripts/validate-content.mjs",
     "validate:cms": "node scripts/validate-cms-config.mjs",
     "validate": "npm run validate:content && npm run validate:cms && npm run validate:redirects",
@@ -18,7 +18,7 @@
     "verify:dist": "node scripts/verify-dist.mjs",
     "smoke": "node scripts/smoke-built-site.mjs",
     "release:proof": "node scripts/create-release-proof.mjs",
-    "check": "npm run clean && npm run validate && npm test && npm run build && npm run audit:a11y && npm run verify:dist && npm run repo:check",
+    "check": "npm run clean && npm run validate && npm test && npm run audit:media && npm run build && npm run audit:a11y && npm run audit:reader && npm run audit:performance && npm run newsroom:health && npm run verify:dist && npm run repo:check",
     "ci": "npm run check && npm run smoke && npm run release:proof",
     "preview": "node scripts/serve.mjs",
     "import": "node scripts/import-content.mjs",
@@ -27,7 +27,15 @@
     "redirects:bulk": "node scripts/export-bulk-redirects.mjs",
     "audit:a11y": "node scripts/audit-accessibility.mjs --report .artifacts/accessibility-audit.json",
     "clean": "node scripts/clean.mjs",
-    "repo:check": "node scripts/check-repository-cleanliness.mjs"
+    "repo:check": "node scripts/check-repository-cleanliness.mjs",
+    "setup:clear-demo": "node scripts/clear-demo-content.mjs",
+    "publish:due": "node scripts/publish-due.mjs",
+    "audit:reader": "node scripts/audit-reader-experience.mjs --report .artifacts/reader-experience-audit.json",
+    "audit:media": "node scripts/audit-media.mjs --report .artifacts/media-health.json --strict",
+    "audit:performance": "node scripts/audit-performance.mjs --report .artifacts/performance-audit.json",
+    "newsroom:health": "node scripts/create-newsroom-dashboard.mjs",
+    "newsroom:promote": "node scripts/promote-newsroom-draft.mjs",
+    "launch:apply": "node scripts/apply-launch-package.mjs"
   },
   "author": {
     "name": "Justin Tahai and TAHAI Web Services",
@@ -53,5 +61,8 @@
     "github-pages",
     "crossword",
     "open-source"
-  ]
+  ],
+  "dependencies": {
+    "sharp": "0.35.3"
+  }
 }

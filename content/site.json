@@ -53,6 +53,144 @@
     "statement_enabled": true,
     "contact_email": "editor@example.org",
     "statement_intro": "TAHAI Press is designed around readable type, keyboard access, resilient layouts, and direct alternatives when embedded documents are not supported by a reader's browser or assistive technology.",
-    "feedback_note": "When reporting a barrier, include the page address, the task you were trying to complete, and the browser or assistive technology involved when possible. Replace this sample address before launch."
+    "feedback_note": "When reporting a barrier, include the page address, the task you were trying to complete, and the browser or assistive technology involved when possible. Replace this sample address before launch.",
+    "reader_tools_enabled": true,
+    "simplified_reading_enabled": true,
+    "default_link_underlines": false,
+    "document_summary_required": true
+  },
+  "setup_version": 6,
+  "theme_preset": "classic-broadsheet",
+  "layout": {
+    "density": "balanced",
+    "reading_width": "standard",
+    "masthead_alignment": "center",
+    "headline_style": "serif",
+    "panel_style": "square",
+    "reader_surface": "paper"
+  },
+  "navigation": {
+    "note": "Make it easy. Make it fast.",
+    "items": [
+      {
+        "href": "/stories/",
+        "label": "Stories"
+      },
+      {
+        "href": "/sections/",
+        "label": "Sections"
+      },
+      {
+        "href": "/series/",
+        "label": "Series"
+      },
+      {
+        "href": "/search/",
+        "label": "Search"
+      },
+      {
+        "href": "/hubs/",
+        "label": "Coverage Hubs"
+      },
+      {
+        "href": "/studio/",
+        "label": "Editorial Studio"
+      },
+      {
+        "href": "/media-desk/",
+        "label": "Media Desk"
+      },
+      {
+        "href": "/edition/",
+        "label": "Edition"
+      },
+      {
+        "href": "/saved/",
+        "label": "Saved"
+      },
+      {
+        "href": "/puzzles/",
+        "label": "Crossword"
+      },
+      {
+        "href": "/about/",
+        "label": "About"
+      },
+      {
+        "href": "/submit/",
+        "label": "Submit"
+      }
+    ]
+  },
+  "homepage": {
+    "modules": [
+      {
+        "type": "intro",
+        "enabled": true
+      },
+      {
+        "type": "setup",
+        "enabled": true
+      },
+      {
+        "type": "license",
+        "enabled": true
+      },
+      {
+        "type": "featured",
+        "enabled": true
+      },
+      {
+        "type": "latest",
+        "enabled": true,
+        "heading": "Stories and documents",
+        "count": 6
+      },
+      {
+        "type": "reach",
+        "enabled": true
+      },
+      {
+        "type": "studio",
+        "enabled": true
+      },
+      {
+        "type": "product",
+        "enabled": true
+      },
+      {
+        "type": "pillars",
+        "enabled": true
+      },
+      {
+        "type": "hubs",
+        "enabled": true,
+        "count": 4
+      },
+      {
+        "type": "submit",
+        "enabled": true
+      }
+    ]
+  },
+  "operations": {
+    "stale_article_days": 730,
+    "performance_budgets": {
+      "homepage_html_bytes": 307200,
+      "stylesheet_bytes": 256000,
+      "javascript_total_bytes": 512000,
+      "search_index_bytes": 2097152,
+      "generated_file_count": 20000,
+      "individual_file_bytes": 26214400
+    }
+  },
+  "reader_reach": {
+    "enabled": true,
+    "offline_enabled": true,
+    "saved_articles_enabled": true,
+    "browser_share_enabled": true,
+    "current_edition_enabled": true,
+    "current_edition_count": 8,
+    "offline_article_count": 12
   }
 }

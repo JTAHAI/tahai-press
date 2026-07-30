@@ -1,0 +1,67 @@
+{
+  "slug": "novice-the-copy-desk",
+  "title": "The Copy Desk",
+  "difficulty": "novice",
+  "deck": "A five-by-five word square with matching Across and Down answers.",
+  "active": true,
+  "rotation_order": 7,
+  "grid": [
+    "WORDS",
+    "OPERA",
+    "RENAL",
+    "DRAFT",
+    "SALTS"
+  ],
+  "clues": [
+    {
+      "direction": "across",
+      "answer": "WORDS",
+      "clue": "A writer arranges these"
+    },
+    {
+      "direction": "down",
+      "answer": "WORDS",
+      "clue": "Units of language"
+    },
+    {
+      "direction": "across",
+      "answer": "OPERA",
+      "clue": "Drama set to music"
+    },
+    {
+      "direction": "down",
+      "answer": "OPERA",
+      "clue": "A grand stage work"
+    },
+    {
+      "direction": "across",
+      "answer": "RENAL",
+      "clue": "Related to the kidneys"
+    },
+    {
+      "direction": "down",
+      "answer": "RENAL",
+      "clue": "Medical adjective for kidney function"
+    },
+    {
+      "direction": "across",
+      "answer": "DRAFT",
+      "clue": "An early version"
+    },
+    {
+      "direction": "down",
+      "answer": "DRAFT",
+      "clue": "Selects a player for a team"
+    },
+    {
+      "direction": "across",
+      "answer": "SALTS",
+      "clue": "Seasoning compounds"
+    },
+    {
+      "direction": "down",
+      "answer": "SALTS",
+      "clue": "Preserves food with minerals"
+    }
+  ]
+}

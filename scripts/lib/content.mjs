@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { normalizeSiteConfig } from './site-config.mjs';
 
 export const ROOT = path.resolve(import.meta.dirname, '../..');
 export const CONTENT = path.join(ROOT, 'content');
@@ -27,11 +28,12 @@ export function readCollection(name) {
 
 export function loadContent() {
   return {
-    site: readJson(path.join(CONTENT, 'site.json')),
+    site: normalizeSiteConfig(readJson(path.join(CONTENT, 'site.json'))),
     articles: readCollection('articles'),
     authors: readCollection('authors'),
     categories: readCollection('categories'),
-    hubs: readCollection('hubs')
+    hubs: readCollection('hubs'),
+    crosswords: readCollection('crosswords')
   };
 }
 

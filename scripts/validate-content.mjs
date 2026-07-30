@@ -4,17 +4,24 @@ import { loadContent, relativeFile, ROOT } from './lib/content.mjs';
 import { sourcePathFromLegacyUrl } from './lib/redirects.mjs';
 import { uniqueTopics } from './lib/discovery.mjs';
 import { themeContrastErrors } from './lib/accessibility.mjs';
+import { THEME_PRESET_IDS, LAYOUT_OPTIONS } from './lib/site-config.mjs';
+import { STORY_BLOCK_TYPES, IMAGE_LAYOUTS, IMAGE_ASPECTS, IMAGE_FOCAL_POINTS, CALLOUT_TONES, articleMedia } from './lib/editorial.mjs';
+import { ARTICLE_CLASSIFICATION_KEYS } from './lib/professional-desk.mjs';
+import { validateCrossword } from './lib/crosswords.mjs';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const STATUS = new Set(['draft', 'published', 'archived']);
+const STATUS = new Set(['draft', 'scheduled', 'published', 'archived']);
+const RELEASE_STATUSES = new Set(['scheduled', 'published']);
 const TYPES = new Set(['standard', 'pdf', 'mixed', 'external']);
+const CLASSIFICATIONS = new Set(ARTICLE_CLASSIFICATION_KEYS);
 const PDF_VIEW_MODES = new Set(['fit-width', 'fit-page']);
 const THEME_FIELDS = ['brand', 'brand_deep', 'brand_soft', 'accent', 'accent_dark', 'highlight', 'surface', 'surface_deep', 'paper'];
 const PUBLISH_REVIEW_FIELDS = ['review_content', 'review_rights', 'review_accessibility'];
 const PUBLISHER_TYPES = new Set(['Organization', 'NewsMediaOrganization']);
 const ARTICLE_SCHEMA_TYPES = new Set(['Article', 'NewsArticle', 'BlogPosting']);
+const HOME_MODULE_TYPES = new Set(['intro', 'setup', 'license', 'featured', 'latest', 'reach', 'studio', 'product', 'pillars', 'hubs', 'submit']);
 const AUTHOR_ENTITY_TYPES = new Set(['Person', 'Organization']);
 const errors = [];
 const warnings = [];
@@ -72,18 +79,129 @@ function validateSluggedCollection(items, name, { requireActive = false } = {}) 
   }
 }
 function publishIssue(article, message) {
-  issue(article.status === 'published' ? errors : warnings, article.__file, message);
+  issue(RELEASE_STATUSES.has(article.status) ? errors : warnings, article.__file, message);
 }
 
-const { site, articles, authors, categories, hubs } = loadContent();
+
+function validateHistory(article, field, label) {
+  const entries = article[field];
+  if (entries === undefined) return;
+  if (!Array.isArray(entries)) {
+    issue(errors, article.__file, `${field} must be an array`);
+    return;
+  }
+  if (entries.length > 25) issue(errors, article.__file, `${field} cannot contain more than 25 entries`);
+  let previous = null;
+  for (const [index, entry] of entries.entries()) {
+    const base = `${field}[${index}]`;
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      issue(errors, article.__file, `${base} must be an object`);
+      continue;
+    }
+    if (!String(entry.body || '').trim()) publishIssue(article, `${base}.body is required`);
+    if (String(entry.body || '').length > 1000) issue(errors, article.__file, `${base}.body must be 1000 characters or fewer`);
+    if (entry.title !== undefined && (typeof entry.title !== 'string' || entry.title.length > 160)) issue(errors, article.__file, `${base}.title must be 160 characters or fewer`);
+    const date = new Date(entry.date || '');
+    if (Number.isNaN(date.getTime())) issue(errors, article.__file, `${base}.date must be a valid ISO date-time`);
+    if (previous && !Number.isNaN(date.getTime()) && date < previous) issue(warnings, article.__file, `${label} entries are not in chronological order; the public page will sort them newest first`);
+    if (!Number.isNaN(date.getTime())) previous = date;
+  }
+}
+
+function validateStoryBlocks(article) {
+  const blocks = article.story_blocks;
+  if (blocks === undefined) return;
+  if (!Array.isArray(blocks)) {
+    issue(errors, article.__file, 'story_blocks must be an array');
+    return;
+  }
+  if (blocks.length > 30) issue(errors, article.__file, 'story_blocks cannot contain more than 30 blocks');
+  for (const [index, block] of blocks.entries()) {
+    const base = `story_blocks[${index}]`;
+    if (!block || typeof block !== 'object' || Array.isArray(block)) {
+      issue(errors, article.__file, `${base} must be an object`);
+      continue;
+    }
+    if (!STORY_BLOCK_TYPES.includes(block.type)) {
+      issue(errors, article.__file, `${base}.type must be one of: ${STORY_BLOCK_TYPES.join(', ')}`);
+      continue;
+    }
+    if (block.heading !== undefined && (typeof block.heading !== 'string' || block.heading.length > 180)) issue(errors, article.__file, `${base}.heading must be 180 characters or fewer`);
+    if (block.type === 'text' && !String(block.body || '').trim()) publishIssue(article, `${base}.body is required for a text block`);
+    if (block.type === 'key_points') {
+      if (!Array.isArray(block.items) || block.items.length < 1 || block.items.length > 12) publishIssue(article, `${base}.items must contain between 1 and 12 key points`);
+      else for (const [itemIndex, item] of block.items.entries()) if (typeof item !== 'string' || !item.trim() || item.length > 300) issue(errors, article.__file, `${base}.items[${itemIndex}] must be 1 to 300 characters`);
+    }
+    if (block.type === 'pull_quote' && (!String(block.quote || '').trim() || String(block.quote).length > 500)) publishIssue(article, `${base}.quote must contain 1 to 500 characters`);
+    if (['fact_box', 'callout'].includes(block.type)) {
+      if (!String(block.heading || '').trim()) publishIssue(article, `${base}.heading is required`);
+      if (!String(block.body || '').trim()) publishIssue(article, `${base}.body is required`);
+    }
+    if (block.type === 'callout' && block.tone !== undefined && !CALLOUT_TONES.includes(block.tone)) issue(errors, article.__file, `${base}.tone must be one of: ${CALLOUT_TONES.join(', ')}`);
+    if (block.type === 'image') {
+      if (!validWebOrLocalUrl(block.src || '')) publishIssue(article, `${base}.src must be site-relative or HTTP(S)`);
+      validateLocalAsset(block.src, article.__file, `${base}.src`);
+      if (!block.decorative && !String(block.alt || '').trim()) publishIssue(article, `${base}.alt is required unless the image is decorative`);
+      if (block.layout !== undefined && !IMAGE_LAYOUTS.includes(block.layout)) issue(errors, article.__file, `${base}.layout must be one of: ${IMAGE_LAYOUTS.join(', ')}`);
+      if (block.aspect !== undefined && !IMAGE_ASPECTS.includes(block.aspect)) issue(errors, article.__file, `${base}.aspect must be one of: ${IMAGE_ASPECTS.join(', ')}`);
+      if (block.focal_point !== undefined && !IMAGE_FOCAL_POINTS.includes(block.focal_point)) issue(errors, article.__file, `${base}.focal_point must be one of: ${IMAGE_FOCAL_POINTS.join(', ')}`);
+    }
+    if (block.type === 'gallery') {
+      if (!Array.isArray(block.items) || block.items.length < 2 || block.items.length > 12) publishIssue(article, `${base}.items must contain between 2 and 12 images`);
+      else for (const [itemIndex, item] of block.items.entries()) {
+        const itemBase = `${base}.items[${itemIndex}]`;
+        if (!item || typeof item !== 'object' || Array.isArray(item)) { issue(errors, article.__file, `${itemBase} must be an object`); continue; }
+        if (!validWebOrLocalUrl(item.src || '')) publishIssue(article, `${itemBase}.src must be site-relative or HTTP(S)`);
+        validateLocalAsset(item.src, article.__file, `${itemBase}.src`);
+        if (!item.decorative && !String(item.alt || '').trim()) publishIssue(article, `${itemBase}.alt is required unless the image is decorative`);
+        if (item.aspect !== undefined && !IMAGE_ASPECTS.includes(item.aspect)) issue(errors, article.__file, `${itemBase}.aspect must be one of: ${IMAGE_ASPECTS.join(', ')}`);
+        if (item.focal_point !== undefined && !IMAGE_FOCAL_POINTS.includes(item.focal_point)) issue(errors, article.__file, `${itemBase}.focal_point must be one of: ${IMAGE_FOCAL_POINTS.join(', ')}`);
+      }
+    }
+    if (block.type === 'timeline') {
+      if (!Array.isArray(block.items) || block.items.length < 1 || block.items.length > 20) publishIssue(article, `${base}.items must contain between 1 and 20 timeline entries`);
+      else for (const [itemIndex, item] of block.items.entries()) if (!item || typeof item !== 'object' || !String(item.title || '').trim()) publishIssue(article, `${base}.items[${itemIndex}].title is required`);
+    }
+    if (block.type === 'document') {
+      if (!String(block.heading || '').trim()) publishIssue(article, `${base}.heading is required`);
+      if (!validWebOrLocalUrl(block.url || '')) publishIssue(article, `${base}.url must be site-relative or HTTP(S)`);
+      validateLocalAsset(block.url, article.__file, `${base}.url`);
+    }
+  }
+}
+
+const { site, articles, authors, categories, hubs, crosswords } = loadContent();
 const siteFile = path.join(ROOT, 'content', 'site.json');
+const rawSite = JSON.parse(fs.readFileSync(siteFile, 'utf8'));
 validateSluggedCollection(authors, 'author', { requireActive: true });
 validateSluggedCollection(categories, 'category');
 validateSluggedCollection(hubs, 'hub', { requireActive: true });
 
+const crosswordSlugs = new Set();
+const crosswordOrders = new Set();
+for (const crossword of crosswords) {
+  requiredString(crossword, 'slug', crossword.__file);
+  requiredString(crossword, 'title', crossword.__file);
+  requiredString(crossword, 'deck', crossword.__file);
+  if (!SLUG.test(crossword.slug || '')) issue(errors, crossword.__file, 'slug must use lowercase letters, numbers, and single hyphens');
+  if (crosswordSlugs.has(crossword.slug)) issue(errors, crossword.__file, `duplicate crossword slug: ${crossword.slug}`);
+  crosswordSlugs.add(crossword.slug);
+  if (path.basename(crossword.__file, '.json') !== crossword.slug) issue(errors, crossword.__file, `filename must match slug (${crossword.slug}.json)`);
+  if (crossword.active !== undefined && typeof crossword.active !== 'boolean') issue(errors, crossword.__file, 'active must be true or false');
+  if (!Number.isInteger(crossword.rotation_order) || crossword.rotation_order < 1) issue(errors, crossword.__file, 'rotation_order must be a positive integer');
+  const orderKey = `${crossword.difficulty}:${crossword.rotation_order}`;
+  if (crosswordOrders.has(orderKey)) issue(errors, crossword.__file, `rotation_order ${crossword.rotation_order} is already used for ${crossword.difficulty}`);
+  crosswordOrders.add(orderKey);
+  for (const message of validateCrossword(crossword)) issue(errors, crossword.__file, message);
+}
+for (const difficulty of ['novice', 'expert']) {
+  if (!crosswords.some((item) => item.active !== false && item.difficulty === difficulty)) issue(errors, siteFile, `at least one active ${difficulty} crossword is required`);
+}
+
 const authorSlugs = new Set(authors.map((item) => item.slug));
 const categorySlugs = new Set(categories.map((item) => item.slug));
 const hubSlugs = new Set(hubs.map((item) => item.slug));
+const articleSlugs = new Set(articles.map((item) => item.slug));
 const seenArticleSlugs = new Set();
 const seenCanonicalUrls = new Map();
 let siteUrl = null;
@@ -141,18 +259,79 @@ if (site.discovery !== undefined) {
   }
 }
 
-if (!site.theme || typeof site.theme !== 'object' || Array.isArray(site.theme)) {
+if (rawSite.theme_preset !== undefined && !THEME_PRESET_IDS.includes(rawSite.theme_preset)) {
+  issue(errors, siteFile, `theme_preset must be one of: ${THEME_PRESET_IDS.join(', ')}`);
+}
+if (rawSite.layout !== undefined) {
+  if (!rawSite.layout || typeof rawSite.layout !== 'object' || Array.isArray(rawSite.layout)) issue(errors, siteFile, 'layout must be an object');
+  else for (const [field, allowed] of Object.entries(LAYOUT_OPTIONS)) if (rawSite.layout[field] !== undefined && !allowed.includes(rawSite.layout[field])) issue(errors, siteFile, `layout.${field} must be one of: ${allowed.join(', ')}`);
+}
+if (rawSite.navigation !== undefined) {
+  if (!rawSite.navigation || typeof rawSite.navigation !== 'object' || Array.isArray(rawSite.navigation)) issue(errors, siteFile, 'navigation must be an object');
+  else {
+    optionalString(rawSite.navigation, 'note', siteFile, 120);
+    if (!Array.isArray(rawSite.navigation.items)) issue(errors, siteFile, 'navigation.items must be an array');
+    else {
+      if (rawSite.navigation.items.length < 1 || rawSite.navigation.items.length > 12) issue(errors, siteFile, 'navigation.items must contain between 1 and 12 links');
+      const destinations = new Set();
+      for (const [index, item] of rawSite.navigation.items.entries()) {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) { issue(errors, siteFile, `navigation.items[${index}] must be an object`); continue; }
+        if (!String(item.label || '').trim() || String(item.label).length > 80) issue(errors, siteFile, `navigation.items[${index}].label must contain 1 to 80 characters`);
+        const href = String(item.href || '').trim();
+        if (!(href.startsWith('/') || /^https:\/\//i.test(href))) issue(errors, siteFile, `navigation.items[${index}].href must begin with / or https://`);
+        if (destinations.has(href)) issue(errors, siteFile, `navigation.items contains duplicate destination: ${href}`);
+        destinations.add(href);
+      }
+    }
+  }
+}
+if (rawSite.homepage !== undefined) {
+  if (!rawSite.homepage || typeof rawSite.homepage !== 'object' || Array.isArray(rawSite.homepage)) issue(errors, siteFile, 'homepage must be an object');
+  else if (!Array.isArray(rawSite.homepage.modules)) issue(errors, siteFile, 'homepage.modules must be an array');
+  else {
+    if (rawSite.homepage.modules.length < 1 || rawSite.homepage.modules.length > 12) issue(errors, siteFile, 'homepage.modules must contain between 1 and 12 sections');
+    const seenModules = new Set();
+    for (const [index, module] of rawSite.homepage.modules.entries()) {
+      if (!module || typeof module !== 'object' || Array.isArray(module)) { issue(errors, siteFile, `homepage.modules[${index}] must be an object`); continue; }
+      if (!HOME_MODULE_TYPES.has(module.type)) issue(errors, siteFile, `homepage.modules[${index}].type is not supported`);
+      if (seenModules.has(module.type)) issue(errors, siteFile, `homepage.modules contains duplicate section type: ${module.type}`);
+      seenModules.add(module.type);
+      if (module.enabled !== undefined && typeof module.enabled !== 'boolean') issue(errors, siteFile, `homepage.modules[${index}].enabled must be true or false`);
+      if (module.heading !== undefined && (typeof module.heading !== 'string' || module.heading.length > 120)) issue(errors, siteFile, `homepage.modules[${index}].heading must be 120 characters or fewer`);
+      if (module.count !== undefined && (!Number.isInteger(Number(module.count)) || Number(module.count) < 1 || Number(module.count) > 24)) issue(errors, siteFile, `homepage.modules[${index}].count must be an integer between 1 and 24`);
+    }
+    if (!rawSite.homepage.modules.some((module) => module.type === 'intro' && module.enabled !== false)) issue(warnings, siteFile, 'homepage introduction is disabled; readers may lack a clear page heading and publication summary');
+  }
+}
+
+const themeForValidation = rawSite.theme && typeof rawSite.theme === 'object' && !Array.isArray(rawSite.theme) ? rawSite.theme : site.theme;
+if (!themeForValidation || typeof themeForValidation !== 'object' || Array.isArray(themeForValidation)) {
   issue(errors, siteFile, 'theme must be an object');
 } else {
   let colorsValid = true;
   for (const field of THEME_FIELDS) {
-    if (!HEX_COLOR.test(site.theme[field] || '')) {
+    if (!HEX_COLOR.test(themeForValidation[field] || '')) {
       colorsValid = false;
       issue(errors, siteFile, `theme.${field} must be a six-digit hex color`);
     }
   }
   if (colorsValid) {
-    for (const message of themeContrastErrors(site.theme)) issue(errors, siteFile, `theme contrast: ${message}`);
+    for (const message of themeContrastErrors(themeForValidation)) issue(errors, siteFile, `theme contrast: ${message}`);
+  }
+}
+
+if (!site.reader_reach || typeof site.reader_reach !== 'object' || Array.isArray(site.reader_reach)) {
+  issue(errors, siteFile, 'reader_reach must be an object');
+} else {
+  for (const field of ['enabled', 'offline_enabled', 'saved_articles_enabled', 'browser_share_enabled', 'current_edition_enabled']) {
+    if (site.reader_reach[field] !== undefined && typeof site.reader_reach[field] !== 'boolean') issue(errors, siteFile, `reader_reach.${field} must be true or false`);
+  }
+  for (const [field, fallback] of [['current_edition_count', 8], ['offline_article_count', 12]]) {
+    const value = Number(site.reader_reach[field] ?? fallback);
+    if (!Number.isInteger(value) || value < 1 || value > 50) issue(errors, siteFile, `reader_reach.${field} must be an integer between 1 and 50`);
+  }
+  if (site.reader_reach.enabled === false && (site.reader_reach.offline_enabled || site.reader_reach.saved_articles_enabled || site.reader_reach.browser_share_enabled || site.reader_reach.current_edition_enabled)) {
+    issue(warnings, siteFile, 'reader_reach is disabled, so its individual features will not be generated');
   }
 }
 
@@ -163,6 +342,9 @@ if (!site.accessibility || typeof site.accessibility !== 'object' || Array.isArr
   optionalString(site.accessibility, 'statement_intro', siteFile, 900);
   optionalString(site.accessibility, 'feedback_note', siteFile, 700);
   if (site.accessibility.contact_email && !EMAIL.test(site.accessibility.contact_email)) issue(errors, siteFile, 'accessibility.contact_email must be a valid email address');
+  for (const field of ['reader_tools_enabled', 'simplified_reading_enabled', 'default_link_underlines', 'document_summary_required']) {
+    if (site.accessibility[field] !== undefined && typeof site.accessibility[field] !== 'boolean') issue(errors, siteFile, `accessibility.${field} must be true or false`);
+  }
 }
 
 for (const article of articles) {
@@ -175,38 +357,77 @@ for (const article of articles) {
   if (path.basename(article.__file, '.json') !== article.slug) issue(errors, article.__file, `filename must match slug (${article.slug}.json)`);
   if (!STATUS.has(article.status)) issue(errors, article.__file, `unsupported status: ${article.status}`);
   if (!TYPES.has(article.article_type)) issue(errors, article.__file, `unsupported article_type: ${article.article_type}`);
+  if (!article.classification) publishIssue(article, 'classification is required before publishing');
+  else if (!CLASSIFICATIONS.has(article.classification)) issue(errors, article.__file, `classification must be one of: ${ARTICLE_CLASSIFICATION_KEYS.join(', ')}`);
 
   const isPublished = article.status === 'published';
-  if (isPublished && String(article.title || '').trim().length < 5) issue(errors, article.__file, 'published title must contain at least 5 characters');
-  if (isPublished && String(article.excerpt || '').trim().length < 20) issue(errors, article.__file, 'published excerpt must contain at least 20 characters');
+  const isReleaseReady = RELEASE_STATUSES.has(article.status);
+  if (isReleaseReady && String(article.title || '').trim().length < 5) issue(errors, article.__file, 'published title must contain at least 5 characters');
+  if (isReleaseReady && String(article.excerpt || '').trim().length < 20) issue(errors, article.__file, 'published excerpt must contain at least 20 characters');
   optionalString(article, 'excerpt', article.__file, 360);
   optionalString(article, 'kicker', article.__file, 100);
   optionalString(article, 'featured_image_alt', article.__file, 240);
+  optionalString(article, 'featured_image_caption', article.__file, 300);
+  optionalString(article, 'featured_image_credit', article.__file, 160);
+  optionalString(article, 'featured_image_rights', article.__file, 300);
   optionalString(article, 'pdf_title', article.__file, 180);
   optionalString(article, 'document_description', article.__file, 600);
+  optionalString(article, 'document_accessible_summary', article.__file, 5000);
+  optionalString(article, 'document_accessibility_note', article.__file, 600);
   optionalString(article, 'document_source', article.__file, 180);
   optionalString(article, 'external_link_label', article.__file, 100);
   optionalString(article, 'seo_title', article.__file, 70);
   optionalString(article, 'seo_description', article.__file, 170);
   optionalString(article, 'editor_notes', article.__file, 2000);
+  optionalString(article, 'series_slug', article.__file, 120);
+  optionalString(article, 'series_title', article.__file, 180);
+  optionalString(article, 'series_description', article.__file, 360);
+  optionalString(article, 'methodology', article.__file, 5000);
+  optionalString(article, 'disclosure', article.__file, 2000);
+  optionalString(article, 'rights_and_reuse', article.__file, 1000);
+  optionalString(article, 'what_changed', article.__file, 1000);
 
-  if (isPublished && !article.published_at) issue(errors, article.__file, 'published_at is required before publishing');
+  const seriesFields = [article.series_slug, article.series_title].filter((value) => String(value || '').trim());
+  if (seriesFields.length === 1) issue(errors, article.__file, 'series_slug and series_title must be provided together');
+  if (article.series_slug && !SLUG.test(article.series_slug)) issue(errors, article.__file, 'series_slug must use lowercase letters, numbers, and single hyphens');
+  if (article.series_order !== undefined && (!Number.isInteger(article.series_order) || article.series_order < 1 || article.series_order > 999)) issue(errors, article.__file, 'series_order must be an integer between 1 and 999');
+  if (article.series_slug && article.series_order === undefined) publishIssue(article, 'series_order is required when an article belongs to a series');
+  if (!article.series_slug && article.series_order !== undefined) issue(errors, article.__file, 'series_order requires series_slug and series_title');
+  if (article.related_articles !== undefined) {
+    if (!Array.isArray(article.related_articles)) issue(errors, article.__file, 'related_articles must be an array');
+    else {
+      if (article.related_articles.length > 12) issue(errors, article.__file, 'related_articles cannot contain more than 12 slugs');
+      if (new Set(article.related_articles).size !== article.related_articles.length) issue(errors, article.__file, 'related_articles must not contain duplicates');
+      for (const [index, slug] of article.related_articles.entries()) {
+        if (!SLUG.test(String(slug || ''))) issue(errors, article.__file, `related_articles[${index}] must be an article slug`);
+        else if (slug === article.slug) issue(errors, article.__file, 'related_articles cannot include the current article');
+        else if (!articleSlugs.has(slug)) issue(errors, article.__file, `related_articles references unknown article: ${slug}`);
+      }
+    }
+  }
+  validateHistory(article, 'update_history', 'Update history');
+  validateHistory(article, 'corrections', 'Correction history');
+  if (article.corrections?.length && !article.updated_at) issue(warnings, article.__file, 'corrections are present but updated_at is empty');
+  if (article.classification === 'developing' && !(article.update_history || []).length) issue(warnings, article.__file, 'developing coverage should include at least one update_history entry');
+
+  if (isReleaseReady && !article.published_at) issue(errors, article.__file, 'published_at is required before publishing');
   if (article.published_at && Number.isNaN(new Date(article.published_at).getTime())) issue(errors, article.__file, 'published_at must be a valid ISO date-time');
+  if (article.status === 'scheduled' && article.published_at && new Date(article.published_at) <= new Date()) issue(warnings, article.__file, 'scheduled article is due now; run npm run publish:due or wait for the scheduled GitHub workflow');
   if (article.updated_at) {
     const updated = new Date(article.updated_at);
     const published = new Date(article.published_at);
     if (Number.isNaN(updated.getTime())) issue(errors, article.__file, 'updated_at must be a valid ISO date-time');
-    else if (!article.published_at) issue(errors, article.__file, 'updated_at requires published_at');
+    else if (!article.published_at) publishIssue(article, 'updated_at requires published_at');
     else if (!Number.isNaN(published.getTime()) && updated < published) issue(errors, article.__file, 'updated_at cannot be earlier than published_at');
   }
 
-  if (isPublished && !article.author) issue(errors, article.__file, 'author is required before publishing');
+  if (isReleaseReady && !article.author) issue(errors, article.__file, 'author is required before publishing');
   if (article.author && !authorSlugs.has(article.author)) issue(errors, article.__file, `unknown author reference: ${article.author}`);
   if (article.categories !== undefined && !Array.isArray(article.categories)) {
     issue(errors, article.__file, 'categories must be an array');
   } else {
     const selected = article.categories || [];
-    if (isPublished && selected.length < 1) issue(errors, article.__file, 'at least one category is required before publishing');
+    if (isReleaseReady && selected.length < 1) issue(errors, article.__file, 'at least one category is required before publishing');
     if (selected.length > 5) issue(errors, article.__file, 'no more than five categories are allowed');
     if (new Set(selected).size !== selected.length) issue(errors, article.__file, 'categories must not contain duplicates');
     for (const category of selected) if (!categorySlugs.has(category)) issue(errors, article.__file, `unknown category reference: ${category}`);
@@ -228,6 +449,10 @@ for (const article of articles) {
   if (['standard', 'mixed'].includes(article.article_type) && !String(article.body || '').trim()) publishIssue(article, `${article.article_type} articles require article body text`);
   if (article.article_type === 'standard' && pdf) issue(warnings, article.__file, 'standard articles ignore PDF fields; use mixed or pdf instead');
   if (['pdf', 'mixed', 'external'].includes(article.article_type) && !String(article.pdf_title || '').trim()) publishIssue(article, `${article.article_type} articles require pdf_title`);
+  if (['pdf', 'mixed', 'external'].includes(article.article_type)) {
+    if (String(article.document_description || '').trim().length < 20) publishIssue(article, `${article.article_type} articles require a document_description of at least 20 characters`);
+    if (site.accessibility?.document_summary_required !== false && String(article.document_accessible_summary || '').trim().length < 40) publishIssue(article, `${article.article_type} articles require a document_accessible_summary of at least 40 characters`);
+  }
   if (article.pdf_file && article.pdf_url) issue(warnings, article.__file, 'both pdf_file and pdf_url are set; pdf_file takes precedence');
   if (article.pdf_viewer_default !== undefined && !PDF_VIEW_MODES.has(article.pdf_viewer_default)) issue(errors, article.__file, 'pdf_viewer_default must be fit-width or fit-page');
   if (article.pdf_viewer_default && !['pdf', 'mixed'].includes(article.article_type)) issue(warnings, article.__file, 'pdf_viewer_default is ignored unless article_type is pdf or mixed');
@@ -243,13 +468,13 @@ for (const article of articles) {
   for (const field of ['featured', 'allow_download', 'show_author_bio', 'noindex', ...PUBLISH_REVIEW_FIELDS]) {
     if (article[field] !== undefined && typeof article[field] !== 'boolean') issue(errors, article.__file, `${field} must be true or false`);
   }
-  if (isPublished) {
+  if (isReleaseReady) {
     for (const field of PUBLISH_REVIEW_FIELDS) if (article[field] !== true) issue(errors, article.__file, `${field} must be confirmed before publishing`);
   }
 
   let canonical = '';
   if (article.canonical_url && !validAbsoluteWebUrl(article.canonical_url)) issue(errors, article.__file, 'canonical_url must be an absolute HTTP(S) URL');
-  else if (isPublished && siteUrl) {
+  else if (isReleaseReady && siteUrl) {
     try {
       const parsed = new URL(article.canonical_url || `/stories/${article.slug}/`, siteUrl);
       canonical = parsed.href;
@@ -286,6 +511,8 @@ for (const article of articles) {
     }
   }
 
+  validateStoryBlocks(article);
+
   if (!Array.isArray(article.source_links || [])) {
     issue(errors, article.__file, 'source_links must be an array');
   } else {
@@ -302,7 +529,29 @@ for (const article of articles) {
   if (article.featured_image && !validWebOrLocalUrl(article.featured_image)) issue(errors, article.__file, 'featured_image must be site-relative or HTTP(S)');
   validateLocalAsset(article.featured_image, article.__file, 'featured_image');
   if (article.featured_image && !article.featured_image_alt) publishIssue(article, 'featured_image_alt is required when featured_image is set');
+  if (article.featured_image_aspect !== undefined && !IMAGE_ASPECTS.includes(article.featured_image_aspect)) issue(errors, article.__file, `featured_image_aspect must be one of: ${IMAGE_ASPECTS.join(', ')}`);
+  if (article.featured_image_focal_point !== undefined && !IMAGE_FOCAL_POINTS.includes(article.featured_image_focal_point)) issue(errors, article.__file, `featured_image_focal_point must be one of: ${IMAGE_FOCAL_POINTS.join(', ')}`);
+  const mediaSources = articleMedia(article).filter((item) => item.src);
+  if (mediaSources.length > 30) issue(errors, article.__file, 'an article cannot reference more than 30 images');
   if (isPublished && article.noindex) issue(warnings, article.__file, 'published article is marked noindex');
+}
+
+
+const seriesOwners = new Map();
+const seriesOrders = new Map();
+for (const article of articles) {
+  if (!article.series_slug) continue;
+  const owner = seriesOwners.get(article.series_slug);
+  const title = String(article.series_title || '').trim();
+  const description = String(article.series_description || '').trim();
+  if (owner && owner.title !== title) issue(errors, article.__file, `series_title must match “${owner.title}” for series ${article.series_slug}`);
+  else if (!owner) seriesOwners.set(article.series_slug, { title, description, file: article.__file });
+  else if (owner.description && description && owner.description !== description) issue(errors, article.__file, `series_description must match the other entries in series ${article.series_slug}`);
+  const orderKey = `${article.series_slug}:${article.series_order}`;
+  if (article.series_order !== undefined) {
+    if (seriesOrders.has(orderKey)) issue(errors, article.__file, `series_order ${article.series_order} is already used by ${relativeFile(seriesOrders.get(orderKey))}`);
+    else seriesOrders.set(orderKey, article.__file);
+  }
 }
 
 try {
@@ -320,5 +569,5 @@ if (errors.length) {
   console.error(`\nValidation failed: ${errors.length} error(s), ${warnings.length} warning(s).`);
   process.exit(1);
 }
-console.log(`Content valid: ${articles.length} article(s), ${authors.length} author(s), ${categories.length} category item(s), ${hubs.length} hub(s).`);
+console.log(`Content valid: ${articles.length} article(s), ${authors.length} author(s), ${categories.length} category item(s), ${hubs.length} hub(s), ${crosswords.length} crossword(s).`);
 if (warnings.length) console.log(`Warnings: ${warnings.length}`);

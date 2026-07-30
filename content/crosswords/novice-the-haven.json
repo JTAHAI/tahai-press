@@ -1,0 +1,67 @@
+{
+  "slug": "novice-the-haven",
+  "title": "The Haven",
+  "difficulty": "novice",
+  "deck": "A five-by-five word square with matching Across and Down answers.",
+  "active": true,
+  "rotation_order": 2,
+  "grid": [
+    "THESE",
+    "HAVEN",
+    "EVENT",
+    "SENSE",
+    "ENTER"
+  ],
+  "clues": [
+    {
+      "direction": "across",
+      "answer": "THESE",
+      "clue": "The ones close at hand"
+    },
+    {
+      "direction": "down",
+      "answer": "THESE",
+      "clue": "Plural demonstrative"
+    },
+    {
+      "direction": "across",
+      "answer": "HAVEN",
+      "clue": "A place of safety"
+    },
+    {
+      "direction": "down",
+      "answer": "HAVEN",
+      "clue": "Sheltered harbor"
+    },
+    {
+      "direction": "across",
+      "answer": "EVENT",
+      "clue": "A scheduled occurrence"
+    },
+    {
+      "direction": "down",
+      "answer": "EVENT",
+      "clue": "Something noteworthy that happens"
+    },
+    {
+      "direction": "across",
+      "answer": "SENSE",
+      "clue": "Meaning or good judgment"
+    },
+    {
+      "direction": "down",
+      "answer": "SENSE",
+      "clue": "One of sight, sound, smell, taste, or touch"
+    },
+    {
+      "direction": "across",
+      "answer": "ENTER",
+      "clue": "Go in"
+    },
+    {
+      "direction": "down",
+      "answer": "ENTER",
+      "clue": "Keyboard key used to submit"
+    }
+  ]
+}

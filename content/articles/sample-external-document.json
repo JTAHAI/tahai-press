@@ -39,5 +39,26 @@
   "review_content": true,
   "review_rights": true,
   "review_accessibility": true,
-  "editor_notes": "Sample content reviewed for starter validation. Replace or remove before launch."
+  "editor_notes": "Sample content reviewed for starter validation. Replace or remove before launch.",
+  "document_accessible_summary": "This demonstration represents a document that remains on an external website. The article explains why a publisher may link to an outside archive, what readers should expect when following the link, and that the destination is controlled by a different service. The sample URL is a placeholder and may not host a real file.",
+  "document_accessibility_note": "The HTML summary is provided so readers can understand the purpose and essential context without relying on the embedded PDF viewer.",
+  "classification": "announcement",
+  "series_slug": "",
+  "series_title": "",
+  "series_description": "",
+  "related_articles": [
+    "sample-pdf-record"
+  ],
+  "methodology": "This entry demonstrates how an editor can provide context and an accessible summary when the primary document is hosted on another website.",
+  "disclosure": "The external URL is a neutral example address used for template testing.",
+  "rights_and_reuse": "The linked publisher controls the external document and its reuse terms.",
+  "what_changed": "Added a clearly labeled announcement classification and related coverage.",
+  "update_history": [
+    {
+      "date": "2026-07-27T12:20:00-04:00",
+      "title": "Professional Desk update",
+      "body": "Added classification, trust context, and related coverage."
+    }
+  ],
+  "corrections": []
 }

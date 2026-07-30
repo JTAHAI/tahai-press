@@ -60,7 +60,7 @@ function checkPage(file) {
   if (duplicates.length) fail(`duplicate ids: ${duplicates.join(', ')}`);
   const idSet = new Set(ids);
 
-  for (const match of html.matchAll(/\saria-(?:labelledby|describedby)=(?:"([^"]+)"|'([^']+)')/gi)) {
+  for (const match of html.matchAll(/\saria-(?:labelledby|describedby|controls)=(?:"([^"]+)"|'([^']+)')/gi)) {
     const references = (match[1] || match[2] || '').split(/\s+/).filter(Boolean);
     for (const reference of references) if (!idSet.has(reference)) fail(`ARIA reference does not resolve: ${reference}`);
   }
@@ -70,6 +70,20 @@ function checkPage(file) {
   }
   for (const match of html.matchAll(/<iframe\b[^>]*>/gi)) {
     if (!attribute(match[0], 'title')) fail('iframe is missing a non-empty title');
+  }
+
+
+  for (const match of html.matchAll(/<dialog\b[^>]*>/gi)) {
+    if (!attribute(match[0], 'aria-label') && !attribute(match[0], 'aria-labelledby')) fail('dialog is missing an accessible name');
+  }
+
+  for (const match of html.matchAll(/<details\b[^>]*>[\s\S]*?<\/details>/gi)) {
+    const summary = match[0].match(/<summary\b[^>]*>([\s\S]*?)<\/summary>/i)?.[1] || '';
+    if (!stripTags(summary)) fail('details disclosure is missing a named summary');
+  }
+
+  for (const match of html.matchAll(/<table\b[^>]*>[\s\S]*?<\/table>/gi)) {
+    if (!/<th\b/i.test(match[0])) fail('data table is missing header cells');
   }
 
   for (const match of html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/gi)) {
@@ -132,9 +146,9 @@ const report = {
     'document language and titles',
     'main landmark and skip-link target',
     'single primary heading',
-    'unique IDs and resolved ARIA references',
+    'unique IDs and resolved ARIA references, including controlled regions',
     'image and iframe alternatives',
-    'button and form-control names',
+    'button, disclosure, dialog, table, and form-control names',
     'safe and announced new-tab links',
     'basic heading-order review'
   ],

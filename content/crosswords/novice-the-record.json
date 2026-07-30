@@ -1,0 +1,67 @@
+{
+  "slug": "novice-the-record",
+  "title": "The Record",
+  "difficulty": "novice",
+  "deck": "A five-by-five word square with matching Across and Down answers.",
+  "active": true,
+  "rotation_order": 1,
+  "grid": [
+    "OTHER",
+    "THERE",
+    "HEART",
+    "ERROR",
+    "RETRO"
+  ],
+  "clues": [
+    {
+      "direction": "across",
+      "answer": "OTHER",
+      "clue": "Not this one"
+    },
+    {
+      "direction": "down",
+      "answer": "OTHER",
+      "clue": "Alternative to this"
+    },
+    {
+      "direction": "across",
+      "answer": "THERE",
+      "clue": "In that place"
+    },
+    {
+      "direction": "down",
+      "answer": "THERE",
+      "clue": "A location being indicated"
+    },
+    {
+      "direction": "across",
+      "answer": "HEART",
+      "clue": "Symbol of courage or affection"
+    },
+    {
+      "direction": "down",
+      "answer": "HEART",
+      "clue": "The organ at the center of circulation"
+    },
+    {
+      "direction": "across",
+      "answer": "ERROR",
+      "clue": "A mistake in print or judgment"
+    },
+    {
+      "direction": "down",
+      "answer": "ERROR",
+      "clue": "Computer message nobody wants"
+    },
+    {
+      "direction": "across",
+      "answer": "RETRO",
+      "clue": "Deliberately old-fashioned"
+    },
+    {
+      "direction": "down",
+      "answer": "RETRO",
+      "clue": "Style inspired by an earlier era"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "slug": "novice-the-editorial",
+  "title": "The Editorial",
+  "difficulty": "novice",
+  "deck": "A five-by-five word square with matching Across and Down answers.",
+  "active": true,
+  "rotation_order": 6,
+  "grid": [
+    "POWER",
+    "OLIVE",
+    "WIVES",
+    "EVENT",
+    "RESTS"
+  ],
+  "clues": [
+    {
+      "direction": "across",
+      "answer": "POWER",
+      "clue": "Authority or energy"
+    },
+    {
+      "direction": "down",
+      "answer": "POWER",
+      "clue": "Ability to act"
+    },
+    {
+      "direction": "across",
+      "answer": "OLIVE",
+      "clue": "Fruit pressed for oil"
+    },
+    {
+      "direction": "down",
+      "answer": "OLIVE",
+      "clue": "Muted green shade"
+    },
+    {
+      "direction": "across",
+      "answer": "WIVES",
+      "clue": "Married women"
+    },
+    {
+      "direction": "down",
+      "answer": "WIVES",
+      "clue": "Spouses in the plural"
+    },
+    {
+      "direction": "across",
+      "answer": "EVENT",
+      "clue": "Public happening"
+    },
+    {
+      "direction": "down",
+      "answer": "EVENT",
+      "clue": "Competition on a program"
+    },
+    {
+      "direction": "across",
+      "answer": "RESTS",
+      "clue": "Takes a break"
+    },
+    {
+      "direction": "down",
+      "answer": "RESTS",
+      "clue": "Remaining portions"
+    }
+  ]
+}

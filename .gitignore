@@ -13,3 +13,4 @@ imports/inbox/*
 !imports/inbox/.gitkeep
 imports/reports/*
 !imports/reports/.gitkeep
+.launch-backups/

@@ -51,16 +51,22 @@ try {
   const checks = [
     ['/', 200, 'text/html'],
     ['/stories/', 200, 'text/html'],
+    ['/sections/', 200, 'text/html'],
+    ['/sections/investigation/', 200, 'text/html'],
+    ['/series/', 200, 'text/html'],
+    ['/series/transparent-local-record/', 200, 'text/html'],
     ['/accessibility/', 200, 'text/html'],
     ['/search/', 200, 'text/html'],
     ['/puzzles/', 200, 'text/html'],
     ['/assets/crossword.js', 200, 'text/javascript'],
+    ['/assets/crosswords.json', 200, 'application/json'],
     ['/search-index.json', 200, 'application/json'],
     ['/categories/public-records/', 200, 'text/html'],
     ['/topics/pdf/', 200, 'text/html'],
     ['/authors/editorial-team/', 200, 'text/html'],
     ['/hubs/primary-coverage/', 200, 'text/html'],
     ['/archive/2026/07/', 200, 'text/html'],
+    ['/stories/sample-written-story/', 200, 'text/html'],
     ['/stories/sample-pdf-record/', 200, 'text/html'],
     ['/uploads/documents/sample-document.pdf', 200, 'application/pdf'],
     ['/.well-known/publication-health.json', 200, 'application/json'],
@@ -91,6 +97,10 @@ try {
   const searchIndex = await fetch(`${origin}/search-index.json`).then((response) => response.json());
   assert.equal(searchIndex.count, searchIndex.entries.length);
   assert.ok(searchIndex.entries.every((entry) => entry.url.startsWith('/stories/')));
+
+  const crosswords = await fetch(`${origin}/assets/crosswords.json`).then((response) => response.json());
+  assert.ok(crosswords.puzzles.some((item) => item.difficulty === 'novice'));
+  assert.ok(crosswords.puzzles.some((item) => item.difficulty === 'expert'));
 
   const health = await fetch(`${origin}/.well-known/publication-health.json`).then((response) => response.json());
   assert.equal(health.ok, true);

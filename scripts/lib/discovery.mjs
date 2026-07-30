@@ -1,3 +1,5 @@
+import { storyBlocksPlainText } from './editorial.mjs';
+
 export function topicSlug(value = '') {
   return String(value)
     .normalize('NFKD')
@@ -76,7 +78,7 @@ export function createSearchIndex({ articles = [], authors = [], categories = []
     const author = authorMap.get(article.author);
     const categoryNames = (article.categories || []).map((slug) => categoryMap.get(slug)?.name).filter(Boolean);
     const hub = hubMap.get(article.hub);
-    const body = plainText(article.body || '');
+    const body = plainText(`${article.body || ''} ${storyBlocksPlainText(article)}`);
     const searchable = normalizeSearchText([
       article.title,
       article.kicker,
@@ -88,7 +90,15 @@ export function createSearchIndex({ articles = [], authors = [], categories = []
       hub?.name,
       article.pdf_title,
       article.document_description,
-      article.document_source
+      article.document_source,
+      article.classification,
+      article.series_title,
+      article.series_description,
+      article.methodology,
+      article.disclosure,
+      article.what_changed,
+      ...(article.update_history || []).flatMap((entry) => [entry.title, entry.body]),
+      ...(article.corrections || []).flatMap((entry) => [entry.title, entry.body])
     ].filter(Boolean).join(' '));
     return {
       title: article.title,
@@ -97,6 +107,8 @@ export function createSearchIndex({ articles = [], authors = [], categories = []
       published_at: article.published_at,
       updated_at: article.updated_at || '',
       article_type: article.article_type,
+      classification: article.classification || 'news',
+      series: article.series_slug ? { slug: article.series_slug, title: article.series_title } : null,
       author: author ? { name: author.name, slug: author.slug } : null,
       categories: (article.categories || []).map((slug) => ({ slug, name: categoryMap.get(slug)?.name || slug })),
       tags: (article.tags || []).map((name) => ({ name, slug: topicSlug(name) })).filter((item) => item.slug),

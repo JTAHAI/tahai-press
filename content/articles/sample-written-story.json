@@ -19,8 +19,8 @@
   ],
   "hub": "primary-coverage",
   "featured": false,
-  "featured_image": "",
-  "featured_image_alt": "",
+  "featured_image": "/uploads/images/media-pipeline-demo.png",
+  "featured_image_alt": "A TAHAI Press media pipeline fixture card showing responsive image handoff, build-time variants, and a manifest-backed workflow.",
   "pdf_file": "",
   "pdf_url": "",
   "pdf_title": "",
@@ -49,5 +49,121 @@
   "legacy_urls": [
     "/news/sample-written-story/",
     "https://legacy.example.org/2026/07/sample-written-story/"
-  ]
+  ],
+  "featured_image_caption": "The sample article now uses a raster image so the responsive media pipeline is exercised in the built site.",
+  "featured_image_credit": "TAHAI Press demonstration asset",
+  "featured_image_rights": "Included with the open-source demonstration.",
+  "featured_image_aspect": "landscape",
+  "featured_image_focal_point": "center",
+  "story_blocks": [
+    {
+      "type": "key_points",
+      "heading": "What the Editorial Studio adds",
+      "items": [
+        "A browser-only Quick Story composer that never sends draft text to a server.",
+        "Structured newspaper blocks that editors can add and reorder in Pages CMS.",
+        "Accessible captions, credits, galleries, timelines, and document cards.",
+        "Strict publication checks that keep drafts flexible and published work complete."
+      ]
+    },
+    {
+      "type": "pull_quote",
+      "quote": "Make it easy. Make it fast. Make it accessible.",
+      "attribution": "Product principle"
+    },
+    {
+      "type": "fact_box",
+      "heading": "No database and no extra publishing account",
+      "body": "The finished site remains static HTML, CSS, JavaScript, images, and documents. Pages CMS edits the repository through GitHub, while Cloudflare Pages serves the generated publication."
+    },
+    {
+      "type": "gallery",
+      "heading": "A reusable publication identity system",
+      "description": "These demonstration assets show how captions, credits, aspect ratios, and the keyboard-accessible image viewer work together.",
+      "items": [
+        {
+          "src": "/uploads/images/source-records.svg",
+          "alt": "Three layered public-record pages with highlighted lines and a magnifying glass.",
+          "caption": "Source-document reporting keeps the record close to the explanation.",
+          "credit": "Sample illustration",
+          "rights": "Included with the open-source demonstration.",
+          "aspect": "square",
+          "focal_point": "center"
+        },
+        {
+          "src": "/uploads/images/community-notes.svg",
+          "alt": "A town hall silhouette surrounded by speech bubbles, a location marker, and written notes.",
+          "caption": "Coverage can be organized around places, institutions, projects, or recurring public issues.",
+          "credit": "Sample illustration",
+          "rights": "Included with the open-source demonstration.",
+          "aspect": "square",
+          "focal_point": "center"
+        },
+        {
+          "src": "/uploads/images/editorial-desk.svg",
+          "alt": "A newspaper, notebook, pencil, camera, and coffee cup arranged on a dark blue editorial desk.",
+          "caption": "The publication files remain portable and readable outside a database.",
+          "credit": "Sample illustration",
+          "rights": "Included with the open-source demonstration.",
+          "aspect": "landscape",
+          "focal_point": "center"
+        }
+      ]
+    },
+    {
+      "type": "timeline",
+      "heading": "From draft to public article",
+      "items": [
+        {
+          "date": "Step 1",
+          "title": "Draft quickly",
+          "body": "Use the Editorial Studio or Pages CMS to write the headline, summary, article text, and media details."
+        },
+        {
+          "date": "Step 2",
+          "title": "Review before publishing",
+          "body": "Confirm sources, image rights, private information, document context, and accessibility."
+        },
+        {
+          "date": "Step 3",
+          "title": "Publish through Git",
+          "body": "Commit the article file. Cloudflare Pages rebuilds the static publication automatically."
+        }
+      ]
+    },
+    {
+      "type": "callout",
+      "tone": "important",
+      "heading": "Accessibility is a publication requirement, not an optional polish pass",
+      "body": "Meaningful images need useful descriptions. Decorative images must be marked decorative. PDFs need direct links and clear HTML context. The build rejects missing reader essentials before a public release."
+    },
+    {
+      "type": "document",
+      "heading": "Sample source document",
+      "url": "/uploads/documents/sample-document.pdf",
+      "label": "Open the sample PDF",
+      "description": "A local PDF demonstrates durable source-document linking beside an ordinary written article."
+    }
+  ],
+  "classification": "investigation",
+  "series_slug": "transparent-local-record",
+  "series_title": "Building a Transparent Local Record",
+  "series_description": "A three-part demonstration of reporting, context, and primary-source publishing in TAHAI Press.",
+  "series_order": 1,
+  "related_articles": [
+    "sample-pdf-story",
+    "sample-pdf-record"
+  ],
+  "methodology": "This demonstration article was assembled from the starter content model to show how a newsroom can distinguish reporting, source material, interpretation, and editorial context. In a real publication, describe interviews, records reviewed, data methods, and verification steps here.",
+  "disclosure": "This is demonstration content included with the TAHAI Press template. It does not describe a real investigation or organization.",
+  "rights_and_reuse": "Reuse of this demonstration article is permitted under the repository license. Publishers should replace this statement with their own copyright and republication policy.",
+  "what_changed": "Added structured story blocks, a methodology note, related coverage, and a permanent citation example for the Professional Desk release.",
+  "update_history": [
+    {
+      "date": "2026-07-27T12:00:00-04:00",
+      "title": "Professional Desk update",
+      "body": "Added article classification, series context, methodology, related coverage, and citation tools."
+    }
+  ],
+  "corrections": []
 }

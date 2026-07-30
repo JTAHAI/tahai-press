@@ -75,7 +75,7 @@ content:
           field: false
         view:
           primary: title
-          fields: [status, published_at, article_type, author]
+          fields: [status, published_at, classification, article_type, author]
           search: [title, slug, excerpt, author, tags]
           sort: [published_at, title, status]
           default:
@@ -102,6 +102,8 @@ content:
               values:
                 - name: draft
                   label: Draft — private from the public build
+                - name: scheduled
+                  label: Scheduled — publishes at the selected date and time
                 - name: published
                   label: Published — visible after deployment
                 - name: archived
@@ -122,6 +124,32 @@ content:
                   label: Written article with supporting PDF
                 - name: external
                   label: Document hosted on another website
+          - name: classification
+            label: Editorial classification
+            type: select
+            required: true
+            default: news
+            description: "Tell readers what kind of work this is. The label appears beside the headline and on professional section fronts."
+            options:
+              values:
+                - name: news
+                  label: News
+                - name: analysis
+                  label: Analysis
+                - name: opinion
+                  label: Opinion
+                - name: investigation
+                  label: Investigation
+                - name: public-record
+                  label: Public record
+                - name: explainer
+                  label: Explainer
+                - name: interview
+                  label: Interview
+                - name: announcement
+                  label: Announcement
+                - name: developing
+                  label: Developing coverage
           - name: kicker
             label: Article eyebrow
             type: string
@@ -146,6 +174,322 @@ content:
               media: images
               rename: safe
               categories: [image]
+          - name: story_blocks
+            label: Structured newspaper blocks
+            type: block
+            description: "Optional. Add and reorder professional story elements without writing special Markdown. Every block is checked before publication."
+            list:
+              max: 30
+              collapsible:
+                collapsed: true
+                summary: "{type} · {heading}"
+            blockKey: type
+            blocks:
+              - name: text
+                label: Text section
+                fields:
+                  - name: heading
+                    label: Section heading
+                    type: string
+                    options:
+                      maxlength: 160
+                  - name: body
+                    label: Section text
+                    type: rich-text
+                    required: true
+                    options:
+                      format: markdown
+                      switcher: true
+                      media: images
+                      rename: safe
+                      categories: [image]
+              - name: key_points
+                label: Key points
+                fields:
+                  - name: heading
+                    label: Heading
+                    type: string
+                    default: Key points
+                    options:
+                      maxlength: 160
+                  - name: items
+                    label: Points
+                    type: string
+                    required: true
+                    list:
+                      min: 1
+                      max: 12
+                    options:
+                      maxlength: 300
+              - name: pull_quote
+                label: Pull quote
+                fields:
+                  - name: quote
+                    label: Quotation
+                    type: text
+                    required: true
+                    options:
+                      maxlength: 500
+                  - name: attribution
+                    label: Attribution
+                    type: string
+                    options:
+                      maxlength: 160
+              - name: fact_box
+                label: Fact box
+                fields:
+                  - name: heading
+                    label: Heading
+                    type: string
+                    required: true
+                    options:
+                      maxlength: 160
+                  - name: body
+                    label: Facts and context
+                    type: rich-text
+                    required: true
+                    options:
+                      format: markdown
+                      switcher: true
+              - name: image
+                label: Image with caption
+                fields:
+                  - name: heading
+                    label: Internal section label
+                    type: string
+                    description: "Optional. Used only for document structure and screen readers."
+                    options:
+                      maxlength: 160
+                  - name: src
+                    label: Image
+                    type: image
+                    required: true
+                    options:
+                      media: images
+                      extensions: [avif, gif, jpeg, jpg, png, svg, webp]
+                      categories: [image]
+                      rename: safe
+                  - name: alt
+                    label: Image description
+                    type: string
+                    description: "Describe meaningful visual content. Leave empty only when Decorative image is enabled."
+                    options:
+                      maxlength: 240
+                  - name: decorative
+                    label: Decorative image
+                    type: boolean
+                    default: false
+                  - name: caption
+                    label: Caption
+                    type: text
+                    options:
+                      maxlength: 300
+                  - name: credit
+                    label: Photographer or source credit
+                    type: string
+                    options:
+                      maxlength: 160
+                  - name: rights
+                    label: Rights or usage note
+                    type: string
+                    options:
+                      maxlength: 300
+                  - name: layout
+                    label: Page width
+                    type: select
+                    default: standard
+                    options:
+                      values:
+                        - name: standard
+                          label: Standard article width
+                        - name: wide
+                          label: Wide
+                        - name: full
+                          label: Full page width
+                        - name: left
+                          label: Float left on large screens
+                        - name: right
+                          label: Float right on large screens
+                  - name: aspect
+                    label: Image shape
+                    type: select
+                    default: original
+                    options:
+                      values: [original, landscape, portrait, square]
+                  - name: focal_point
+                    label: Important image area
+                    type: select
+                    default: center
+                    options:
+                      values: [center, top, bottom, left, right]
+                  - name: lightbox
+                    label: Allow larger image viewer
+                    type: boolean
+                    default: true
+              - name: gallery
+                label: Accessible image gallery
+                fields:
+                  - name: heading
+                    label: Gallery heading
+                    type: string
+                    default: Photo gallery
+                    options:
+                      maxlength: 160
+                  - name: description
+                    label: Gallery introduction
+                    type: text
+                    options:
+                      maxlength: 500
+                  - name: items
+                    label: Gallery images
+                    type: object
+                    required: true
+                    list:
+                      min: 2
+                      max: 12
+                      collapsible:
+                        collapsed: true
+                        summary: "{caption} · image {index}"
+                    fields:
+                      - name: src
+                        label: Image
+                        type: image
+                        required: true
+                        options:
+                          media: images
+                          extensions: [avif, gif, jpeg, jpg, png, svg, webp]
+                          categories: [image]
+                          rename: safe
+                      - name: alt
+                        label: Image description
+                        type: string
+                        options:
+                          maxlength: 240
+                      - name: decorative
+                        label: Decorative image
+                        type: boolean
+                        default: false
+                      - name: caption
+                        label: Caption
+                        type: text
+                        options:
+                          maxlength: 300
+                      - name: credit
+                        label: Photographer or source credit
+                        type: string
+                        options:
+                          maxlength: 160
+                      - name: rights
+                        label: Rights or usage note
+                        type: string
+                        options:
+                          maxlength: 300
+                      - name: aspect
+                        label: Image shape
+                        type: select
+                        default: landscape
+                        options:
+                          values: [original, landscape, portrait, square]
+                      - name: focal_point
+                        label: Important image area
+                        type: select
+                        default: center
+                        options:
+                          values: [center, top, bottom, left, right]
+              - name: timeline
+                label: Timeline
+                fields:
+                  - name: heading
+                    label: Timeline heading
+                    type: string
+                    default: Timeline
+                    options:
+                      maxlength: 160
+                  - name: items
+                    label: Timeline entries
+                    type: object
+                    required: true
+                    list:
+                      min: 1
+                      max: 20
+                      collapsible:
+                        collapsed: true
+                        summary: "{date} · {title}"
+                    fields:
+                      - name: date
+                        label: Date or time label
+                        type: string
+                        options:
+                          maxlength: 80
+                      - name: title
+                        label: Entry title
+                        type: string
+                        required: true
+                        options:
+                          maxlength: 180
+                      - name: body
+                        label: Entry detail
+                        type: rich-text
+                        options:
+                          format: markdown
+                          switcher: true
+              - name: callout
+                label: Callout or editor note
+                fields:
+                  - name: tone
+                    label: Style
+                    type: select
+                    default: neutral
+                    options:
+                      values:
+                        - name: neutral
+                          label: Neutral note
+                        - name: note
+                          label: Editor note
+                        - name: important
+                          label: Important notice
+                        - name: context
+                          label: Background context
+                  - name: heading
+                    label: Heading
+                    type: string
+                    required: true
+                    options:
+                      maxlength: 160
+                  - name: body
+                    label: Callout text
+                    type: rich-text
+                    required: true
+                    options:
+                      format: markdown
+                      switcher: true
+              - name: document
+                label: Supporting document card
+                fields:
+                  - name: heading
+                    label: Document title
+                    type: string
+                    required: true
+                    options:
+                      maxlength: 180
+                  - name: url
+                    label: Document path or URL
+                    type: string
+                    required: true
+                    description: "Use a repository path beginning with / or a complete https:// address."
+                    options:
+                      maxlength: 2048
+                  - name: label
+                    label: Button label
+                    type: string
+                    default: Open document
+                    options:
+                      maxlength: 100
+                  - name: description
+                    label: Reader-facing description
+                    type: text
+                    options:
+                      maxlength: 600
           - name: author
             label: Author or contributor
             type: reference
@@ -206,7 +550,7 @@ content:
           - name: featured_image
             label: Featured image
             type: image
-            description: "Optional article card and page image. Add a useful description in the next field."
+            description: "Optional article card and page image. Prepare and compress it at /media-desk/ when useful, then add a meaningful description in the next field."
             options:
               media: images
               extensions: [avif, gif, jpeg, jpg, png, svg, webp]
@@ -218,6 +562,43 @@ content:
             description: "Required whenever a featured image is used. Describe the meaningful visual content; do not begin with Image of."
             options:
               maxlength: 240
+          - name: featured_image_caption
+            label: Featured image caption
+            type: text
+            options:
+              maxlength: 300
+          - name: featured_image_credit
+            label: Featured image credit
+            type: string
+            options:
+              maxlength: 160
+          - name: featured_image_rights
+            label: Featured image rights note
+            type: string
+            description: "Optional internal/public rights context, such as Courtesy of or used with permission."
+            options:
+              maxlength: 300
+          - name: featured_image_aspect
+            label: Featured image shape
+            type: select
+            default: landscape
+            options:
+              values:
+                - name: original
+                  label: Original proportions
+                - name: landscape
+                  label: Newspaper landscape
+                - name: portrait
+                  label: Portrait
+                - name: square
+                  label: Square
+          - name: featured_image_focal_point
+            label: Important image area
+            type: select
+            default: center
+            description: "Keeps the important part visible when the image is cropped."
+            options:
+              values: [center, top, bottom, left, right]
           - name: pdf_file
             label: Upload a local PDF
             type: file
@@ -245,7 +626,21 @@ content:
           - name: document_description
             label: Document description
             type: text
-            description: "Optional reader-facing note explaining what the document is and why it is included."
+            description: "Required before publishing PDF-first, mixed, and external-document articles. Explain what the document is and why it is included in at least one clear sentence."
+            options:
+              minlength: 20
+              maxlength: 600
+          - name: document_accessible_summary
+            label: Accessible HTML document summary
+            type: rich-text
+            description: "Required before publishing a document article. Summarize the document's essential meaning, context, and key information so readers do not have to rely on the embedded PDF viewer."
+            options:
+              format: markdown
+              switcher: true
+          - name: document_accessibility_note
+            label: Document accessibility note
+            type: text
+            description: "Optional. Explain any known limitations, remediation status, transcript availability, or alternative access path."
             options:
               maxlength: 600
           - name: document_date
@@ -292,6 +687,126 @@ content:
             label: Show contributor biography
             type: boolean
             default: true
+          - name: series_slug
+            label: Series URL slug
+            type: string
+            description: "Optional. Use the same lowercase slug on every article in a series. Leave all series fields empty for a standalone article."
+            pattern:
+              regex: "^$|^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              message: "Use lowercase letters, numbers, and single hyphens only."
+            options:
+              maxlength: 120
+          - name: series_title
+            label: Series title
+            type: string
+            description: "Optional. Must match across every article using the same series slug."
+            options:
+              maxlength: 180
+          - name: series_description
+            label: Series description
+            type: text
+            description: "Optional plain-language introduction for the generated series front."
+            options:
+              maxlength: 360
+          - name: series_order
+            label: Order within series
+            type: number
+            description: "Required when a series is selected. Use 1 for the first installment, 2 for the next, and so on."
+            options:
+              min: 1
+              max: 999
+              step: 1
+          - name: related_articles
+            label: Related article slugs
+            type: string
+            description: "Optional. Add the permanent slugs of other articles readers should see next."
+            list:
+              max: 12
+            pattern:
+              regex: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              message: "Use an existing article slug."
+            options:
+              maxlength: 120
+          - name: methodology
+            label: Reporting methodology
+            type: rich-text
+            description: "Optional. Explain records reviewed, interviews, data methods, verification steps, or limits."
+            options:
+              format: markdown
+              switcher: true
+          - name: disclosure
+            label: Disclosure or context note
+            type: rich-text
+            description: "Optional. Disclose relationships, funding, conflicts, AI assistance, or other context readers should know."
+            options:
+              format: markdown
+              switcher: true
+          - name: rights_and_reuse
+            label: Rights and reuse statement
+            type: text
+            description: "Optional article-specific copyright, quotation, or republication guidance."
+            options:
+              maxlength: 1000
+          - name: what_changed
+            label: What changed
+            type: text
+            description: "Optional short summary shown near the top when a meaningful update has been made."
+            options:
+              maxlength: 1000
+          - name: update_history
+            label: Update history
+            type: object
+            description: "Optional material update log. Newest entries are displayed first."
+            list:
+              max: 25
+              collapsible:
+                collapsed: true
+                summary: "{date} · {title}"
+            fields:
+              - name: date
+                label: Update date and time
+                type: date
+                required: true
+                options:
+                  time: true
+              - name: title
+                label: Update heading
+                type: string
+                options:
+                  maxlength: 160
+              - name: body
+                label: What changed
+                type: text
+                required: true
+                options:
+                  maxlength: 1000
+          - name: corrections
+            label: Corrections
+            type: object
+            description: "Optional corrections record. Explain the original error and the corrected information clearly."
+            list:
+              max: 25
+              collapsible:
+                collapsed: true
+                summary: "{date} · {title}"
+            fields:
+              - name: date
+                label: Correction date and time
+                type: date
+                required: true
+                options:
+                  time: true
+              - name: title
+                label: Correction heading
+                type: string
+                options:
+                  maxlength: 160
+              - name: body
+                label: Correction note
+                type: text
+                required: true
+                options:
+                  maxlength: 1000
           - name: source_links
             label: Sources and related links
             type: object
@@ -513,7 +1028,7 @@ content:
     type: group
     items:
       - name: site
-        label: Publication settings
+        label: Quick setup & publication settings
         type: file
         path: content/site.json
         format: json
@@ -527,14 +1042,13 @@ content:
           - name: short_title
             label: Short publication name
             type: string
-            required: true
-            description: "Used in browser titles when the full name would be too long."
+            description: "Optional. TAHAI Press uses the publication name automatically when this is blank; it is used in browser titles when the full name is too long."
             options:
               maxlength: 60
           - name: brand_mark
             label: Brand mark letters
             type: string
-            description: "One or two letters or numbers used when no uploaded logo is configured."
+            description: "Optional. One or two letters used when no logo is uploaded; initials are generated from the publication name when blank."
             pattern:
               regex: "^[A-Za-z0-9]{1,2}$"
               message: "Use one or two letters or numbers."
@@ -697,6 +1211,75 @@ content:
                 description: "Tell readers what information will help the publisher investigate an accessibility problem."
                 options:
                   maxlength: 700
+              - name: reader_tools_enabled
+                label: Show reader preference tools
+                type: boolean
+                default: true
+                description: "Adds local text-size, spacing, reading-width, surface, link, and motion controls. Preferences stay in the reader's browser."
+              - name: simplified_reading_enabled
+                label: Generate simplified article views
+                type: boolean
+                default: true
+                description: "Creates a distraction-reduced, noindex reading route for every published article."
+              - name: default_link_underlines
+                label: Underline links by default
+                type: boolean
+                default: false
+              - name: document_summary_required
+                label: Require accessible HTML summaries for document articles
+                type: boolean
+                default: true
+                description: "Recommended. Prevents publication of PDF-first, mixed, or external-document articles without a meaningful HTML alternative."
+          - name: reader_reach
+            label: Reader Reach
+            type: object
+            required: true
+            description: "Optional static reader conveniences. Saved lists and preferences remain in each reader's browser; no reader account, database, or analytics service is created."
+            fields:
+              - name: enabled
+                label: Enable Reader Reach
+                type: boolean
+                required: true
+                default: true
+              - name: offline_enabled
+                label: Cache recent pages for offline reading
+                type: boolean
+                required: true
+                default: true
+                description: "Generates a same-origin service worker and installable web app manifest."
+              - name: saved_articles_enabled
+                label: Let readers save stories on this device
+                type: boolean
+                required: true
+                default: true
+              - name: browser_share_enabled
+                label: Add browser sharing and copy-link fallback
+                type: boolean
+                required: true
+                default: true
+              - name: current_edition_enabled
+                label: Generate a printable current edition
+                type: boolean
+                required: true
+                default: true
+              - name: current_edition_count
+                label: Stories in the current edition
+                type: number
+                required: true
+                default: 8
+                options:
+                  min: 1
+                  max: 50
+                  step: 1
+              - name: offline_article_count
+                label: Recent stories cached for offline reading
+                type: number
+                required: true
+                default: 12
+                options:
+                  min: 1
+                  max: 50
+                  step: 1
           - name: discovery
             label: Search and archive settings
             type: object
@@ -721,8 +1304,207 @@ content:
                   min: 1
                   max: 100
                   step: 1
+          - name: theme_preset
+            label: Accessible newspaper theme
+            type: select
+            required: true
+            default: classic-broadsheet
+            description: "Choose a tested preset. Select Custom only when an experienced maintainer needs the advanced color fields below."
+            options:
+              values:
+                - name: classic-broadsheet
+                  label: Classic Broadsheet
+                - name: community-weekly
+                  label: Community Weekly
+                - name: civic-record
+                  label: Civic Record
+                - name: modern-daily
+                  label: Modern Daily
+                - name: investigative-journal
+                  label: Investigative Journal
+                - name: arts-culture
+                  label: Arts & Culture
+                - name: high-contrast
+                  label: High Contrast
+                - name: warm-reading
+                  label: Warm Reading Edition
+                - name: custom
+                  label: Custom — use advanced colors below
+          - name: layout
+            label: Reading and layout preset
+            type: object
+            required: true
+            description: "A small set of safe presentation choices. Recommended defaults are Balanced, Standard, Centered, Serif, Square, and Paper."
+            fields:
+              - name: density
+                label: Page density
+                type: select
+                required: true
+                default: balanced
+                options:
+                  values:
+                    - name: compact
+                      label: Compact
+                    - name: balanced
+                      label: Balanced
+                    - name: spacious
+                      label: Spacious
+              - name: reading_width
+                label: Article reading width
+                type: select
+                required: true
+                default: standard
+                options:
+                  values:
+                    - name: narrow
+                      label: Narrow
+                    - name: standard
+                      label: Standard
+                    - name: wide
+                      label: Wide
+              - name: masthead_alignment
+                label: Masthead alignment
+                type: select
+                required: true
+                default: center
+                options:
+                  values:
+                    - name: center
+                      label: Centered
+                    - name: left
+                      label: Left aligned
+              - name: headline_style
+                label: Headline style
+                type: select
+                required: true
+                default: serif
+                options:
+                  values:
+                    - name: serif
+                      label: Newspaper serif
+                    - name: sans
+                      label: Modern sans serif
+              - name: panel_style
+                label: Panel corners
+                type: select
+                required: true
+                default: square
+                options:
+                  values:
+                    - name: square
+                      label: Square
+                    - name: soft
+                      label: Soft
+              - name: reader_surface
+                label: Default reading surface
+                type: select
+                required: true
+                default: paper
+                options:
+                  values:
+                    - name: paper
+                      label: Paper
+                    - name: light
+                      label: Light
+                    - name: sepia
+                      label: Sepia
+          - name: navigation
+            label: Main navigation
+            type: object
+            required: true
+            description: "Add, remove, rename, and reorder menu links. Use site paths beginning with / or complete https:// links."
+            fields:
+              - name: note
+                label: Short navigation note
+                type: string
+                options:
+                  maxlength: 120
+              - name: items
+                label: Menu links
+                type: object
+                list:
+                  max: 12
+                  collapsible:
+                    collapsed: true
+                    summary: "{label} → {href}"
+                fields:
+                  - name: label
+                    label: Link label
+                    type: string
+                    required: true
+                    options:
+                      maxlength: 80
+                  - name: href
+                    label: Destination
+                    type: string
+                    required: true
+                    pattern:
+                      regex: "^(?:/|https://).+$"
+                      message: "Use a site path beginning with / or a complete https:// URL."
+                    options:
+                      maxlength: 2048
+          - name: homepage
+            label: Homepage sections
+            type: object
+            required: true
+            description: "Enable and reorder the sections that belong on the front page. Demo-only sections disappear automatically when demo mode is off."
+            fields:
+              - name: modules
+                label: Section order
+                type: object
+                list:
+                  max: 12
+                  collapsible:
+                    collapsed: true
+                    summary: "{type}"
+                fields:
+                  - name: type
+                    label: Section type
+                    type: select
+                    required: true
+                    options:
+                      values:
+                        - name: intro
+                          label: Homepage introduction
+                        - name: setup
+                          label: Guided setup panel — demo only
+                        - name: license
+                          label: License explanation — demo only
+                        - name: featured
+                          label: Featured story
+                        - name: latest
+                          label: Latest stories
+                        - name: reach
+                          label: Reader Reach
+                        - name: studio
+                          label: Editorial Studio composer
+                        - name: product
+                          label: TAHAI Press project panel — demo only
+                        - name: pillars
+                          label: Publishing pillars
+                        - name: hubs
+                          label: Coverage hubs
+                        - name: submit
+                          label: Submission callout
+                  - name: enabled
+                    label: Show this section
+                    type: boolean
+                    default: true
+                  - name: heading
+                    label: Optional custom heading
+                    type: string
+                    options:
+                      maxlength: 120
+                  - name: count
+                    label: Maximum items
+                    type: number
+                    description: "Used by Latest stories and Coverage hubs."
+                    options:
+                      min: 1
+                      max: 24
+                      step: 1
           - name: theme
-            label: Theme colors
+            label: Advanced custom colors
             type: object
             required: true
             description: "Use six-digit hex colors. The build rejects combinations that fail required text, button, or control contrast thresholds."
@@ -763,6 +1545,106 @@ content:
                 label: Page color
                 component: hex_color
                 required: true
+      - name: crosswords
+        label: Crossword desk
+        type: collection
+        path: content/crosswords
+        format: json
+        subfolders: false
+        filename:
+          template: "{fields.slug}.json"
+          field: false
+        view:
+          primary: title
+          fields: [difficulty, active, rotation_order]
+          search: [title, slug, deck]
+          sort: [difficulty, rotation_order, title]
+        fields:
+          - name: title
+            label: Puzzle title
+            type: string
+            required: true
+            options:
+              maxlength: 120
+          - name: slug
+            component: slug
+          - name: difficulty
+            label: Difficulty
+            type: select
+            required: true
+            default: novice
+            options:
+              values:
+                - name: novice
+                  label: Novice mini — 5 by 5
+                - name: expert
+                  label: Expert — blocked grid
+          - name: deck
+            label: Short description
+            type: text
+            required: true
+            options:
+              maxlength: 300
+          - name: active
+            label: Include in rotation
+            type: boolean
+            default: true
+          - name: rotation_order
+            label: Rotation order
+            type: number
+            required: true
+            description: "Use a unique positive number within each difficulty. Lower numbers appear first when browsing alternate editions."
+            options:
+              min: 1
+              max: 999
+              step: 1
+          - name: grid
+            label: Grid rows
+            type: string
+            required: true
+            description: "Enter one row per item. Use uppercase letters for open squares and # for black squares. Every row must have the same length as the number of rows."
+            list:
+              min: 5
+              max: 21
+            pattern:
+              regex: "^[A-Z#]+$"
+              message: "Use uppercase A-Z letters and # black squares only."
+          - name: clues
+            label: Clues
+            type: object
+            required: true
+            list:
+              min: 1
+              max: 200
+              collapsible:
+                collapsed: true
+                summary: "{direction} · {answer} · {clue}"
+            fields:
+              - name: direction
+                label: Direction
+                type: select
+                required: true
+                options:
+                  values:
+                    - name: across
+                      label: Across
+                    - name: down
+                      label: Down
+              - name: answer
+                label: Answer
+                type: string
+                required: true
+                pattern:
+                  regex: "^[A-Z]+$"
+                  message: "Use uppercase A-Z letters only."
+                options:
+                  maxlength: 30
+              - name: clue
+                label: Clue text
+                type: text
+                required: true
+                options:
+                  maxlength: 300
       - name: redirects
         label: Manual redirects
         type: file

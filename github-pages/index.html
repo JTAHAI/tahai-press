@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="TAHAI Press is a database-free, static-first publishing platform for articles, public records, PDFs, community reporting, and independent publications.">
+  <meta name="description" content="TAHAI Press is a database-free, static-first publishing platform with browser-only contributor tools, reader-controlled accessibility, professional editorial presentation, private operational health reports, CMS-managed crosswords, installable offline reading, browser-local saved stories, printable editions, a seven-step first-day Launch Desk, public-record and PDF publishing, and formal newspaper design.">
   <meta name="theme-color" content="#061b2d">
   <meta property="og:title" content="TAHAI Press">
   <meta property="og:description" content="A publisher-owned newsroom built for GitHub, Pages CMS, and Cloudflare Pages.">
@@ -36,6 +36,12 @@
   <nav class="primary-nav" aria-label="Primary">
     <div class="page-width">
       <a href="#edition">The edition</a>
+      <a href="#launch-desk">Launch Desk</a>
+      <a href="#studio">Editorial Studio</a>
+      <a href="#accessibility">Accessibility</a>
+      <a href="#professional">Professional Desk</a>
+      <a href="#operations">Operations</a>
+      <a href="#reader-reach">Reader Reach</a>
       <a href="#features">Features</a>
       <a href="#architecture">Architecture</a>
       <a href="#deploy">Deploy</a>
@@ -50,9 +56,12 @@
       <div class="lead-copy">
         <p class="kicker">The publisher-owned newsroom</p>
         <h1>Set the record in type.<br>Keep the record in Git.</h1>
-        <p class="deck">TAHAI Press turns articles, public records, PDFs, and community reporting into a formal, fast, accessible publication without requiring a traditional database or proprietary newsroom.</p>
+        <p class="deck">TAHAI Press turns articles, images, public records, PDFs, and community reporting into a formal, fast, accessible publication. Launch Desk guides a first-time publisher from an untouched demo to a backed-up launch package in seven short steps. Its browser-only Contributor Composer gives nontechnical writers a clean first-draft workflow with local saved copies and JSON handoff. Media Desk crops, compresses, describes, credits, and exports publication-ready images without an upload service. Professional Desk adds clear classifications, section fronts, continuing series, correction history, trust notes, related coverage, and permanent citations. Operational Polish adds private newsroom health, media inventory, performance budgets, and CMS-managed puzzles. Reader Reach adds installable offline reading, private saved stories, accessible sharing, and a printable current edition without adding a reader account or public backend.</p>
         <div class="actions">
-          <a class="button" href="https://tahai-press.tahai.net">Open the live demo</a>
+          <a class="button" href="https://tahai-press.tahai.net/setup/">Start the Launch Desk</a>
+          <a class="button button-outline" href="https://tahai-press.tahai.net/studio/">Open Editorial Studio</a>
+          <a class="button button-outline" href="https://tahai-press.tahai.net/media-desk/">Open Media Desk</a>
+          <a class="button button-outline" href="https://tahai-press.tahai.net">Read the live edition</a>
           <a class="button button-outline" href="https://github.com/JTAHAI/tahai-press">Read the source</a>
         </div>
       </div>
@@ -60,11 +69,19 @@
         <p class="kicker">What ships</p>
         <h2>A complete publishing desk.</h2>
         <ul>
+          <li>Seven-step Launch Desk with progress, preview, undo, backup, and a first-story walkthrough</li>
           <li>Written, PDF-first, mixed, and external-document articles</li>
-          <li>Browser editing through Pages CMS</li>
+          <li>Browser-only Contributor Composer with autosave, local draft copies, import, and clean JSON handoff</li>
+          <li>Browser-only Media Desk with crop presets, focal points, JPEG/WebP compression, accessible metadata, and repository handoff</li>
+          <li>Structured images, galleries, pull quotes, fact boxes, timelines, and document cards</li>
+          <li>Reader-controlled type, spacing, measure, surfaces, link underlines, and reduced decoration</li>
+          <li>Professional section fronts, ordered series, corrections, trust notes, related coverage, and copyable citations</li>
+          <li>Simplified article views and required HTML summaries for document-led reporting</li>
           <li>WordPress, Markdown, JSON, CSV, and PDF import tools</li>
           <li>Search, archives, feeds, redirects, and structured metadata</li>
-          <li>Novice mini and expert blocked-grid crosswords</li>
+          <li>CMS-managed Novice mini and Expert blocked-grid crosswords with static local play</li>
+          <li>Private media, performance, launch-readiness, and newsroom-health reports</li>
+          <li>Installable offline reading, browser-local saved stories, native sharing, and printable current editions</li>
         </ul>
       </aside>
     </section>
@@ -72,7 +89,7 @@
     <section class="front-rule page-width" aria-label="Project summary">
       <p><strong>DATABASE-FREE</strong><span>Articles remain portable files.</span></p>
       <p><strong>STATIC-FIRST</strong><span>Fast pages with a small attack surface.</span></p>
-      <p><strong>EDITOR-FRIENDLY</strong><span>Publish in a browser without touching code.</span></p>
+      <p><strong>MEDIA DESK</strong><span>Crop, compress, describe, and hand off.</span></p>
       <p><strong>OPEN SOURCE</strong><span>Inspect, fork, improve, and keep it.</span></p>
     </section>
 
@@ -88,6 +105,145 @@
       </div>
     </section>
 
+    <section class="professional-broadside page-width" id="launch-desk" aria-labelledby="launch-desk-heading">
+      <header class="section-mast">
+        <p class="kicker">Launch Desk · Version 1.8</p>
+        <h2 id="launch-desk-heading">From untouched demo to first story in seven clear steps.</h2>
+      </header>
+      <div class="professional-grid">
+        <article class="professional-lead">
+          <p class="dropcap">Launch Desk is the first-day newsroom for people who should not need to understand JSON, deployment terminology, or theme systems before they can publish. One primary action appears on each screen. Safe defaults fill ordinary decisions, progress stays visible, the publication preview updates before anything is applied, and the desk explains unfamiliar fields in plain language.</p>
+          <p>Undo history and backups remain local. The final package contains ordinary TAHAI Press files, and Git still provides review and recovery. No setup account, analytics service, database, or public attribution requirement is added.</p>
+          <p class="professional-links"><a class="button" href="https://tahai-press.tahai.net/setup/">Open Launch Desk</a> <a class="button button-outline" href="https://github.com/JTAHAI/tahai-press/blob/main/docs/LAUNCH-DESK.md">Read the launch guide</a></p>
+        </article>
+        <div class="professional-ledger">
+          <article><h3>Know what comes next</h3><p>A persistent Start here screen and “0 of 7” progress indicator keep the first-day path visible.</p></article>
+          <article><h3>Preview before applying</h3><p>Identity, theme, front-page modules, navigation, and the first story appear in a live newspaper preview.</p></article>
+          <article><h3>Recover safely</h3><p>Undo the latest setup change, download a backup, or use the validated applicator that backs up source files before changing them.</p></article>
+          <article><h3>Launch without cleanup chores</h3><p>One launch package replaces the demonstration identity, removes known sample stories, and writes the first draft and editorial-team record.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="studio-broadside page-width" id="studio" aria-labelledby="studio-heading">
+      <header class="section-mast">
+        <p class="kicker">Contributor Composer · Current edition</p>
+        <h2 id="studio-heading">A fast desk for the first draft—and the next one.</h2>
+      </header>
+      <div class="studio-broadside-grid">
+        <article class="studio-lead">
+          <p class="dropcap">Quick Story keeps the writing surface short: headline, summary, article, contributor, category, and an optional image. The browser generates the slug, estimates reading time, previews the newspaper layout, flags common accessibility problems, keeps up to 20 local draft copies, reopens TAHAI Press JSON, and exports an ordinary contributor package.</p>
+          <p>The draft remains in local browser storage. No text or selected image is uploaded to TAHAI Press, an AI service, analytics provider, or application database.</p>
+          <p><a class="button" href="https://tahai-press.tahai.net/studio/">Try the Editorial Studio</a></p>
+        </article>
+        <div class="studio-columns">
+          <article><span>01</span><h3>Write without code</h3><p>Nontechnical contributors see the common fields first and a live reader preview beside the form.</p></article>
+          <article><span>02</span><h3>Catch problems early</h3><p>Plain-language checks surface missing summaries, vague links, long paragraphs, and images without descriptions.</p></article>
+          <article><span>03</span><h3>Save and reopen locally</h3><p>Keep named draft copies in the browser or open an existing TAHAI Press article JSON file—without an account or upload.</p></article>
+          <article><span>04</span><h3>Hand off cleanly</h3><p>Download or copy a Draft JSON package, then finish sources, rights, structured blocks, and publication review in Pages CMS.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="professional-broadside page-width" id="media-desk" aria-labelledby="media-desk-heading">
+      <header class="section-mast">
+        <p class="kicker">Media Desk · Version 2.2</p>
+        <h2 id="media-desk-heading">Prepare the image and preserve the editorial context.</h2>
+      </header>
+      <div class="professional-grid">
+        <article class="professional-lead">
+          <p class="dropcap">Media Desk gives a small newsroom the image workflow it actually needs: constrained publishing presets, browser-local cropping, focal-point control, WebP or JPEG compression, a required image description, source credit, rights notes, and a clean repository handoff. The source image never leaves the browser.</p>
+          <p>The downloaded manifest keeps crop coordinates, output dimensions, accessibility text, credit, rights, and ready-to-paste TAHAI Press article fields together. No hosted media service, database, account, analytics call, or remote image fetch is introduced.</p>
+          <p class="professional-links"><a class="button" href="https://tahai-press.tahai.net/media-desk/">Open Media Desk</a> <a class="button button-outline" href="https://github.com/JTAHAI/tahai-press/blob/main/docs/MEDIA-DESK.md">Read the media guide</a></p>
+        </article>
+        <div class="professional-ledger">
+          <article><h3>Choose a publishing shape</h3><p>Feature, article, social, square, portrait, and original-ratio presets remove guesswork without becoming a full page builder.</p></article>
+          <article><h3>Keep the subject in frame</h3><p>Click, keyboard, slider, and named focal controls reposition the crop around the meaningful content.</p></article>
+          <article><h3>Export efficiently</h3><p>WebP and JPEG quality controls show an estimated file size before the optimized image is downloaded.</p></article>
+          <article><h3>Preserve the record</h3><p>The manifest and copied article fields carry the image description, caption, credit, rights note, aspect, and focal point into the newsroom workflow.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="accessibility-broadside page-width" id="accessibility" aria-labelledby="accessibility-heading">
+      <header class="section-mast">
+        <p class="kicker">Accessibility Edition · Version 1.4</p>
+        <h2 id="accessibility-heading">The reader controls the reading surface.</h2>
+      </header>
+      <div class="accessibility-grid">
+        <article class="accessibility-lead">
+          <p class="dropcap">TAHAI Press treats accessibility as part of publishing, not a compliance footnote. Editors receive plain-language guidance before handoff. The build rejects broken accessibility contracts. Readers can adjust type size, line spacing, measure, surface, link underlines, decoration, and motion without signing in or sending preferences to a server.</p>
+          <p><a class="button" href="https://tahai-press.tahai.net/stories/sample-written-story/reader/">Open a simplified article</a></p>
+        </article>
+        <div class="accessibility-ledger">
+          <article><h3>Readable by preference</h3><p>Paper, sepia, dark, and high-contrast surfaces combine with type, spacing, and width controls stored only in the browser.</p></article>
+          <article><h3>Documents beside HTML</h3><p>Released PDF and external-document stories require a substantial HTML summary, so the record is understandable without the embedded file.</p></article>
+          <article><h3>Simplified by design</h3><p>Every article can publish a noindex reader route with less furniture, no PDF frame, direct source links, and the same reporting.</p></article>
+          <article><h3>Proved at build time</h3><p>Static audits verify semantics, ARIA references, target sizing, reader controls, document alternatives, and high-zoom resilience before deployment.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="professional-broadside page-width" id="professional" aria-labelledby="professional-heading">
+      <header class="section-mast">
+        <p class="kicker">Professional Desk · Version 1.5</p>
+        <h2 id="professional-heading">Give every story a clear place in the public record.</h2>
+      </header>
+      <div class="professional-grid">
+        <article class="professional-lead">
+          <p class="dropcap">Professional Desk adds the newsroom signals readers use to understand what they are reading, how it was reported, what changed, and where the coverage continues. Editors choose plain-language fields in Pages CMS; TAHAI Press turns them into accessible section fronts, ordered series, correction ledgers, trust notes, related coverage, and permanent citations.</p>
+          <p>No newsroom database, citation vendor, tracking service, or additional reader account is introduced. The record remains ordinary files in Git.</p>
+          <p class="professional-links"><a class="button" href="https://tahai-press.tahai.net/sections/">Browse section fronts</a> <a class="button button-outline" href="https://tahai-press.tahai.net/series/">Browse series</a></p>
+        </article>
+        <div class="professional-ledger">
+          <article><h3>Classify honestly</h3><p>News, Analysis, Opinion, Investigation, Public Record, Explainer, Interview, Announcement, and Developing labels appear as text—not color alone.</p></article>
+          <article><h3>Show what changed</h3><p>Dated updates and corrections explain meaningful revisions while Git preserves the complete underlying file history.</p></article>
+          <article><h3>Explain the work</h3><p>Methodology, disclosures, and reuse guidance give readers context when a story, investigation, or record package needs it.</p></article>
+          <article><h3>Keep coverage connected</h3><p>Series pages, related stories, and permanent copyable citations make sustained reporting easier to follow and reference.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="professional-broadside page-width" id="operations" aria-labelledby="operations-heading">
+      <header class="section-mast">
+        <p class="kicker">Operational Polish · Version 1.6</p>
+        <h2 id="operations-heading">Keep the newsroom healthy without building another system.</h2>
+      </header>
+      <div class="professional-grid">
+        <article class="professional-lead">
+          <p class="dropcap">Operational Polish turns routine maintenance into readable, private build artifacts. TAHAI Press inventories media, finds missing and unused uploads, detects exact duplicates, enforces explicit performance budgets, and summarizes the newsroom state before deployment.</p>
+          <p>The reports remain in local and GitHub Actions artifacts. They are never copied into the public site, and they require no monitoring vendor, analytics account, application database, or administration server.</p>
+          <p class="professional-links"><a class="button" href="https://github.com/JTAHAI/tahai-press/blob/main/docs/OPERATIONS.md">Read the operations guide</a> <a class="button button-outline" href="https://tahai-press.tahai.net/puzzles/">Open the crossword desk</a></p>
+        </article>
+        <div class="professional-ledger">
+          <article><h3>See media problems early</h3><p>Missing references, unused files, exact duplicates, unreadable dimensions, and large uploads become a clear report before publication.</p></article>
+          <article><h3>Keep pages fast</h3><p>Budgets cover homepage HTML, CSS, JavaScript, search data, file count, and the largest asset so growth remains deliberate.</p></article>
+          <article><h3>Review one private dashboard</h3><p>Published, draft, scheduled, stale, due, launch, media, and performance signals are collected in a local HTML report.</p></article>
+          <article><h3>Edit puzzles like content</h3><p>Novice and Expert crossword grids, clues, active state, and rotation order now live in Pages CMS instead of application code.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="professional-broadside page-width" id="reader-reach" aria-labelledby="reader-reach-heading">
+      <header class="section-mast">
+        <p class="kicker">Reader Reach · Version 1.7</p>
+        <h2 id="reader-reach-heading">Bring readers back without creating another account system.</h2>
+      </header>
+      <div class="professional-grid">
+        <article class="professional-lead">
+          <p class="dropcap">Reader Reach gives a static publication the return-visit conveniences readers expect while keeping the privacy and operational simplicity of ordinary files. The latest edition can be installed and read offline, articles can be saved on one device, links can be shared through the browser, and a complete current edition can be printed like a newspaper.</p>
+          <p>Saved lists and preferences remain in local browser storage. The service worker caches only same-origin publication pages and assets. No reader profile, analytics account, notification vendor, hosted database, or social-sharing script is introduced.</p>
+          <p class="professional-links"><a class="button" href="https://tahai-press.tahai.net/edition/">Open the current edition</a> <a class="button button-outline" href="https://tahai-press.tahai.net/saved/">Open saved stories</a></p>
+        </article>
+        <div class="professional-ledger">
+          <article><h3>Install and read offline</h3><p>A generated web app manifest and same-origin service worker cache the publication shell and a configurable number of recent articles.</p></article>
+          <article><h3>Save privately</h3><p>Readers keep up to 100 article links in local storage and can remove one item or clear the list at any time.</p></article>
+          <article><h3>Share accessibly</h3><p>The native browser share sheet is used when available, with a copy-link fallback and announced status.</p></article>
+          <article><h3>Print the edition</h3><p>A formal current-edition route gathers the newest work into a clean, grayscale-safe newspaper print layout.</p></article>
+        </div>
+      </div>
+    </section>
+
     <section class="news-section page-width" id="features">
       <header class="section-mast">
         <p class="kicker">Inside the press</p>
@@ -95,12 +251,16 @@
       </header>
       <div class="three-columns newspaper-copy">
         <article>
-          <h3>Formal reading experience</h3>
-          <p>Newspaper-inspired hierarchy, drop caps, measured line lengths, accessible contrast, structured headings, resilient mobile layouts, and print-aware article pages make long-form reporting easier to read.</p>
+          <h3>Quick Story, then full editorial control</h3>
+          <p>Draft in the browser-only Contributor Composer, then use Pages CMS for structured blocks, sources, documents, review gates, scheduling, and publication.</p>
         </article>
         <article>
-          <h3>Documents beside context</h3>
-          <p>Embed local PDFs, link external records, preserve direct-open and download alternatives, and publish the written context readers need to understand why a source document matters.</p>
+          <h3>Formal, reader-controlled presentation</h3>
+          <p>Newspaper hierarchy, drop caps, measured line lengths, accessible contrast, structured headings, local reading preferences, simplified views, resilient mobile layouts, and print-aware pages make long-form reporting easier to read.</p>
+        </article>
+        <article>
+          <h3>Documents beside accessible context</h3>
+          <p>Embed local PDFs, link external records, preserve direct-open and download alternatives, and require a useful HTML summary so readers can understand the record without the native document viewer.</p>
         </article>
         <article>
           <h3>Publishing with receipts</h3>
@@ -116,7 +276,7 @@
         </article>
         <article>
           <h3>A small daily ritual</h3>
-          <p>The included crossword desk offers seven Novice minis and multiple fifteen-by-fifteen Expert blocked grids, with local browser storage, keyboard controls, and no external service.</p>
+          <p>The crossword desk reads validated puzzle records from Pages CMS, rotates Novice and Expert editions, supports printing and keyboard play, and stores progress only in the reader’s browser.</p>
         </article>
       </div>
     </section>
@@ -146,9 +306,10 @@
       <div class="deploy-grid">
         <div class="steps">
           <article><span>1</span><div><h3>Fork or clone</h3><p>Start from the public repository and keep the included README, license, CMS configuration, tests, and deployment workflows.</p></div></article>
-          <article><span>2</span><div><h3>Configure the publication</h3><p>Replace the sample identity in <code>content/site.json</code>, add the publisher's own logo and social image, and review sample content.</p></div></article>
-          <article><span>3</span><div><h3>Connect Cloudflare Pages</h3><p>Use Node 22, build command <code>npm run build:cloudflare</code>, and output directory <code>dist</code>.</p></div></article>
-          <article><span>4</span><div><h3>Connect Pages CMS</h3><p>Authorize the repository and give editors a browser-based workflow for stories, PDFs, contributors, hubs, categories, and publication settings.</p></div></article>
+          <article><span>2</span><div><h3>Complete Launch Desk</h3><p>Open <code>/setup/</code>, follow the seven short steps, preview the publication, download a backup, and apply the validated launch package.</p></div></article>
+          <article><span>3</span><div><h3>Publish the guided first story</h3><p>Use the first-story walkthrough in Launch Desk or open <code>/studio/</code> for the complete browser composer, then finish review in Pages CMS.</p></div></article>
+          <article><span>4</span><div><h3>Connect Cloudflare Pages</h3><p>Use Node 22, build command <code>npm run build:cloudflare</code>, and output directory <code>dist</code>.</p></div></article>
+          <article><span>5</span><div><h3>Connect Pages CMS</h3><p>Authorize the repository and give editors a browser-based workflow for stories, PDFs, contributors, hubs, categories, crosswords, and publication settings.</p></div></article>
         </div>
         <aside class="command-box" aria-label="Quick start commands">
           <p class="kicker">Local proof</p>
@@ -164,7 +325,7 @@ npm run preview</code></pre>
     <section class="final-banner">
       <div class="page-width">
         <img src="assets/tahai-press-logo.png" alt="" width="675" height="594">
-        <div><p class="kicker">TAHAI Press</p><h2>The files are the publication.</h2><p>Created by Justin Tahai and TAHAI Web Services. Released under the Apache License, Version 2.0.</p></div>
+        <div><p class="kicker">TAHAI Press</p><h2>Write quickly. Publish deliberately.</h2><p>Created by Justin Tahai and TAHAI Web Services. Released under the Apache License, Version 2.0.</p></div>
         <div class="actions"><a class="button button-light" href="https://tahai-press.tahai.net">Open the live demo</a><a class="text-link-light" href="https://github.com/JTAHAI/tahai-press">Read the source</a><a class="text-link-light" href="https://tahai.net">Visit tahai.net</a></div>
       </div>
     </section>
