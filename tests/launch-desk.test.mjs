@@ -55,7 +55,7 @@ function buildPublisherModeSnapshot() {
 
 test('current package preserves Launch Desk and a safe launch-package applicator', () => {
   const pkg = readJson(path.join(ROOT, 'package.json'));
-  assert.equal(pkg.version, '2.2.1');
+  assert.equal(pkg.version, '2.3.0');
   assert.equal(pkg.scripts['launch:apply'], 'node scripts/apply-launch-package.mjs');
   assert.equal(fs.existsSync(path.join(ROOT, 'scripts', 'apply-launch-package.mjs')), true);
 });

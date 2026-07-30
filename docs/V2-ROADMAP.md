@@ -37,7 +37,7 @@ Every pass remains cumulative. Every release produces:
 - Usage ledger, duplicate detection, and a visual media-library panel
 - No external image CDN required
 
-## Release v2.3 — Publishing Console
+## Release v2.3 — Publishing Console — complete
 
 - Full schema-safe Git editor for articles, authors, categories, hubs, navigation, and homepage
 - Draft, review, scheduled, published, corrected, and archived workflows

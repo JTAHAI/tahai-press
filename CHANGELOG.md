@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.0 — Publishing Console
+
+- Added a schema-safe Publishing Console route for site structure, article workflow, collections, and release review.
+- Added draft/review/scheduled/published/corrected/archived workflow support with diff, conflict, and handoff checks.
+- Added structured footer-link rendering and homepage console promotion in the generated public shell.
+- Added console tests and updated the release copy, roadmap, and editorial handoff docs to the v2.3.0 release line.
+
 ## 2.2.1 — Media Pipeline Hardened
 
 - Replaced the width-suffixed placeholder copies with real resized responsive derivatives.

@@ -1,3 +1,4 @@
+import { normalizeFooter, normalizePublicationSettings } from './publishing-console.mjs';
 import { READER_REACH_DEFAULTS } from './reader-reach.mjs';
 
 const PRESET_DEFINITIONS = {
@@ -83,6 +84,7 @@ export const DEFAULT_NAVIGATION = Object.freeze([
   { href: '/search/', label: 'Search' },
   { href: '/hubs/', label: 'Coverage Hubs' },
   { href: '/studio/', label: 'Editorial Studio' },
+  { href: '/publisher/', label: 'Publishing Console' },
   { href: '/puzzles/', label: 'Crossword' },
   { href: '/about/', label: 'About' },
   { href: '/submit/', label: 'Submit' }
@@ -96,6 +98,7 @@ export const DEFAULT_HOMEPAGE_MODULES = Object.freeze([
   { type: 'latest', enabled: true, heading: 'Stories and documents', count: 6 },
   { type: 'reach', enabled: true },
   { type: 'studio', enabled: true },
+  { type: 'console', enabled: true },
   { type: 'product', enabled: true },
   { type: 'pillars', enabled: true },
   { type: 'hubs', enabled: true, count: 4 },
@@ -207,6 +210,8 @@ export function normalizeSiteConfig(input = {}) {
     theme_preset: preset,
     navigation: normalizeNavigation(input.navigation),
     homepage: normalizeHomepage(input.homepage),
+    footer: normalizeFooter(input.footer || { note: input.footer_note }),
+    publication_settings: normalizePublicationSettings(input.publication_settings),
     layout: normalizeLayout(input.layout),
     reader_reach: normalizeReaderReach(input.reader_reach),
     setup_version: Number.isInteger(Number(input.setup_version)) ? Number(input.setup_version) : 2

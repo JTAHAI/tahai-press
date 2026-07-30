@@ -1,6 +1,6 @@
 # Writer Desk (Editorial Studio)
 
-TAHAI Press v2.2 keeps the Writer Desk route stable while the surrounding release expands the media pipeline and preserves the same portable article JSON handoff.
+TAHAI Press v2.3 keeps the Writer Desk route stable while the surrounding release adds the Publishing Console and preserves the same portable article JSON handoff.
 
 TAHAI Press Editorial Studio is a fast, browser-only drafting surface for contributors and nontechnical editors. It prepares a valid article record without requiring the writer to open source code, understand the repository layout, or create another account.
 
@@ -182,7 +182,7 @@ Quick Story now asks for an article classification so the exported draft arrives
 For the complete local-draft, import, privacy, and handoff contract, see [CONTRIBUTOR-COMPOSER.md](CONTRIBUTOR-COMPOSER.md).
 
 
-## Writer Desk v2.2
+## Writer Desk v2.3
 
 Writer Desk adds:
 

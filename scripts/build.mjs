@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import {
   ROOT, DIST, loadContent, readJson, escapeHtml, safeUrl, renderMarkdown, formatDate, estimateReadingMinutes
@@ -17,6 +18,7 @@ import { ARTICLE_CLASSIFICATION_KEYS, articleCitation, classificationInfo, publi
 import { publicCrossword } from './lib/crosswords.mjs';
 import { readerReachConfig, serviceWorkerSource } from './lib/reader-reach.mjs';
 import { cmsBranch, cmsRepository, SVELTIA_CMS_LICENSE, SVELTIA_CMS_SCRIPT, SVELTIA_CMS_VERSION, sveltiaCmsConfig } from './lib/open-publishing.mjs';
+import { stableStringify, WORKFLOW_STATES, workflowTransitions } from './lib/publishing-console.mjs';
 import { mediaHealth } from './lib/operations.mjs';
 
 const { site, articles, authors, categories, hubs, crosswords } = loadContent();
@@ -70,6 +72,14 @@ function absoluteUrl(route) {
 
 function newTabNote() {
   return '<span class="visually-hidden new-tab-note"> (opens in a new tab)</span>';
+}
+
+function sha256(value) {
+  return crypto.createHash('sha256').update(String(value)).digest('hex');
+}
+
+function normalizeRouteRoute(route = '') {
+  return String(route || '').trim().replace(/\/+/g, '/');
 }
 
 function renderMediaLibrary(report) {
@@ -221,6 +231,16 @@ function layout({
     categories: categoryNames, tags
   });
   const templateNotice = templateMode(site) ? `<div class="template-notice" role="note"><div class="shell template-notice-inner"><p><strong>TAHAI Press demo edition.</strong> This first-deploy identity and sample newsroom are intentionally blocked from search indexing.</p><nav aria-label="TAHAI Press project links"><a href="${PROJECT_REPOSITORY}" target="_blank" rel="noopener noreferrer">Source on GitHub${newTabNote()}</a><a href="${DEVELOPER_SITE}" target="_blank" rel="noopener noreferrer">Developer site${newTabNote()}</a></nav></div></div>` : '';
+  const footerColumns = Array.isArray(site.footer?.columns) ? site.footer.columns : [];
+  const footerColumnsMarkup = footerColumns.length
+    ? `<section class="footer-structured-links" aria-label="Additional publication links">${footerColumns.map((column) => `<div class="footer-column"><h2>${escapeHtml(column.heading || 'Links')}</h2>${(column.links || []).map((link) => {
+      const href = safeUrl(link.href || '');
+      if (!href) return '';
+      const external = /^https?:\/\//i.test(href);
+      return `<a href="${escapeHtml(href)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(link.label || href)}${external ? newTabNote() : ''}</a>`;
+    }).filter(Boolean).join('')}</div>`).join('')}</section>`
+    : '';
+  const footerNote = site.footer?.note || site.footer_note || '';
   return `<!doctype html>
 ${sourceProvenanceComment()}
 <html lang="${escapeHtml(site.locale)}">
@@ -248,12 +268,17 @@ ${sourceProvenanceComment()}
 <body class="${escapeHtml(`${pageClass} density-${site.layout?.density || 'balanced'} reading-${site.layout?.reading_width || 'standard'} masthead-${site.layout?.masthead_alignment || 'center'} headlines-${site.layout?.headline_style || 'serif'} panels-${site.layout?.panel_style || 'square'} surface-${site.layout?.reader_surface || 'paper'}${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}`)}">
   <a class="skip-link" href="#main">Skip to content</a>
   ${templateNotice}
-  <div class="publication-bar">
+  ${templateMode(site) ? `<div class="publication-bar">
     <div class="shell publication-bar-inner">
       <p>${escapeHtml(site.masthead_kicker || site.tagline)}</p>
-      ${templateMode(site) ? `<a href="${PROJECT_REPOSITORY}" target="_blank" rel="noopener noreferrer">GitHub repository${newTabNote()}</a>` : `<a href="/about/#standards">${escapeHtml(site.standards_label || 'Editorial standards')}</a>`}
+      <a href="${PROJECT_REPOSITORY}" target="_blank" rel="noopener noreferrer">GitHub repository${newTabNote()}</a>
     </div>
-  </div>
+  </div>` : `<div class="publication-bar">
+    <div class="shell publication-bar-inner">
+      <p>${escapeHtml(site.tagline || site.standards_label || 'Independent reporting and standards-based publishing.')}</p>
+      <a href="/about/#standards">${escapeHtml(site.standards_label || 'Editorial standards')}</a>
+    </div>
+  </div>`}
   <header class="site-header">
     <div class="shell masthead-row">
       <div class="masthead-folio" aria-hidden="true"><span>${templateMode(site) ? 'EST. 2026' : 'INDEPENDENT'}</span><strong>${templateMode(site) ? 'OPEN-SOURCE EDITION' : 'PUBLICATION'}</strong></div>
@@ -284,6 +309,7 @@ ${sourceProvenanceComment()}
         <a class="brand brand-footer" href="/">${brandMark()}<span class="brand-copy"><strong id="footer-brand-title">${escapeHtml(site.title)}</strong><small>${escapeHtml(site.tagline)}</small></span></a>
         <p>${escapeHtml(site.description)}</p>
       </section>
+      ${footerColumnsMarkup}
       <nav aria-label="Footer publication links">
         <h2>Publication</h2>
         <a href="/stories/">Stories</a>
@@ -296,7 +322,7 @@ ${sourceProvenanceComment()}
         <a href="/puzzles/">Daily crossword</a>
         <a href="/studio/">Contributor Composer</a>
         <a href="/media-desk/">Media Desk</a>
-        <a href="/publisher/">Publisher Studio</a>
+        <a href="/publisher/">Publishing Console</a>
         ${readerReach.enabled && readerReach.currentEditionEnabled ? '<a href="/edition/">Current edition</a>' : ''}
         ${readerReach.enabled && readerReach.savedArticlesEnabled ? '<a href="/saved/">Saved stories</a>' : ''}
         ${accessibility.enabled ? `<a href="/accessibility/">Accessibility</a>` : ''}
@@ -312,7 +338,7 @@ ${sourceProvenanceComment()}
     ${templateMode(site) ? `<div class="shell template-project-credit"><p><strong>TAHAI Press</strong> is open-source software created by Justin Tahai and TAHAI Web Services.</p><p><a href="${PROJECT_REPOSITORY}" target="_blank" rel="noopener noreferrer">View the repository${newTabNote()}</a><span aria-hidden="true"> · </span><a href="${DEMO_SITE}" target="_blank" rel="noopener noreferrer">Open the live demo${newTabNote()}</a><span aria-hidden="true"> · </span><a href="${DEVELOPER_SITE}" target="_blank" rel="noopener noreferrer">Visit tahai.net${newTabNote()}</a></p></div>` : ''}
     <div class="shell footer-bottom">
       ${templateMode(site) ? `<p>© ${new Date().getFullYear()} <a href="${DEVELOPER_SITE}" target="_blank" rel="noopener noreferrer">TAHAI Web Services${newTabNote()}</a>.</p>` : `<p>© ${new Date().getFullYear()} ${escapeHtml(site.title)}.</p>`}
-      ${site.footer_note ? `<p>${escapeHtml(site.footer_note)}</p>` : ''}
+      ${footerNote ? `<p>${escapeHtml(footerNote)}</p>` : ''}
     </div>
   </footer>
 </body>
@@ -342,11 +368,11 @@ ${sourceProvenanceComment()}
   <main id="main" tabindex="-1">
     <section class="git-cms-loader" aria-labelledby="git-cms-title">
       <span class="git-cms-mark" aria-hidden="true">TP</span>
-      <p class="eyebrow">TAHAI Publisher Studio</p>
+      <p class="eyebrow">TAHAI Publishing Console</p>
       <h1 id="git-cms-title">Opening the Git Draft Desk.</h1>
       <p>This optional editor writes only to <code>content/inbox/</code>. Production articles are protected until a repository operator validates and promotes the draft.</p>
       <p><strong>Repository:</strong> <code>${escapeHtml(gitCmsRepository)}</code> · <strong>Branch:</strong> <code>${escapeHtml(gitCmsBranch)}</code></p>
-      <div class="button-row"><a class="button button-secondary" href="/publisher/">Return to Publisher Studio</a><a class="button button-quiet" href="/studio/">Use the local Composer</a></div>
+      <div class="button-row"><a class="button button-secondary" href="/publisher/">Return to Publishing Console</a><a class="button button-quiet" href="/studio/">Use the local Composer</a></div>
       <noscript><p><strong>JavaScript is required for the Git Draft Desk.</strong> The local Contributor Composer remains available at <a href="/studio/">/studio/</a>.</p></noscript>
     </section>
   </main>
@@ -448,6 +474,17 @@ function articleFormat(article) {
   if (article.article_type === 'mixed') return 'Story + PDF';
   if (article.article_type === 'external') return 'External document';
   return 'Written story';
+}
+
+function articleStatusLabel(status = 'draft') {
+  return {
+    draft: 'Draft',
+    review: 'Review',
+    scheduled: 'Scheduled',
+    published: 'Published',
+    corrected: 'Corrected',
+    archived: 'Archived'
+  }[status] || 'Draft';
 }
 
 function articleTemplateLabel(article) {
@@ -678,7 +715,7 @@ function articleCard(article, { compact = false } = {}) {
     <div class="story-card-body">
       <div class="story-card-labels">
         ${category ? `<a class="eyebrow discovery-label-link" href="/categories/${escapeHtml(category.slug)}/">${escapeHtml(category.name)}</a>` : '<span class="eyebrow">Story</span>'}
-        ${renderClassificationBadge(article)}<span class="format-label">${escapeHtml(articleFormat(article))}</span>
+        ${renderClassificationBadge(article)}<span class="format-label">${escapeHtml(articleFormat(article))}</span><span class="status-label status-${escapeHtml(article.status)}">${escapeHtml(articleStatusLabel(article.status))}</span>
       </div>
       <h2><a href="/stories/${escapeHtml(article.slug)}/">${escapeHtml(article.title)}</a></h2>
       <p>${escapeHtml(article.excerpt)}</p>
@@ -694,7 +731,7 @@ function featuredStory(article) {
     <div class="featured-story-copy">
       <div class="story-card-labels">
         <span class="eyebrow">Featured</span>
-        ${renderClassificationBadge(article)}<span class="format-label">${escapeHtml(category?.name || articleFormat(article))}</span>
+        ${renderClassificationBadge(article)}<span class="format-label">${escapeHtml(category?.name || articleFormat(article))}</span><span class="status-label status-${escapeHtml(article.status)}">${escapeHtml(articleStatusLabel(article.status))}</span>
       </div>
       <h2><a href="/stories/${escapeHtml(article.slug)}/">${escapeHtml(article.title)}</a></h2>
       <p class="featured-deck">${escapeHtml(article.excerpt)}</p>
@@ -751,7 +788,7 @@ function writePaginatedArchive({ base, title, description, eyebrow, items, pageC
 }
 
 const published = articles
-  .filter((article) => article.status === 'published')
+  .filter((article) => ['published', 'corrected'].includes(article.status))
   .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
 const publishedArticleMap = new Map(published.map((article) => [article.slug, article]));
 const classificationGroups = new Map(ARTICLE_CLASSIFICATION_KEYS.map((key) => [key, published.filter((article) => classificationInfo(article.classification).key === key)]));
@@ -807,6 +844,9 @@ function renderHomeModule(module) {
   if (type === 'studio') {
     return `<section class="section shell editorial-studio-frontispiece" aria-labelledby="studio-front-heading"><div class="editorial-studio-front-copy"><p class="eyebrow">Browser-local newsroom tools</p><h2 id="studio-front-heading">Draft the story and prepare its images without touching code.</h2><p>Contributor Composer generates the article file and checks common accessibility issues. Media Desk crops, compresses, describes, credits, and exports publication-ready JPEG or WebP images. Both tools stay in the browser and send nothing to a server.</p><div class="button-row"><a class="button" href="/studio/">Open Contributor Composer ${icon('edit')}</a><a class="button button-secondary" href="/media-desk/">Open Media Desk ${icon('image')}</a></div></div><div class="editorial-studio-feature-list"><article><span>${icon('edit')}</span><h3>Quick Story</h3><p>Headline, summary, article, author, category, and image—only the fields most contributors need.</p></article><article><span>${icon('source')}</span><h3>Local draft desk</h3><p>Keep up to 20 named browser-local copies or reopen an existing TAHAI Press article file.</p></article><article><span>${icon('image')}</span><h3>Media Desk</h3><p>Use publishing presets, focal points, compression, accessibility metadata, and a clean repository handoff.</p></article></div></section>`;
   }
+  if (type === 'console') {
+    return `<section class="section shell publishing-console-frontispiece" aria-labelledby="console-front-heading"><div class="publishing-console-front-copy"><p class="eyebrow">Publishing Console</p><h2 id="console-front-heading">Schema-safe Git editing for the newsroom model.</h2><p>Articles, authors, categories, hubs, navigation, homepage modules, footer columns, and publication settings stay visible in one role-ready editing surface with workflow states, diff review, and stale-revision checks.</p><div class="button-row"><a class="button" href="/publisher/">Open the Publishing Console ${icon('edit')}</a><a class="button button-secondary" href="/studio/">Use Contributor Composer</a></div></div><div class="publishing-console-feature-list"><article><span>${icon('source')}</span><h3>Workflow states</h3><p>Draft, review, scheduled, published, corrected, and archived records are tracked with fail-closed transitions.</p></article><article><span>${icon('document')}</span><h3>Diff review</h3><p>Preview the file changes and reject a stale or conflicting revision before export.</p></article><article><span>${icon('community')}</span><h3>Site structure</h3><p>Navigation, homepage modules, and footer links share the same schema-safe handoff.</p></article></div></section>`;
+  }
   if (type === 'product') {
     return `<section class="section shell product-broadsheet" aria-labelledby="product-heading"><div class="product-broadsheet-heading"><p class="eyebrow">From the publisher's desk</p><h2 id="product-heading">Fork the press. Keep the files. Publish on your terms.</h2><p>TAHAI Press is a reusable publication engine, not a hosted lock-in service. The repository includes newsroom templates, Pages CMS configuration, import tools, redirect preservation, accessibility checks, private operational health reports, explicit performance budgets, CMS-managed crosswords, and the Cloudflare build contract.</p></div><div class="product-broadsheet-columns"><article><span class="column-number">01</span><h3>Read the source</h3><p>Inspect every build step, content rule, operational check, and generated page in the public repository.</p><a class="text-link" href="${PROJECT_REPOSITORY}" target="_blank" rel="noopener noreferrer">Open GitHub ${icon('arrow')}${newTabNote()}</a></article><article><span class="column-number">02</span><h3>Meet the developer</h3><p>Created by Justin Tahai and TAHAI Web Services as a practical open-source publishing foundation.</p><a class="text-link" href="${DEVELOPER_SITE}" target="_blank" rel="noopener noreferrer">Visit tahai.net ${icon('arrow')}${newTabNote()}</a></article><article><span class="column-number">03</span><h3>Operate without a backend</h3><p>Audit media, protect performance, review private newsroom health, edit crosswords as content, and keep contributor drafts local.</p><a class="text-link" href="/studio/">Open the Contributor Composer ${icon('arrow')}</a></article></div></section>`;
   }
@@ -857,7 +897,7 @@ const studioAuthors = authors.filter((author) => author.active !== false).map((a
 const studioCategories = categories.map((category) => ({ slug: category.slug, name: category.name }));
 const studioBody = `<section class="page-hero studio-hero"><div class="shell page-hero-grid"><div><p class="eyebrow">Writer Desk · private by design</p><h1>Write cleanly. Review clearly. Publish without plugin debt.</h1><p class="lede">A focused Markdown newsroom with structured story commands, local revisions, paste cleanup, live preview, and publication checks. Draft text stays in this browser.</p></div><span class="hero-illustration" aria-hidden="true">${icon('edit')}</span></div></section>
 <section class="section shell writer-desk-overview" aria-labelledby="writer-desk-overview-heading">
-  <div class="writer-desk-overview-copy"><p class="eyebrow">Writer Desk v2.2</p><h2 id="writer-desk-overview-heading">Publish faster without lowering editorial standards.</h2><p>TAHAI Press keeps the durable part of publishing—plain Markdown and ordinary files—while removing the plugin stack, database maintenance, and formatting cleanup that slow small newsrooms down.</p><div class="button-row"><a class="button" href="#writer-editor">Open the Writer Desk ${icon('arrow')}</a><a class="button button-secondary" href="/publisher/">Publisher Studio</a></div></div>
+  <div class="writer-desk-overview-copy"><p class="eyebrow">Writer Desk v2.3</p><h2 id="writer-desk-overview-heading">Publish faster without lowering editorial standards.</h2><p>TAHAI Press keeps the durable part of publishing—plain Markdown and ordinary files—while removing the plugin stack, database maintenance, and formatting cleanup that slow small newsrooms down.</p><div class="button-row"><a class="button" href="#writer-editor">Open the Writer Desk ${icon('arrow')}</a><a class="button button-secondary" href="/publisher/">Publishing Console</a></div></div>
   <div class="writer-desk-feature-grid" aria-label="Writer Desk capabilities"><article><span aria-hidden="true">${icon('edit')}</span><div><p class="eyebrow">Draft assistant</p><h3>Headline and summary</h3><p>Clear required fields, reading-time feedback, and useful editorial checks stay close to the story.</p></div></article><article><span aria-hidden="true">${icon('document')}</span><div><p class="eyebrow">Structured reporting</p><h3>Commands, sources, and story blocks</h3><p>Use the toolbar, slash commands, or the keyboard palette without exposing readers to proprietary editor markup.</p></div></article><article><span aria-hidden="true">${icon('image')}</span><div><p class="eyebrow">Media and access</p><h3>Rights and accessibility before export</h3><p>Image descriptions, source context, and publication blockers are reviewed before the contributor package leaves the browser.</p></div></article></div>
 </section>
 <section class="section shell editorial-studio" id="writer-editor" data-editorial-studio>
@@ -952,26 +992,108 @@ writeRoute('/media-desk/', layout({
   body: mediaDeskBody
 }), { sitemap: false });
 
-const publisherStudioBody = `<section class="page-hero publisher-studio-hero"><div class="shell page-hero-grid"><div><p class="eyebrow">TAHAI Publisher Studio · v2 foundation</p><h1>One newsroom doorway. Publisher-owned files underneath.</h1><p class="lede">Draft locally, prepare media, manage Git-backed intake, review launch readiness, and deploy a plain static publication without operating WordPress, a database, or a plugin stack.</p></div><span class="hero-illustration" aria-hidden="true">${icon('edit')}</span></div></section>
-<section class="section shell publisher-command-center" aria-labelledby="publisher-command-heading">
-  <div class="section-heading"><div><p class="eyebrow">Newsroom command center</p><h2 id="publisher-command-heading">Choose the desk that matches the work.</h2></div><p>Every core desk is private by default and either browser-local or Git-backed.</p></div>
-  <div class="publisher-desk-grid">
-    <article class="publisher-desk-card publisher-desk-primary"><span class="publisher-desk-icon" aria-hidden="true">${icon('edit')}</span><p class="eyebrow">Write</p><h3>Contributor Composer</h3><p>Draft and preview a complete story locally, run publication checks, and export portable article JSON.</p><a class="button" href="/studio/">Open Composer ${icon('arrow')}</a></article>
-    <article class="publisher-desk-card"><span class="publisher-desk-icon" aria-hidden="true">${icon('image')}</span><p class="eyebrow">Prepare</p><h3>Media Desk</h3><p>Crop, compress, describe, credit, and package images without uploading them to a service.</p><a class="button button-secondary" href="/media-desk/">Open Media Desk ${icon('arrow')}</a></article>
-    <article class="publisher-desk-card"><span class="publisher-desk-icon" aria-hidden="true">${icon('github')}</span><p class="eyebrow">Git-backed beta</p><h3>Git Draft Desk</h3><p>Use Sveltia CMS ${escapeHtml(SVELTIA_CMS_VERSION)} (${escapeHtml(SVELTIA_CMS_LICENSE)}) to commit safe intake drafts into <code>content/inbox/</code>. Production articles are never edited by this bridge.</p><a class="button button-secondary" href="/admin/">Open Git Draft Desk ${icon('arrow')}</a></article>
-    ${templateMode(site) ? `<article class="publisher-desk-card"><span class="publisher-desk-icon" aria-hidden="true">${icon('source')}</span><p class="eyebrow">Configure</p><h3>Launch Desk</h3><p>Set publication identity, visual defaults, homepage structure, first-story content, and launch readiness.</p><a class="button button-secondary" href="/setup/">Open Launch Desk ${icon('arrow')}</a></article>` : ''}
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function scrubConsoleArticle(article = {}) {
+  const clone = cloneJson(article);
+  delete clone.__file;
+  delete clone.editor_notes;
+  delete clone.private_editor_notes;
+  return clone;
+}
+
+function scrubConsoleRecord(record = {}) {
+  const clone = cloneJson(record);
+  delete clone.__file;
+  return clone;
+}
+
+function sanitizeConsoleSiteForPublicMode(value = {}) {
+  const clone = cloneJson(value);
+  delete clone.logo;
+  delete clone.default_social_image;
+  delete clone.default_social_image_alt;
+  delete clone.masthead_kicker;
+  if (clone.seo && typeof clone.seo === 'object') {
+    delete clone.seo.social_profiles;
+    delete clone.seo.feed_title;
+    delete clone.seo.feed_description;
+  }
+  return clone;
+}
+
+const consoleArticle = scrubConsoleArticle(articles.find((article) => article.status === 'draft') || articles[0] || {});
+const consoleSite = templateMode(site) ? cloneJson(site) : sanitizeConsoleSiteForPublicMode(site);
+const consoleSource = {
+  site: consoleSite,
+  article: consoleArticle,
+  articles: articles.map((article) => scrubConsoleArticle(article)),
+  authors: authors.map((author) => scrubConsoleRecord(author)),
+  categories: categories.map((category) => scrubConsoleRecord(category)),
+  hubs: hubs.map((hub) => scrubConsoleRecord(hub)),
+  navigation: cloneJson(site.navigation),
+  homepage: cloneJson(site.homepage),
+  footer: cloneJson(site.footer),
+  publication_settings: cloneJson(site.publication_settings),
+  workflow: 'draft',
+  workflow_states: WORKFLOW_STATES,
+  workflow_transitions: Object.fromEntries(WORKFLOW_STATES.map((state) => [state, workflowTransitions(state)]))
+};
+const publishingConsoleData = {
+  schema_version: 1,
+  source_hash: sha256(stableStringify(consoleSource)),
+  ...consoleSource,
+  content_counts: {
+    articles: articles.length,
+    authors: authors.length,
+    categories: categories.length,
+    hubs: hubs.length
+  }
+};
+const publisherStudioBody = `<section class="page-hero publisher-console-hero"><div class="shell page-hero-grid"><div><p class="eyebrow">${templateMode(site) ? 'TAHAI Publishing Console' : 'Publishing Console'}</p><h1>Schema-safe Git editing for the newsroom model.</h1><p class="lede">One browser workspace handles articles, authors, categories, hubs, navigation, homepage modules, footer columns, and publication settings with workflow states, preview diffs, and stale-revision checks.</p></div><span class="hero-illustration" aria-hidden="true">${icon('source')}</span></div></section>
+<section class="section shell publisher-console-shell" data-publishing-console>
+  <div class="publisher-console-toolbar">
+    <div>
+      <p class="eyebrow">Versioned publication model</p>
+      <h2>Draft, review, schedule, publish, correct, archive.</h2>
+      <p>The console stays browser-local until you export a release bundle or copy the generated files into <code>content/inbox/</code> for review.</p>
+    </div>
+    <div class="button-row">
+      <label class="button button-secondary publisher-console-import" for="publisher-console-import">Import bundle<input id="publisher-console-import" type="file" accept=".json,application/json" data-console-import hidden></label>
+      <button class="button" type="button" data-console-export>Download bundle</button>
+      <button class="button button-secondary" type="button" data-console-copy>Copy JSON</button>
+      <button class="button button-quiet" type="button" data-console-reset>Reset</button>
+    </div>
   </div>
+  <div class="publisher-console-tabs" role="tablist" aria-label="Publishing console sections">
+    <button type="button" role="tab" aria-selected="true" data-console-tab="site">Site</button>
+    <button type="button" role="tab" aria-selected="false" data-console-tab="article">Article</button>
+    <button type="button" role="tab" aria-selected="false" data-console-tab="collections">Collections</button>
+    <button type="button" role="tab" aria-selected="false" data-console-tab="workflow">Workflow</button>
+    <button type="button" role="tab" aria-selected="false" data-console-tab="preview">Preview</button>
+  </div>
+  <div class="publisher-console-layout">
+    <section class="publisher-console-editor" data-console-editor></section>
+    <aside class="publisher-console-aside">
+      <section class="publisher-console-card" data-console-preview aria-labelledby="publisher-console-preview-heading"><div class="publisher-console-card-heading"><p class="eyebrow">Preview</p><h3 id="publisher-console-preview-heading">Live release preview</h3></div><div data-console-preview-body><p>Choose a tab to inspect the generated output.</p></div></section>
+      <section class="publisher-console-card" data-console-validation aria-labelledby="publisher-console-validation-heading"><div class="publisher-console-card-heading"><p class="eyebrow">Validation</p><h3 id="publisher-console-validation-heading">Schema and workflow checks</h3></div><div data-console-validation-body><p>Waiting for the console to load.</p></div></section>
+      <section class="publisher-console-card" data-console-diff aria-labelledby="publisher-console-diff-heading"><div class="publisher-console-card-heading"><p class="eyebrow">Diff</p><h3 id="publisher-console-diff-heading">Release handoff</h3></div><div data-console-diff-body><p>Preview the release bundle before committing.</p></div></section>
+    </aside>
+  </div>
+  <p class="fine-print">The console is role-ready, but it does not require a user account in the static core. Conflict detection refuses stale bundles before a handoff is exported.</p>
 </section>
-<section class="section publisher-foundation-section"><div class="shell publisher-foundation-grid"><article><p class="eyebrow">Repository contract</p><h2>Safe intake before publication.</h2><p>The Git Draft Desk targets <strong>${escapeHtml(gitCmsRepository)}</strong> on <strong>${escapeHtml(gitCmsBranch)}</strong>. New work lands in <code>content/inbox/</code>. A repository operator runs:</p><pre><code>npm run newsroom:promote -- --file content/inbox/story-slug.json</code></pre><p>The command normalizes the record, validates required editorial fields, refuses overwrites by default, and promotes it as a draft for the ordinary TAHAI Press release gates.</p></article><article><p class="eyebrow">Why this is different</p><h2>No runtime hostage situation.</h2><ul class="check-list"><li>No database or PHP runtime.</li><li>No plugin marketplace required for basic publishing.</li><li>No reader accounts, telemetry, or advertising scripts.</li><li>No proprietary archive format.</li><li>Git history, portable files, and static output remain the source of truth.</li></ul></article></div></section>
-<section class="section shell publisher-stack-section"><div class="section-heading"><div><p class="eyebrow">Open publishing foundation</p><h2>Permissive components, adopted behind TAHAI-owned workflows.</h2></div><p>The public publication remains usable even when every optional editor integration is unavailable.</p></div><div class="publisher-stack-grid"><article><strong>Integrated now</strong><h3>Sveltia CMS</h3><p>MIT-licensed Git drafting bridge, pinned to ${escapeHtml(SVELTIA_CMS_VERSION)}.</p></article><article><strong>Next writer pass</strong><h3>Milkdown or Lexical</h3><p>Permissive editor primitives for a richer TAHAI Writer Desk.</p></article><article><strong>Integrated now</strong><h3>Media Pipeline</h3><p>Browser crop controls, responsive derivatives, and a manifest-backed handoff with durable originals.</p></article><article><strong>Search and records</strong><h3>Pagefind + PDF.js</h3><p>Static search and first-class public-record reading without a server.</p></article></div><p class="fine-print">See <code>docs/FOSS-FOUNDATION.md</code>, <code>docs/V2-ROADMAP.md</code>, and <code>THIRD_PARTY_NOTICES.md</code> in the source package for license and adoption rules.</p></section>`;
+<script id="publishing-console-data" type="application/json">${jsonForHtml(publishingConsoleData)}</script>`;
 
 writeRoute('/publisher/', layout({
   route: '/publisher/',
-  title: 'Publisher Studio',
-  description: 'The unified TAHAI Press newsroom command center for local drafting, media preparation, Git-backed intake, setup, and static deployment.',
+  title: 'Publishing Console',
+  description: 'The schema-safe TAHAI Press newsroom editor for articles, site structure, navigation, homepage modules, footer links, and workflow review.',
   canonical: absoluteUrl('/publisher/'),
   noindex: true,
-  pageClass: 'publisher-studio-page',
+  pageClass: 'publisher-console-page',
+  scripts: ['/assets/publishing-console.js'],
   body: publisherStudioBody
 }), { sitemap: false });
 
@@ -1312,6 +1434,7 @@ for (const article of published) {
   const sourceLinks = (article.source_links || []).filter((source) => safeUrl(source.url));
   const kicker = article.kicker || (article.featured ? 'Featured story' : categoryNames.join(' · ') || 'Story');
   const headerFacts = renderMetaList([
+    { label: 'Status', value: articleStatusLabel(article.status) },
     { label: 'Classification', value: classificationInfo(article.classification).label },
     { label: 'Format', value: articleTemplateLabel(article) },
     { label: 'Series', value: article.series_title || '' },

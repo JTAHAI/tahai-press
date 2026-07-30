@@ -22,7 +22,7 @@ test('the current package and site configuration enable static Reader Reach with
   const pkg = JSON.parse(read('package.json'));
   const { site } = loadContent();
   const reach = readerReachConfig(site);
-  assert.equal(pkg.version, '2.2.1');
+  assert.equal(pkg.version, '2.3.0');
   assert.equal(reach.enabled, true);
   assert.equal(reach.offlineEnabled, true);
   assert.equal(reach.savedArticlesEnabled, true);

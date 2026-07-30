@@ -12,8 +12,9 @@ import { validateCrossword } from './lib/crosswords.mjs';
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const STATUS = new Set(['draft', 'scheduled', 'published', 'archived']);
-const RELEASE_STATUSES = new Set(['scheduled', 'published']);
+const STATUS = new Set(['draft', 'review', 'scheduled', 'published', 'corrected', 'archived']);
+const RELEASE_STATUSES = new Set(['scheduled', 'published', 'corrected']);
+const LIVE_STATUSES = new Set(['published', 'corrected']);
 const TYPES = new Set(['standard', 'pdf', 'mixed', 'external']);
 const CLASSIFICATIONS = new Set(ARTICLE_CLASSIFICATION_KEYS);
 const PDF_VIEW_MODES = new Set(['fit-width', 'fit-page']);
@@ -21,8 +22,32 @@ const THEME_FIELDS = ['brand', 'brand_deep', 'brand_soft', 'accent', 'accent_dar
 const PUBLISH_REVIEW_FIELDS = ['review_content', 'review_rights', 'review_accessibility'];
 const PUBLISHER_TYPES = new Set(['Organization', 'NewsMediaOrganization']);
 const ARTICLE_SCHEMA_TYPES = new Set(['Article', 'NewsArticle', 'BlogPosting']);
-const HOME_MODULE_TYPES = new Set(['intro', 'setup', 'license', 'featured', 'latest', 'reach', 'studio', 'product', 'pillars', 'hubs', 'submit']);
+const HOME_MODULE_TYPES = new Set(['intro', 'setup', 'license', 'featured', 'latest', 'reach', 'studio', 'console', 'product', 'pillars', 'hubs', 'submit']);
 const AUTHOR_ENTITY_TYPES = new Set(['Person', 'Organization']);
+const PUBLICATION_WORKFLOWS = new Set(['editorial_review', 'strict_review']);
+const RESERVED_INTERNAL_PATHS = [
+  /^\/(?:assets|uploads|\.well-known)(?:\/|$)/,
+  /^\/(?:_redirects|404\.html|service-worker\.js|site\.webmanifest)$/i,
+  /^\/admin\/config\.yml$/i
+];
+const KNOWN_INTERNAL_PATHS = new Set([
+  '/', '/stories/', '/search/', '/topics/', '/authors/', '/categories/', '/sections/', '/series/',
+  '/archive/', '/hubs/', '/about/', '/accessibility/', '/submit/', '/contact/', '/edition/',
+  '/saved/', '/puzzles/', '/studio/', '/publisher/', '/media-desk/', '/setup/', '/admin/', '/offline/'
+]);
+const KNOWN_INTERNAL_PREFIXES = [
+  /^\/stories\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i,
+  /^\/topics\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i,
+  /^\/authors\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i,
+  /^\/categories\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i,
+  /^\/sections\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i,
+  /^\/series\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i,
+  /^\/hubs\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i,
+  /^\/archive\/\d{4}\/?$/i,
+  /^\/archive\/\d{4}\/\d{2}\/?$/i,
+  /^\/archive\/\d{4}\/\d{2}\/page\/\d+\/?$/i,
+  /^\/stories\/[a-z0-9]+(?:-[a-z0-9]+)*\/page\/\d+\/?$/i
+];
 const errors = [];
 const warnings = [];
 
@@ -48,6 +73,20 @@ function validWebOrLocalUrl(value) {
   } catch {
     return false;
   }
+}
+function normalizeInternalPath(value = '') {
+  return String(value).trim().split('?')[0].split('#')[0];
+}
+function isReservedInternalPath(value = '') {
+  const pathValue = normalizeInternalPath(value);
+  return RESERVED_INTERNAL_PATHS.some((pattern) => pattern.test(pathValue));
+}
+function validPublicationRoute(value = '') {
+  const pathValue = normalizeInternalPath(value);
+  if (!pathValue.startsWith('/')) return false;
+  if (isReservedInternalPath(pathValue)) return false;
+  if (KNOWN_INTERNAL_PATHS.has(pathValue)) return true;
+  return KNOWN_INTERNAL_PREFIXES.some((pattern) => pattern.test(pathValue));
 }
 function validAbsoluteWebUrl(value) {
   try {
@@ -279,8 +318,37 @@ if (rawSite.navigation !== undefined) {
         if (!String(item.label || '').trim() || String(item.label).length > 80) issue(errors, siteFile, `navigation.items[${index}].label must contain 1 to 80 characters`);
         const href = String(item.href || '').trim();
         if (!(href.startsWith('/') || /^https:\/\//i.test(href))) issue(errors, siteFile, `navigation.items[${index}].href must begin with / or https://`);
+        if (href.startsWith('/') && !validPublicationRoute(href)) issue(errors, siteFile, `navigation.items[${index}].href points to a reserved or unknown route: ${href}`);
         if (destinations.has(href)) issue(errors, siteFile, `navigation.items contains duplicate destination: ${href}`);
         destinations.add(href);
+      }
+    }
+  }
+}
+if (rawSite.footer !== undefined) {
+  if (!rawSite.footer || typeof rawSite.footer !== 'object' || Array.isArray(rawSite.footer)) issue(errors, siteFile, 'footer must be an object');
+  else {
+    optionalString(rawSite.footer, 'note', siteFile, 160);
+    if (!Array.isArray(rawSite.footer.columns)) issue(errors, siteFile, 'footer.columns must be an array');
+    else {
+      if (rawSite.footer.columns.length < 1 || rawSite.footer.columns.length > 4) issue(errors, siteFile, 'footer.columns must contain between 1 and 4 columns');
+      const destinations = new Set();
+      for (const [columnIndex, column] of rawSite.footer.columns.entries()) {
+        if (!column || typeof column !== 'object' || Array.isArray(column)) { issue(errors, siteFile, `footer.columns[${columnIndex}] must be an object`); continue; }
+        if (!String(column.heading || '').trim() || String(column.heading).length > 80) issue(errors, siteFile, `footer.columns[${columnIndex}].heading must contain 1 to 80 characters`);
+        if (!Array.isArray(column.links)) issue(errors, siteFile, `footer.columns[${columnIndex}].links must be an array`);
+        else {
+          if (column.links.length < 1 || column.links.length > 8) issue(errors, siteFile, `footer.columns[${columnIndex}].links must contain between 1 and 8 links`);
+          for (const [linkIndex, link] of column.links.entries()) {
+            if (!link || typeof link !== 'object' || Array.isArray(link)) { issue(errors, siteFile, `footer.columns[${columnIndex}].links[${linkIndex}] must be an object`); continue; }
+            if (!String(link.label || '').trim() || String(link.label).length > 80) issue(errors, siteFile, `footer.columns[${columnIndex}].links[${linkIndex}].label must contain 1 to 80 characters`);
+            const href = String(link.href || '').trim();
+            if (!(href.startsWith('/') || /^https:\/\//i.test(href))) issue(errors, siteFile, `footer.columns[${columnIndex}].links[${linkIndex}].href must begin with / or https://`);
+            if (href.startsWith('/') && !validPublicationRoute(href)) issue(errors, siteFile, `footer.columns[${columnIndex}].links[${linkIndex}].href points to a reserved or unknown route: ${href}`);
+            if (destinations.has(href)) issue(errors, siteFile, `footer.columns contains duplicate destination: ${href}`);
+            destinations.add(href);
+          }
+        }
       }
     }
   }
@@ -299,8 +367,19 @@ if (rawSite.homepage !== undefined) {
       if (module.enabled !== undefined && typeof module.enabled !== 'boolean') issue(errors, siteFile, `homepage.modules[${index}].enabled must be true or false`);
       if (module.heading !== undefined && (typeof module.heading !== 'string' || module.heading.length > 120)) issue(errors, siteFile, `homepage.modules[${index}].heading must be 120 characters or fewer`);
       if (module.count !== undefined && (!Number.isInteger(Number(module.count)) || Number(module.count) < 1 || Number(module.count) > 24)) issue(errors, siteFile, `homepage.modules[${index}].count must be an integer between 1 and 24`);
+      if (module.type === 'console' && module.heading !== undefined && String(module.heading).length < 5) issue(errors, siteFile, `homepage.modules[${index}].heading must contain at least 5 characters`);
     }
     if (!rawSite.homepage.modules.some((module) => module.type === 'intro' && module.enabled !== false)) issue(warnings, siteFile, 'homepage introduction is disabled; readers may lack a clear page heading and publication summary');
+  }
+}
+if (rawSite.publication_settings !== undefined) {
+  if (!rawSite.publication_settings || typeof rawSite.publication_settings !== 'object' || Array.isArray(rawSite.publication_settings)) issue(errors, siteFile, 'publication_settings must be an object');
+  else {
+    if (rawSite.publication_settings.schema_version !== undefined && (!Number.isInteger(Number(rawSite.publication_settings.schema_version)) || Number(rawSite.publication_settings.schema_version) < 1)) issue(errors, siteFile, 'publication_settings.schema_version must be a positive integer');
+    if (rawSite.publication_settings.workflow !== undefined && !PUBLICATION_WORKFLOWS.has(rawSite.publication_settings.workflow)) issue(errors, siteFile, `publication_settings.workflow must be one of: ${[...PUBLICATION_WORKFLOWS].join(', ')}`);
+    for (const field of ['scheduled_publishing', 'corrections_enabled', 'archive_withdrawn_publications', 'conflict_detection', 'preview_before_commit']) {
+      if (rawSite.publication_settings[field] !== undefined && typeof rawSite.publication_settings[field] !== 'boolean') issue(errors, siteFile, `publication_settings.${field} must be true or false`);
+    }
   }
 }
 
@@ -360,7 +439,7 @@ for (const article of articles) {
   if (!article.classification) publishIssue(article, 'classification is required before publishing');
   else if (!CLASSIFICATIONS.has(article.classification)) issue(errors, article.__file, `classification must be one of: ${ARTICLE_CLASSIFICATION_KEYS.join(', ')}`);
 
-  const isPublished = article.status === 'published';
+  const isPublished = LIVE_STATUSES.has(article.status);
   const isReleaseReady = RELEASE_STATUSES.has(article.status);
   if (isReleaseReady && String(article.title || '').trim().length < 5) issue(errors, article.__file, 'published title must contain at least 5 characters');
   if (isReleaseReady && String(article.excerpt || '').trim().length < 20) issue(errors, article.__file, 'published excerpt must contain at least 20 characters');
@@ -409,6 +488,7 @@ for (const article of articles) {
   validateHistory(article, 'corrections', 'Correction history');
   if (article.corrections?.length && !article.updated_at) issue(warnings, article.__file, 'corrections are present but updated_at is empty');
   if (article.classification === 'developing' && !(article.update_history || []).length) issue(warnings, article.__file, 'developing coverage should include at least one update_history entry');
+  if (article.status === 'corrected' && !(article.corrections || []).length && !String(article.what_changed || '').trim()) issue(errors, article.__file, 'corrected articles require a correction entry or what_changed note');
 
   if (isReleaseReady && !article.published_at) issue(errors, article.__file, 'published_at is required before publishing');
   if (article.published_at && Number.isNaN(new Date(article.published_at).getTime())) issue(errors, article.__file, 'published_at must be a valid ISO date-time');

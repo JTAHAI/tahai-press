@@ -16,8 +16,8 @@ function build() {
   }
 }
 
-test('v2.2 identifies the Writer Desk release and keeps the studio route stable', () => {
-  assert.equal(readJson(path.join(ROOT, 'package.json')).version, '2.2.1');
+test('v2.3 identifies the Writer Desk release and keeps the studio route stable', () => {
+  assert.equal(readJson(path.join(ROOT, 'package.json')).version, '2.3.0');
   build();
   const html = built('studio/index.html');
   assert.match(html, /Writer Desk · private by design/);

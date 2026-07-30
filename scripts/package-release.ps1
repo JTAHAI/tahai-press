@@ -13,20 +13,23 @@ try {
   $cleanSha = "tahai-press_v$version`_clean-source.sha256"
   $deploySha = "tahai-press_v$version`_cloudflare-deploy.sha256"
 
-  $exclude = @(
-    '.git',
-    'dist',
-    '.artifacts',
-    'node_modules',
-    'tahai-press_v2.2.0_clean-source.zip',
-    'tahai-press_v2.2.0_cloudflare-deploy.zip',
-    'tahai-press_v2.2.0_clean-source.sha256',
-    'tahai-press_v2.2.0_cloudflare-deploy.sha256',
-    'SHA256SUMS.txt',
-    'apply-tahai-press-v2.2.0.ps1'
+  $excludePatterns = @(
+    '^\.(git|artifacts)$',
+    '^dist$',
+    '^node_modules$',
+    '^SHA256SUMS\.txt$',
+    '^tahai-press_v.+_(clean-source|cloudflare-deploy)\.zip$',
+    '^tahai-press_v.+_(clean-source|cloudflare-deploy)\.sha256$',
+    '^apply-tahai-press-.+\.ps1$'
   )
 
-  $cleanPaths = Get-ChildItem -Force | Where-Object { $exclude -notcontains $_.Name } | ForEach-Object { $_.FullName }
+  $cleanPaths = Get-ChildItem -Force | Where-Object {
+    $name = $_.Name
+    foreach ($pattern in $excludePatterns) {
+      if ($name -match $pattern) { return $false }
+    }
+    return $true
+  } | ForEach-Object { $_.FullName }
 
   if (Test-Path -LiteralPath $cleanZip) { Remove-Item -LiteralPath $cleanZip -Force }
   Compress-Archive -Path $cleanPaths -DestinationPath $cleanZip -CompressionLevel Optimal -Force
