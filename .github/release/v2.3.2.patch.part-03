@@ -1,0 +1,102 @@
+@@ -43,3 +43,34 @@ test('primary navigation marks the current route', () => {
+   const hubs = fs.readFileSync(path.join(DIST, 'hubs/index.html'), 'utf8');
+   assert.match(hubs, /href="\/hubs\/" aria-current="page"/);
+ });
++
++test('desktop navigation groups tools and never squeezes labels into fixed cells', () => {
++  const home = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
++  const primary = home.match(/<nav class="desktop-nav"[^>]*>([\s\S]*?)<\/nav>/)?.[1] || '';
++  const utilities = home.match(/<nav class="desktop-nav-utilities"[^>]*>([\s\S]*?)<\/nav>/)?.[1] || '';
++
++  for (const label of ['Stories', 'Sections', 'Series', 'Search', 'Coverage Hubs', 'About', 'Submit']) {
++    assert.match(primary, new RegExp(`>${label}<`));
++  }
++  for (const label of ['Editorial Studio', 'Media Desk']) assert.doesNotMatch(primary, new RegExp(`>${label}<`));
++  assert.match(utilities, /<summary>Publisher tools/);
++  assert.match(utilities, /<summary>Reader desk/);
++  assert.match(utilities, />Editorial Studio</);
++  assert.match(utilities, />Media Desk</);
++  assert.match(utilities, />Crossword</);
++  assert.match(home, /src="\/assets\/navigation\.js\?v=2\.3\.2" defer/);
++  assert.match(home, /href="\/assets\/styles\.css\?v=2\.3\.2"/);
++  assert.doesNotMatch(home, /class="navigation-promise"/);
++});
++
++
++test('stale pre-grouped navigation fails safely to the complete mobile menu', () => {
++  const css = fs.readFileSync(path.join(ROOT, 'public/assets/styles.css'), 'utf8');
++  assert.match(css, /\.navigation-promise \{ display: none !important; \}/);
++  assert.match(css, /\.navigation-inner > \.desktop-nav \{ display: none !important; \}/);
++  assert.match(css, /\.navigation-inner > \.desktop-nav \+ \.mobile-nav \{ display: block; width: 100%; \}/);
++});
++
++test('obsolete bootstrap payloads are absent from the release source', () => {
++  assert.equal(fs.existsSync(path.join(ROOT, '.bootstrap')), false);
++});
+diff --git a/tests/open-publishing-foundation.test.mjs b/tests/open-publishing-foundation.test.mjs
+index 2ff8d4a..e7d95a0 100644
+--- a/tests/open-publishing-foundation.test.mjs
++++ b/tests/open-publishing-foundation.test.mjs
+@@ -27,7 +27,7 @@ const built = (relative) => fs.readFileSync(path.join(DIST, relative), 'utf8');
+ 
+ test('v2.0 package exposes the open publishing foundation', () => {
+   const pkg = readJson(path.join(ROOT, 'package.json'));
+-  assert.equal(pkg.version, '2.3.0');
++  assert.equal(pkg.version, '2.3.2');
+   assert.equal(pkg.scripts['newsroom:promote'], 'node scripts/promote-newsroom-draft.mjs');
+   assert.equal(fs.existsSync(path.join(ROOT, 'docs', 'FOSS-FOUNDATION.md')), true);
+   assert.equal(fs.existsSync(path.join(ROOT, 'docs', 'V2-ROADMAP.md')), true);
+diff --git a/tests/operational-polish.test.mjs b/tests/operational-polish.test.mjs
+index 43127e4..70a105a 100644
+--- a/tests/operational-polish.test.mjs
++++ b/tests/operational-polish.test.mjs
+@@ -20,7 +20,7 @@ function build() {
+ 
+ test('Operational Polish package exposes one-command operational health checks', () => {
+   const pkg = JSON.parse(read('package.json'));
+-  assert.equal(pkg.version, '2.3.0');
++  assert.equal(pkg.version, '2.3.2');
+   for (const command of ['audit:media', 'audit:performance', 'newsroom:health']) assert.ok(pkg.scripts[command]);
+   assert.match(pkg.scripts.check, /audit:media/);
+   assert.match(pkg.scripts.check, /audit:performance/);
+diff --git a/tests/reader-reach.test.mjs b/tests/reader-reach.test.mjs
+index 690a3d2..b73247f 100644
+--- a/tests/reader-reach.test.mjs
++++ b/tests/reader-reach.test.mjs
+@@ -22,7 +22,7 @@ test('the current package and site configuration enable static Reader Reach with
+   const pkg = JSON.parse(read('package.json'));
+   const { site } = loadContent();
+   const reach = readerReachConfig(site);
+-  assert.equal(pkg.version, '2.3.0');
++  assert.equal(pkg.version, '2.3.2');
+   assert.equal(reach.enabled, true);
+   assert.equal(reach.offlineEnabled, true);
+   assert.equal(reach.savedArticlesEnabled, true);
+diff --git a/tests/styles.test.mjs b/tests/styles.test.mjs
+index 7ee9fa3..aa4013f 100644
+--- a/tests/styles.test.mjs
++++ b/tests/styles.test.mjs
+@@ -52,3 +52,10 @@ test('mobile masthead preserves the publication name instead of squeezing it bes
+   assert.match(css, /\.brand-copy strong\s*\{[\s\S]*?white-space: nowrap;[\s\S]*?word-break: normal;/);
+   assert.match(css, /\.masthead-actions\s*\{[\s\S]*?width: 100%;[\s\S]*?flex-wrap: wrap;/);
+ });
++
++test('desktop navigation labels remain content-sized and unbroken before mobile takeover', () => {
++  assert.match(css, /\.desktop-nav a,[\s\S]*?white-space: nowrap;[\s\S]*?word-break: normal;[\s\S]*?overflow-wrap: normal;/);
++  assert.match(css, /\.desktop-nav a\s*\{[\s\S]*?flex: 0 0 auto;/);
++  assert.match(css, /\.desktop-nav-utilities\s*\{[\s\S]*?flex: 0 0 auto;/);
++  assert.match(css, /@media \(max-width: 70rem\)[\s\S]*?\.desktop-navigation\s*\{ display: none; \}[\s\S]*?\.mobile-nav\s*\{ display: block;/);
++});
+diff --git a/tests/writer-desk.test.mjs b/tests/writer-desk.test.mjs
+index 37196d5..384c845 100644
+--- a/tests/writer-desk.test.mjs
++++ b/tests/writer-desk.test.mjs
+@@ -17,7 +17,7 @@ function build() {
+ }
+ 
+ test('v2.3 identifies the Writer Desk release and keeps the studio route stable', () => {
+-  assert.equal(readJson(path.join(ROOT, 'package.json')).version, '2.3.0');
++  assert.equal(readJson(path.join(ROOT, 'package.json')).version, '2.3.2');
+   build();
+   const html = built('studio/index.html');
+   assert.match(html, /Writer Desk · private by design/);
