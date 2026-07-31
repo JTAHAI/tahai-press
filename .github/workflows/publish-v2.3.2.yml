@@ -34,7 +34,7 @@ jobs:
         run: |
           git fetch origin main --tags
           git checkout -B main origin/main
-          test "$(git rev-parse HEAD)" = "1ac8390f63908fafdab1d0732fbd146ca0da56e0"
+          test "$(git rev-parse HEAD)" = "1c324af47dcc1d5944d5df8cc4294f2d000303d1"
           test "$(node -p "require('./package.json').version")" = "2.3.0"
           git apply --check /tmp/tahai-press-v2.3.2.patch
           git apply /tmp/tahai-press-v2.3.2.patch
@@ -70,3 +70,5 @@ jobs:
         shell: bash
         run: |
           git push origin --delete release-v2.3.2 release-v2.3.2-test tmp-tree-test || true
+
+# Synchronize the release PR after the default-branch workflow became available.
