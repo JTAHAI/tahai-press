@@ -1,0 +1,151 @@
++  color: var(--ink);
++  font-family: var(--serif);
++  font-size: 0.86rem;
++  font-weight: 700;
++  letter-spacing: 0.018em;
++  cursor: pointer;
++  list-style: none;
++}
++.desktop-nav-menu summary::-webkit-details-marker { display: none; }
++.desktop-nav-menu summary:hover,
++.desktop-nav-menu summary:focus-visible,
++.desktop-nav-menu summary[aria-current='page'],
++.desktop-nav-menu[open] summary { color: var(--accent-dark); }
++.desktop-nav-menu summary::after {
++  content: '';
++  position: absolute;
++  left: 0.7rem;
++  right: 0.7rem;
++  bottom: -1px;
++  height: 3px;
++  background: transparent;
++}
++.desktop-nav-menu[data-current-menu='true'] summary::after { background: var(--accent); }
++.desktop-nav-menu-panel {
++  position: absolute;
++  z-index: 40;
++  top: calc(100% + 1px);
++  right: 0;
++  width: max-content;
++  min-width: 13rem;
++  max-width: min(22rem, calc(100vw - 2rem));
++  display: grid;
++  padding: 0.45rem;
++  border: 1px solid var(--line-strong);
++  border-top: 0;
++  background: var(--paper);
++  box-shadow: var(--shadow-lg);
++}
++.desktop-nav-menu:not([open]) .desktop-nav-menu-panel { display: none; }
++.desktop-nav-menu-link {
++  display: block;
++  padding: 0.75rem 0.85rem;
++  color: var(--ink);
++  font-family: var(--sans);
++  font-size: 0.84rem;
++  font-weight: 800;
++  text-decoration: none;
++}
++.desktop-nav-menu-link:hover,
++.desktop-nav-menu-link:focus-visible,
++.desktop-nav-menu-link[aria-current='page'] {
++  color: var(--accent-dark);
++  background: var(--brand-soft);
++}
++.navigation-inner { gap: 0; }
++/* The masthead already carries the publication promise. Never spend scarce
++   navigation width on a duplicate slogan, including stale pre-v2.3.1 HTML. */
++.navigation-promise { display: none !important; }
++/* Fail-safe for a cached page built before grouped desktop navigation existed:
++   suppress the overloaded legacy row and expose its complete mobile menu. */
++.navigation-inner > .desktop-nav { display: none !important; }
++.navigation-inner > .desktop-nav + .mobile-nav { display: block; width: 100%; }
++
++@media (max-width: 70rem) {
++  .desktop-navigation { display: none; }
++  .navigation-inner { min-height: auto; display: block; }
++  .mobile-nav { display: block; width: 100%; }
++}
++
++@media (min-width: 70.0625rem) {
++  .mobile-nav { display: none; }
++}
++
++@media print {
++  .desktop-nav-menu-panel { display: none !important; }
++}
+diff --git a/scripts/build.mjs b/scripts/build.mjs
+index 714cf09..ecf1536 100644
+--- a/scripts/build.mjs
++++ b/scripts/build.mjs
+@@ -157,13 +157,55 @@ function isCurrent(route, href) {
+   return route === href || route.startsWith(href);
+ }
+ 
+-function navLinks(route, className = '') {
+-  return navItems.map(({ href, label }) => {
+-    const safeHref = safeUrl(href || '');
+-    if (!safeHref || !label) return '';
+-    const external = isExternalNavigation(safeHref);
+-    return `<a class="${className}" href="${escapeHtml(safeHref)}"${isCurrent(route, safeHref) ? ' aria-current="page"' : ''}${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(label)}${external ? newTabNote() : ''}</a>`;
+-  }).filter(Boolean).join('\n');
++function navLink({ href, label }, route, className = '') {
++  const safeHref = safeUrl(href || '');
++  if (!safeHref || !label) return '';
++  const external = isExternalNavigation(safeHref);
++  return `<a class="${className}" href="${escapeHtml(safeHref)}"${isCurrent(route, safeHref) ? ' aria-current="page"' : ''}${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(label)}${external ? newTabNote() : ''}</a>`;
++}
++
++function navLinks(route, className = '', items = navItems) {
++  return items.map((item) => navLink(item, route, className)).filter(Boolean).join('\n');
++}
++
++const PUBLISHER_TOOL_ROUTES = new Set(['/studio/', '/media-desk/', '/publisher/', '/setup/']);
++const READER_UTILITY_ROUTES = new Set(['/edition/', '/saved/', '/puzzles/']);
++
++function groupedNavigation() {
++  const primary = [];
++  const publisher = [];
++  const reader = [];
++  const overflow = [];
++
++  for (const item of navItems) {
++    const href = String(item?.href || '');
++    if (PUBLISHER_TOOL_ROUTES.has(href)) publisher.push(item);
++    else if (READER_UTILITY_ROUTES.has(href)) reader.push(item);
++    else if (primary.length < 7) primary.push(item);
++    else overflow.push(item);
++  }
++  return { primary, publisher, reader, overflow };
++}
++
++function navMenu(route, label, items, menuClass) {
++  if (!items.length) return '';
++  const current = items.some((item) => isCurrent(route, String(item?.href || '')));
++  return `<details class="desktop-nav-menu ${menuClass}" data-navigation-menu${current ? ' data-current-menu="true"' : ''}>
++    <summary${current ? ' aria-current="page"' : ''}>${escapeHtml(label)}<span aria-hidden="true">▾</span></summary>
++    <div class="desktop-nav-menu-panel">${navLinks(route, 'desktop-nav-menu-link', items)}</div>
++  </details>`;
++}
++
++function desktopNavigation(route) {
++  const groups = groupedNavigation();
++  return `<div class="desktop-navigation" data-desktop-navigation>
++    <nav class="desktop-nav" aria-label="Primary navigation">${navLinks(route, '', groups.primary)}</nav>
++    <nav class="desktop-nav-utilities" aria-label="Additional navigation">
++      ${navMenu(route, 'Publisher tools', groups.publisher, 'desktop-nav-publisher')}
++      ${navMenu(route, 'Reader desk', groups.reader, 'desktop-nav-reader')}
++      ${navMenu(route, 'More', groups.overflow, 'desktop-nav-more')}
++    </nav>
++  </div>`;
+ }
+ 
+ function brandMark() {
+@@ -253,11 +295,12 @@ ${sourceProvenanceComment()}
+   <meta name="description" content="${escapeHtml(description)}">
+   <link rel="canonical" href="${escapeHtml(canonical)}">
+   ${head.html}
+-  <link rel="stylesheet" href="/assets/styles.css">
++  <link rel="stylesheet" href="/assets/styles.css?v=${escapeHtml(packageInfo.version)}">
+   <script src="/assets/pdf-reader.js" defer></script>
+   <script src="/assets/search.js" defer></script>
