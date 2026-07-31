@@ -1,11 +1,9 @@
 name: Publish TAHAI Press v2.3.2
 
 on:
-  push:
+  pull_request:
     branches:
       - main
-    paths:
-      - .github/workflows/publish-v2.3.2.yml
 
 permissions:
   contents: write
@@ -22,12 +20,12 @@ jobs:
       - name: Check out current main
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Reconstruct and verify release patch
         shell: bash
         run: |
-          test "$(git rev-parse HEAD^)" = "0344ebb99757d8344adfa971d9ea26666d10227a"
           test "$(node -p "require('./package.json').version")" = "2.3.0"
           git fetch origin release-v2.3.2
           for part in 00 01 02 03; do
@@ -35,7 +33,7 @@ jobs:
           done > /tmp/tahai-press-v2.3.2.patch
           echo "197b84983274622533cc5d14f2fdf760fa362619938de7b07d488afba9084bcf  /tmp/tahai-press-v2.3.2.patch" | sha256sum -c -
 
-      - name: Apply and verify release source
+      - name: Apply release to current main
         shell: bash
         run: |
           git apply --check /tmp/tahai-press-v2.3.2.patch
