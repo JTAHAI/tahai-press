@@ -1,0 +1,69 @@
+name: Publish TAHAI Press v2.3.2
+
+on:
+  push:
+    branches:
+      - release-v2.3.2
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-tahai-press-v2.3.2
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out staged release branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and verify release patch
+        shell: bash
+        run: |
+          cat .github/release/v2.3.2.patch.part-* > /tmp/tahai-press-v2.3.2.patch
+          echo "197b84983274622533cc5d14f2fdf760fa362619938de7b07d488afba9084bcf  /tmp/tahai-press-v2.3.2.patch" | sha256sum -c -
+
+      - name: Apply release to current main
+        shell: bash
+        run: |
+          git fetch origin main --tags
+          git checkout -B main origin/main
+          test "$(git rev-parse HEAD)" = "0344ebb99757d8344adfa971d9ea26666d10227a"
+          git apply --check /tmp/tahai-press-v2.3.2.patch
+          git apply /tmp/tahai-press-v2.3.2.patch
+          rm -rf .bootstrap
+          rm -f deployment/bulk-redirects.csv
+          test ! -e .bootstrap
+          test "$(node -p "require('./package.json').version")" = "2.3.2"
+          git diff --check
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run complete release gate
+        run: npm run ci
+
+      - name: Commit, push, and tag verified release
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Release TAHAI Press v2.3.2 — Responsive navigation hardening"
+          release_sha="$(git rev-parse HEAD)"
+          git push origin HEAD:main
+          git tag -a v2.3.2 -m "TAHAI Press v2.3.2"
+          git push origin v2.3.2
+          echo "release_sha=$release_sha" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove temporary publication branches
+        if: success()
+        shell: bash
+        run: |
+          git push origin --delete release-v2.3.2 release-v2.3.2-test tmp-tree-test || true
