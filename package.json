@@ -1,6 +1,6 @@
 {
   "name": "tahai-press",
-  "version": "2.3.0",
+  "version": "2.3.2",
   "private": true,
   "type": "module",
   "description": "A database-free, static-first publishing platform for articles, public records, PDFs, community reporting, and independent publications. Built for GitHub, Pages CMS, and Cloudflare Pages.",
