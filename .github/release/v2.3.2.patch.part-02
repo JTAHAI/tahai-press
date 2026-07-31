@@ -1,0 +1,123 @@
+   <script src="/assets/crossword.js" defer></script>
+   <script src="/assets/media-gallery.js" defer></script>
++  <script src="/assets/navigation.js?v=${escapeHtml(packageInfo.version)}" defer></script>
+   <script src="/assets/professional-desk.js" defer></script>
+   ${accessibility.readerToolsEnabled ? '<script src="/assets/reading-tools.js" defer></script>' : ''}
+   ${readerReach.enabled ? `<script src="/assets/reader-reach.js" defer data-reader-reach data-offline-enabled="${readerReach.offlineEnabled ? 'true' : 'false'}"></script>` : ''}
+@@ -290,7 +333,7 @@ ${sourceProvenanceComment()}
+     </div>
+     <div class="navigation-wrap">
+       <div class="shell navigation-inner">
+-        <nav class="desktop-nav" aria-label="Primary navigation">${navLinks(route)}</nav>
++        ${desktopNavigation(route)}
+         <details class="mobile-nav">
+           <summary>${icon('menu')}<span>Menu</span></summary>
+           <nav aria-label="Mobile navigation">
+@@ -298,7 +341,6 @@ ${sourceProvenanceComment()}
+             <a class="mobile-nav-contact" href="${escapeHtml(site.contact_url || '/contact/')}">Contact the publication</a>
+           </nav>
+         </details>
+-        <p class="navigation-promise">${escapeHtml(site.navigation?.note || site.navigation_note || 'Static-first. Editor-friendly. Open source.')}</p>
+       </div>
+     </div>
+   </header>
+@@ -361,7 +403,7 @@ ${sourceProvenanceComment()}
+   <title>Git Draft Desk | ${escapeHtml(site.short_title)}</title>
+   <meta name="description" content="Optional Git-backed newsroom intake for ${escapeHtml(site.title)}.">
+   <link rel="canonical" href="${escapeHtml(canonical)}">
+-  <link rel="stylesheet" href="/assets/styles.css">
++  <link rel="stylesheet" href="/assets/styles.css?v=${escapeHtml(packageInfo.version)}">
+ </head>
+ <body class="git-cms-page">
+   <a class="skip-link" href="#main">Skip to content</a>
+@@ -415,7 +457,7 @@ ${sourceProvenanceComment()}
+   <meta name="description" content="${escapeHtml(article.seo_description || article.excerpt)}">
+   <link rel="canonical" href="${escapeHtml(canonical)}">
+   ${head.html}
+-  <link rel="stylesheet" href="/assets/styles.css">
++  <link rel="stylesheet" href="/assets/styles.css?v=${escapeHtml(packageInfo.version)}">
+   ${accessibility.readerToolsEnabled ? '<script src="/assets/reading-tools.js" defer></script>' : ''}
+   ${themeVariables()}
+ </head>
+diff --git a/scripts/check-repository-cleanliness.mjs b/scripts/check-repository-cleanliness.mjs
+index ad09f98..4d553b2 100644
+--- a/scripts/check-repository-cleanliness.mjs
++++ b/scripts/check-repository-cleanliness.mjs
+@@ -19,6 +19,8 @@ function walk(directory) {
+ 
+ walk(ROOT);
+ 
++if (fs.existsSync(path.join(ROOT, '.bootstrap'))) errors.push('Obsolete .bootstrap payload directory remains in the source tree.');
++
+ for (const { full, relative } of files) {
+   if (relative === 'scripts/check-repository-cleanliness.mjs') continue;
+   if (/^(?:PASS\d|proof\/pass-|docs\/PASS-)/i.test(relative) || /pass-\d{2}/i.test(relative)) {
+diff --git a/scripts/package-release.ps1 b/scripts/package-release.ps1
+index 24335ee..bd8d795 100644
+--- a/scripts/package-release.ps1
++++ b/scripts/package-release.ps1
+@@ -14,7 +14,7 @@ try {
+   $deploySha = "tahai-press_v$version`_cloudflare-deploy.sha256"
+ 
+   $excludePatterns = @(
+-    '^\.(git|artifacts)$',
++    '^\.(git|artifacts|bootstrap)$',
+     '^dist$',
+     '^node_modules$',
+     '^SHA256SUMS\.txt$',
+diff --git a/tests/launch-desk.test.mjs b/tests/launch-desk.test.mjs
+index 16f5f6d..efeb558 100644
+--- a/tests/launch-desk.test.mjs
++++ b/tests/launch-desk.test.mjs
+@@ -55,7 +55,7 @@ function buildPublisherModeSnapshot() {
+ 
+ test('current package preserves Launch Desk and a safe launch-package applicator', () => {
+   const pkg = readJson(path.join(ROOT, 'package.json'));
+-  assert.equal(pkg.version, '2.3.0');
++  assert.equal(pkg.version, '2.3.2');
+   assert.equal(pkg.scripts['launch:apply'], 'node scripts/apply-launch-package.mjs');
+   assert.equal(fs.existsSync(path.join(ROOT, 'scripts', 'apply-launch-package.mjs')), true);
+ });
+diff --git a/tests/media-desk.test.mjs b/tests/media-desk.test.mjs
+index 80ec0bb..596740d 100644
+--- a/tests/media-desk.test.mjs
++++ b/tests/media-desk.test.mjs
+@@ -20,7 +20,7 @@ const built = (relative) => fs.readFileSync(path.join(DIST, relative), 'utf8');
+ 
+ test('v2.3 package exposes the browser-only Media Desk release', () => {
+   const pkg = readJson(path.join(ROOT, 'package.json'));
+-  assert.equal(pkg.version, '2.3.0');
++  assert.equal(pkg.version, '2.3.2');
+   assert.equal(fs.existsSync(path.join(ROOT, 'docs', 'MEDIA-DESK.md')), true);
+   assert.equal(fs.existsSync(path.join(ROOT, 'public', 'assets', 'media-desk.js')), true);
+ });
+diff --git a/tests/navigation-menu.test.mjs b/tests/navigation-menu.test.mjs
+new file mode 100644
+index 0000000..764c777
+--- /dev/null
++++ b/tests/navigation-menu.test.mjs
+@@ -0,0 +1,20 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import path from 'node:path';
++import { ROOT } from '../scripts/lib/content.mjs';
++
++const script = fs.readFileSync(path.join(ROOT, 'public/assets/navigation.js'), 'utf8');
++
++test('navigation menus close on Escape and outside pointer interaction', () => {
++  assert.match(script, /event\.key !== 'Escape'/);
++  assert.match(script, /summary\?\.focus\(\)/);
++  assert.match(script, /document\.addEventListener\('pointerdown'/);
++  assert.match(script, /other !== menu/);
++});
++
++test('navigation enhancement has no network or credential behavior', () => {
++  for (const forbidden of ['fetch(', 'XMLHttpRequest', 'WebSocket', 'sendBeacon', 'localStorage', 'sessionStorage']) {
++    assert.equal(script.includes(forbidden), false, `navigation enhancement must not use ${forbidden}`);
++  }
++});
+diff --git a/tests/navigation.test.mjs b/tests/navigation.test.mjs
+index 0cd14cc..dcf7ace 100644
+--- a/tests/navigation.test.mjs
++++ b/tests/navigation.test.mjs
