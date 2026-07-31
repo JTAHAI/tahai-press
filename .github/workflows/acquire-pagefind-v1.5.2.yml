@@ -1,0 +1,41 @@
+name: Acquire verified Pagefind 1.5.2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/acquire-pagefind-v1.5.2.yml
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download official Pagefind release and checksum
+        shell: bash
+        run: |
+          set -e
+          VERSION=1.5.2
+          TARGET=x86_64-unknown-linux-musl
+          ASSET="pagefind-v${VERSION}-${TARGET}.tar.gz"
+          BASE="https://github.com/Pagefind/pagefind/releases/download/v${VERSION}"
+          curl --fail --location --silent --show-error --output "$ASSET" "$BASE/$ASSET"
+          curl --fail --location --silent --show-error --output "$ASSET.sha256" "$BASE/$ASSET.sha256"
+          sha256sum --check "$ASSET.sha256"
+          mkdir pagefind-v1.5.2-linux-x64
+          tar -xzf "$ASSET" -C pagefind-v1.5.2-linux-x64
+          chmod 0755 pagefind-v1.5.2-linux-x64/pagefind
+          pagefind-v1.5.2-linux-x64/pagefind --version | tee pagefind-v1.5.2-linux-x64/VERSION.txt
+          cp "$ASSET.sha256" pagefind-v1.5.2-linux-x64/ARCHIVE.sha256
+          sha256sum pagefind-v1.5.2-linux-x64/pagefind > pagefind-v1.5.2-linux-x64/BINARY.sha256
+
+      - name: Upload verified Pagefind binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: pagefind-v1.5.2-linux-x64
+          path: pagefind-v1.5.2-linux-x64
+          if-no-files-found: error
+          retention-days: 1
