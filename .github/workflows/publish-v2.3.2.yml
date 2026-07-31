@@ -1,9 +1,9 @@
 name: Publish TAHAI Press v2.3.2
 
 on:
-  push:
+  pull_request:
     branches:
-      - release-v2.3.2
+      - main
 
 permissions:
   contents: write
@@ -20,6 +20,7 @@ jobs:
       - name: Check out staged release branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Reconstruct and verify release patch
@@ -33,11 +34,13 @@ jobs:
         run: |
           git fetch origin main --tags
           git checkout -B main origin/main
-          test "$(git rev-parse HEAD)" = "0344ebb99757d8344adfa971d9ea26666d10227a"
+          test "$(git rev-parse HEAD)" = "1ac8390f63908fafdab1d0732fbd146ca0da56e0"
+          test "$(node -p "require('./package.json').version")" = "2.3.0"
           git apply --check /tmp/tahai-press-v2.3.2.patch
           git apply /tmp/tahai-press-v2.3.2.patch
           rm -rf .bootstrap
           rm -f deployment/bulk-redirects.csv
+          rm -f .github/workflows/publish-v2.3.2.yml
           test ! -e .bootstrap
           test "$(node -p "require('./package.json').version")" = "2.3.2"
           git diff --check
@@ -60,7 +63,7 @@ jobs:
           git push origin HEAD:main
           git tag -a v2.3.2 -m "TAHAI Press v2.3.2"
           git push origin v2.3.2
-          echo "release_sha=$release_sha" >> "$GITHUB_STEP_SUMMARY"
+          echo "Release SHA: $release_sha" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove temporary publication branches
         if: success()
