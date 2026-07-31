@@ -13,29 +13,45 @@ jobs:
   acquire:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            platform: linux-x64
+            executable: pagefind
+          - target: x86_64-pc-windows-msvc
+            platform: windows-x64
+            executable: pagefind.exe
     steps:
       - name: Download official Pagefind release and checksum
         shell: bash
         run: |
           set -e
           VERSION=1.5.2
-          TARGET=x86_64-unknown-linux-musl
+          TARGET='${{ matrix.target }}'
+          PLATFORM='${{ matrix.platform }}'
+          EXECUTABLE='${{ matrix.executable }}'
           ASSET="pagefind-v${VERSION}-${TARGET}.tar.gz"
+          OUTPUT="pagefind-v${VERSION}-${PLATFORM}"
           BASE="https://github.com/Pagefind/pagefind/releases/download/v${VERSION}"
           curl --fail --location --silent --show-error --output "$ASSET" "$BASE/$ASSET"
           curl --fail --location --silent --show-error --output "$ASSET.sha256" "$BASE/$ASSET.sha256"
           sha256sum --check "$ASSET.sha256"
-          mkdir pagefind-v1.5.2-linux-x64
-          tar -xzf "$ASSET" -C pagefind-v1.5.2-linux-x64
-          chmod 0755 pagefind-v1.5.2-linux-x64/pagefind
-          pagefind-v1.5.2-linux-x64/pagefind --version | tee pagefind-v1.5.2-linux-x64/VERSION.txt
-          cp "$ASSET.sha256" pagefind-v1.5.2-linux-x64/ARCHIVE.sha256
-          sha256sum pagefind-v1.5.2-linux-x64/pagefind > pagefind-v1.5.2-linux-x64/BINARY.sha256
+          mkdir "$OUTPUT"
+          tar -xzf "$ASSET" -C "$OUTPUT"
+          chmod 0755 "$OUTPUT/$EXECUTABLE"
+          cp "$ASSET.sha256" "$OUTPUT/ARCHIVE.sha256"
+          sha256sum "$OUTPUT/$EXECUTABLE" > "$OUTPUT/BINARY.sha256"
+          printf 'pagefind 1.5.2\n' > "$OUTPUT/VERSION.txt"
+          if [ "$PLATFORM" = linux-x64 ]; then
+            "$OUTPUT/$EXECUTABLE" --version | grep -Fx 'pagefind 1.5.2'
+          fi
 
       - name: Upload verified Pagefind binary
         uses: actions/upload-artifact@v4
         with:
-          name: pagefind-v1.5.2-linux-x64
-          path: pagefind-v1.5.2-linux-x64
+          name: pagefind-v1.5.2-${{ matrix.platform }}
+          path: pagefind-v1.5.2-${{ matrix.platform }}
           if-no-files-found: error
           retention-days: 1
