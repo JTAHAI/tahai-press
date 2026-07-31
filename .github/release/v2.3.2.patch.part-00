@@ -1,0 +1,175 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 0c16f19..3742d86 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,5 +1,20 @@
+ # Changelog
+ 
++
++## 2.3.2 — Navigation Collision and Cache Hardening
++
++- Removed the duplicate navigation-row slogan that could collide with About and Submit on stale or constrained desktop layouts.
++- Added cache-busting version queries for the shared stylesheet and navigation controller.
++- Added a fail-safe that replaces cached pre-grouped desktop navigation with the complete mobile menu instead of allowing an overloaded row.
++- Preserved the grouped reader, publisher, and utility navigation introduced in v2.3.1.
++
++## 2.3.1 — Responsive Navigation Hardening
++
++- Replaced the overloaded desktop link row with content-sized primary navigation plus Publisher tools and Reader desk menus.
++- Prevented mid-word wrapping, fixed equal-width squeezing, and moved the mobile navigation breakpoint ahead of collisions.
++- Added Escape, click-outside, and single-open-menu behavior while preserving a complete no-JavaScript navigation fallback.
++- Added regression coverage for grouped navigation, unbroken labels, responsive switching, and removal of obsolete bootstrap payloads.
++
+ ## 2.3.0 — Publishing Console
+ 
+ - Added a schema-safe Publishing Console route for site structure, article workflow, collections, and release review.
+diff --git a/README.md b/README.md
+index d4122e0..25f2c85 100644
+--- a/README.md
++++ b/README.md
+@@ -32,6 +32,8 @@ The included first-deploy edition is intentionally branded as **TAHAI Press** so
+ 
+ **Product principle:** **Make it easy. Make it fast. Make it accessible.**
+ 
++**Current release:** **v2.3.2**, with the Publishing Console and hardened responsive navigation.
++
+ **Project repository:** [github.com/JTAHAI/tahai-press](https://github.com/JTAHAI/tahai-press)  
+ **Live demo:** [tahai-press.tahai.net](https://tahai-press.tahai.net)  
+ **Project site:** [JTAHAI.github.io/tahai-press](https://JTAHAI.github.io/tahai-press/)  
+diff --git a/docs/V2-ROADMAP.md b/docs/V2-ROADMAP.md
+index a4a69ac..2d20db3 100644
+--- a/docs/V2-ROADMAP.md
++++ b/docs/V2-ROADMAP.md
+@@ -44,6 +44,7 @@ Every pass remains cumulative. Every release produces:
+ - Diff preview before commit
+ - Conflict detection and safe merge refusal
+ - Role-ready architecture without requiring user accounts in the static core
++- v2.3.2 responsive navigation hardening keeps reader links visible and groups publisher/reader utilities without mid-word wrapping
+ 
+ ## Release v2.4 — Search and Knowledge Desk
+ 
+diff --git a/package-lock.json b/package-lock.json
+index 26536d3..728d35b 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "tahai-press",
+-  "version": "2.3.0",
++  "version": "2.3.2",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "tahai-press",
+-      "version": "2.3.0",
++      "version": "2.3.2",
+       "license": "Apache-2.0",
+       "dependencies": {
+         "sharp": "0.35.3"
+diff --git a/package.json b/package.json
+index f13acab..2bbce6b 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "tahai-press",
+-  "version": "2.3.0",
++  "version": "2.3.2",
+   "private": true,
+   "type": "module",
+   "description": "A database-free, static-first publishing platform for articles, public records, PDFs, community reporting, and independent publications. Built for GitHub, Pages CMS, and Cloudflare Pages.",
+diff --git a/public/assets/navigation.js b/public/assets/navigation.js
+new file mode 100644
+index 0000000..8bd07d1
+--- /dev/null
++++ b/public/assets/navigation.js
+@@ -0,0 +1,32 @@
++(() => {
++  const menus = [...document.querySelectorAll('[data-navigation-menu]')];
++  if (!menus.length) return;
++
++  const close = (menu) => {
++    if (menu.open) menu.removeAttribute('open');
++  };
++
++  for (const menu of menus) {
++    menu.addEventListener('toggle', () => {
++      if (!menu.open) return;
++      for (const other of menus) {
++        if (other !== menu) close(other);
++      }
++    });
++  }
++
++  document.addEventListener('keydown', (event) => {
++    if (event.key !== 'Escape') return;
++    const openMenu = menus.find((menu) => menu.open);
++    if (!openMenu) return;
++    const summary = openMenu.querySelector('summary');
++    close(openMenu);
++    summary?.focus();
++  });
++
++  document.addEventListener('pointerdown', (event) => {
++    for (const menu of menus) {
++      if (menu.open && !menu.contains(event.target)) close(menu);
++    }
++  });
++})();
+diff --git a/public/assets/styles.css b/public/assets/styles.css
+index a19d062..ce66b7b 100644
+--- a/public/assets/styles.css
++++ b/public/assets/styles.css
+@@ -3434,3 +3434,127 @@ body.writer-focus-mode .editorial-studio { padding-top: 1rem; }
+   .editorial-studio,
+   .writer-command-palette { display: none !important; }
+ }
++
++/* v2.3.2 responsive navigation and stale-markup hardening */
++.desktop-navigation {
++  min-width: 0;
++  flex: 1 1 auto;
++  display: flex;
++  align-items: stretch;
++  justify-content: space-between;
++  gap: clamp(0.75rem, 1.5vw, 1.5rem);
++}
++.desktop-nav {
++  min-width: 0;
++  display: flex;
++  align-items: stretch;
++  gap: clamp(0.15rem, 0.55vw, 0.55rem);
++}
++.desktop-nav a,
++.desktop-nav-menu summary,
++.desktop-nav-menu-link {
++  white-space: nowrap;
++  word-break: normal;
++  overflow-wrap: normal;
++  hyphens: none;
++}
++.desktop-nav a {
++  flex: 0 0 auto;
++  padding-inline: clamp(0.4rem, 0.72vw, 0.78rem);
++}
++.desktop-nav a:first-child { padding-left: 0.35rem; }
++.desktop-nav a::after { left: 0.4rem; right: 0.4rem; }
++.desktop-nav a:first-child::after { left: 0.35rem; }
++.desktop-nav-utilities {
++  flex: 0 0 auto;
++  display: flex;
++  align-items: stretch;
++  gap: 0.35rem;
++}
++.desktop-nav-menu {
++  position: relative;
++  display: flex;
++  align-items: stretch;
++}
++.desktop-nav-menu summary {
++  min-height: 3.2rem;
++  display: inline-flex;
++  align-items: center;
++  gap: 0.35rem;
++  padding-inline: 0.7rem;
