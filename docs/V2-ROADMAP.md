@@ -44,6 +44,7 @@ Every pass remains cumulative. Every release produces:
 - Diff preview before commit
 - Conflict detection and safe merge refusal
 - Role-ready architecture without requiring user accounts in the static core
+- v2.3.2 responsive navigation hardening keeps reader links visible and groups publisher/reader utilities without mid-word wrapping
 
 ## Release v2.4 — Search and Knowledge Desk
 

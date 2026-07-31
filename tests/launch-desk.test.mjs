@@ -55,7 +55,7 @@ function buildPublisherModeSnapshot() {
 
 test('current package preserves Launch Desk and a safe launch-package applicator', () => {
   const pkg = readJson(path.join(ROOT, 'package.json'));
-  assert.equal(pkg.version, '2.3.0');
+  assert.equal(pkg.version, '2.3.2');
   assert.equal(pkg.scripts['launch:apply'], 'node scripts/apply-launch-package.mjs');
   assert.equal(fs.existsSync(path.join(ROOT, 'scripts', 'apply-launch-package.mjs')), true);
 });
@@ -109,7 +109,7 @@ test('Launch package applicator backs up source files, disables demo mode, repla
       hub: 'primary-coverage', featured: true, featured_image: '', featured_image_alt: '', pdf_file: '', pdf_url: '', pdf_title: '',
       document_description: '', document_date: '', document_pages: 0, document_source: '', external_link_label: '', allow_download: false,
       show_author_bio: true, source_links: [], seo_title: 'Welcome', seo_description: 'A first draft prepared by Launch Desk.',
-      canonical_url: '', noindex: true, review_content: false, review_rights: true, review_accessibility: true, editor_notes: 'Draft.',
+      canonical_url: '', noindex: true, review_content: false, review_rights: true, review_accessibility: true, editor_notes: 'Draft',
       legacy_urls: [], story_blocks: [], classification: 'news', related_articles: [], update_history: [], corrections: []
     };
     const payload = {

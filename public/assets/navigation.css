@@ -1,0 +1,20 @@
+.desktop-navigation{min-width:0;flex:1 1 auto;display:flex;align-items:stretch;justify-content:space-between;gap:clamp(.75rem,1.5vw,1.5rem)}
+.desktop-nav{min-width:0;display:flex;align-items:stretch;gap:clamp(.15rem,.55vw,.55rem)}
+.desktop-nav a,.desktop-nav-menu summary,.desktop-nav-menu-link{white-space:nowrap;word-break:normal;overflow-wrap:normal;hyphens:none}
+.desktop-nav a{flex:0 0 auto;padding-inline:clamp(.4rem,.72vw,.78rem)}
+.desktop-nav a:first-child{padding-left:.35rem}.desktop-nav a::after{left:.4rem;right:.4rem}.desktop-nav a:first-child::after{left:.35rem}
+.desktop-nav-utilities{flex:0 0 auto;display:flex;align-items:stretch;gap:.35rem}
+.desktop-nav-menu{position:relative;display:flex;align-items:stretch}
+.desktop-nav-menu summary{position:relative;min-height:3.2rem;display:inline-flex;align-items:center;gap:.35rem;padding-inline:.7rem;color:var(--ink);font-family:var(--serif);font-size:.86rem;font-weight:700;letter-spacing:.018em;cursor:pointer;list-style:none}
+.desktop-nav-menu summary::-webkit-details-marker{display:none}
+.desktop-nav-menu summary:hover,.desktop-nav-menu summary:focus-visible,.desktop-nav-menu summary[aria-current='page'],.desktop-nav-menu[open] summary{color:var(--accent-dark)}
+.desktop-nav-menu summary::after{content:'';position:absolute;left:.7rem;right:.7rem;bottom:-1px;height:3px;background:transparent}
+.desktop-nav-menu[data-current-menu='true'] summary::after{background:var(--accent)}
+.desktop-nav-menu-panel{position:absolute;z-index:40;top:calc(100% + 1px);right:0;width:max-content;min-width:13rem;max-width:min(22rem,calc(100vw - 2rem));display:grid;padding:.45rem;border:1px solid var(--line-strong);border-top:0;background:var(--paper);box-shadow:var(--shadow-lg)}
+.desktop-nav-menu:not([open]) .desktop-nav-menu-panel{display:none}
+.desktop-nav-menu-link{display:block;padding:.75rem .85rem;color:var(--ink);font-family:var(--sans);font-size:.84rem;font-weight:800;text-decoration:none}
+.desktop-nav-menu-link:hover,.desktop-nav-menu-link:focus-visible,.desktop-nav-menu-link[aria-current='page']{color:var(--accent-dark);background:var(--brand-soft)}
+.navigation-inner{gap:0}.navigation-promise{display:none!important}
+@media(max-width:70rem){.desktop-navigation{display:none}.navigation-inner{min-height:auto;display:block}.mobile-nav{display:block;width:100%}}
+@media(min-width:70.0625rem){.mobile-nav{display:none}}
+@media print{.desktop-nav-menu-panel{display:none!important}}

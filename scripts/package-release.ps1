@@ -14,7 +14,7 @@ try {
   $deploySha = "tahai-press_v$version`_cloudflare-deploy.sha256"
 
   $excludePatterns = @(
-    '^\.(git|artifacts)$',
+    '^\.(git|artifacts|bootstrap)$',
     '^dist$',
     '^node_modules$',
     '^SHA256SUMS\.txt$',

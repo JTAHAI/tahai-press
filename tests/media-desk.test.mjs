@@ -20,7 +20,7 @@ const built = (relative) => fs.readFileSync(path.join(DIST, relative), 'utf8');
 
 test('v2.3 package exposes the browser-only Media Desk release', () => {
   const pkg = readJson(path.join(ROOT, 'package.json'));
-  assert.equal(pkg.version, '2.3.0');
+  assert.equal(pkg.version, '2.3.2');
   assert.equal(fs.existsSync(path.join(ROOT, 'docs', 'MEDIA-DESK.md')), true);
   assert.equal(fs.existsSync(path.join(ROOT, 'public', 'assets', 'media-desk.js')), true);
 });

@@ -52,3 +52,13 @@ test('mobile masthead preserves the publication name instead of squeezing it bes
   assert.match(css, /\.brand-copy strong\s*\{[\s\S]*?white-space: nowrap;[\s\S]*?word-break: normal;/);
   assert.match(css, /\.masthead-actions\s*\{[\s\S]*?width: 100%;[\s\S]*?flex-wrap: wrap;/);
 });
+
+test('dedicated responsive navigation stylesheet keeps labels unbroken before mobile takeover', () => {
+  const navigationCss = fs.readFileSync(path.join(ROOT, 'public/assets/navigation.css'), 'utf8');
+  assert.match(navigationCss, /white-space:nowrap/);
+  assert.match(navigationCss, /word-break:normal/);
+  assert.match(navigationCss, /overflow-wrap:normal/);
+  assert.match(navigationCss, /flex:0 0 auto/);
+  assert.match(navigationCss, /@media\(max-width:70rem\)/);
+  assert.match(navigationCss, /\.desktop-navigation\{display:none\}/);
+});

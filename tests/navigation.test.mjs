@@ -43,3 +43,16 @@ test('primary navigation marks the current route', () => {
   const hubs = fs.readFileSync(path.join(DIST, 'hubs/index.html'), 'utf8');
   assert.match(hubs, /href="\/hubs\/" aria-current="page"/);
 });
+
+
+test('desktop navigation is grouped by the post-build hardener', () => {
+  const home = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
+  const primary = home.match(/<nav class="desktop-nav"[^>]*>([\s\S]*?)<\/nav>/)?.[1] || '';
+  const utilities = home.match(/<nav class="desktop-nav-utilities"[^>]*>([\s\S]*?)<\/nav>/)?.[1] || '';
+  for (const label of ['Stories', 'Sections', 'Series', 'Search', 'Coverage Hubs', 'About', 'Submit']) assert.match(primary, new RegExp(`>${label}<`));
+  assert.match(utilities, /<summary>Publisher tools/);
+  assert.match(utilities, /<summary>Reader desk/);
+  assert.match(home, /href="\/assets\/navigation\.css\?v=2\.3\.2"/);
+  assert.match(home, /src="\/assets\/navigation\.js\?v=2\.3\.2" defer/);
+  assert.doesNotMatch(home, /class="navigation-promise"/);
+});

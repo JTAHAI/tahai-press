@@ -19,6 +19,8 @@ function walk(directory) {
 
 walk(ROOT);
 
+if (fs.existsSync(path.join(ROOT, '.bootstrap'))) errors.push('Obsolete .bootstrap payload directory remains in the source tree.');
+
 for (const { full, relative } of files) {
   if (relative === 'scripts/check-repository-cleanliness.mjs') continue;
   if (/^(?:PASS\d|proof\/pass-|docs\/PASS-)/i.test(relative) || /pass-\d{2}/i.test(relative)) {
