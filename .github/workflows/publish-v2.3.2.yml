@@ -1,9 +1,9 @@
 name: Publish TAHAI Press v2.3.2
 
 on:
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
 
 permissions:
   contents: write
@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   publish:
+    if: github.repository == 'JTAHAI/tahai-press'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
