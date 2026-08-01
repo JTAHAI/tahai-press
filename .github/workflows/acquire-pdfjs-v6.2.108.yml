@@ -1,0 +1,43 @@
+name: Acquire verified PDF.js 6.2.108
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/acquire-pdfjs-v6.2.108.yml
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Download official PDF.js distribution
+        shell: bash
+        run: |
+          set -e
+          VERSION=6.2.108
+          ASSET="pdfjs-${VERSION}-dist.zip"
+          URL="https://github.com/mozilla/pdf.js/releases/download/v${VERSION}/${ASSET}"
+          curl --fail --location --silent --show-error --output "$ASSET" "$URL"
+          mkdir pdfjs-v${VERSION}-dist
+          unzip -q "$ASSET" -d pdfjs-v${VERSION}-dist
+          sha256sum "$ASSET" > pdfjs-v${VERSION}-dist/ARCHIVE.sha256
+          find pdfjs-v${VERSION}-dist -type f -print0 | sort -z | xargs -0 sha256sum > pdfjs-v${VERSION}-dist/FILES.sha256
+          printf '%s\n' "$VERSION" > pdfjs-v${VERSION}-dist/VERSION.txt
+          test -f pdfjs-v${VERSION}-dist/web/viewer.html
+          test -f pdfjs-v${VERSION}-dist/web/viewer.mjs
+          test -f pdfjs-v${VERSION}-dist/web/viewer.css
+          test -f pdfjs-v${VERSION}-dist/build/pdf.mjs
+          test -f pdfjs-v${VERSION}-dist/build/pdf.worker.mjs
+          test -f pdfjs-v${VERSION}-dist/LICENSE
+
+      - name: Upload verified PDF.js distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdfjs-v6.2.108-dist
+          path: pdfjs-v6.2.108-dist
+          if-no-files-found: error
+          retention-days: 1
