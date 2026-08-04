@@ -1,0 +1,48 @@
+name: Export theme release source
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Create clean source archive
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+          root = Path('.').resolve()
+          out = root / 'tahai-press-branch-source.zip'
+          excluded_parts = {'.git', 'node_modules', 'dist', '.artifacts'}
+          files = []
+          for path in root.rglob('*'):
+              if not path.is_file() or path == out:
+                  continue
+              rel = path.relative_to(root)
+              if any(part in excluded_parts for part in rel.parts):
+                  continue
+              files.append((rel.as_posix(), path))
+          with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+              for rel, path in sorted(files):
+                  info = zipfile.ZipInfo(rel, (1980, 1, 1, 0, 0, 0))
+                  info.compress_type = zipfile.ZIP_DEFLATED
+                  info.external_attr = 0o100644 << 16
+                  archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+          print(f'Archived {len(files)} files')
+          PY
+      - name: Upload clean source
+        uses: actions/upload-artifact@v4
+        with:
+          name: tahai-press-branch-source
+          path: tahai-press-branch-source.zip
+          if-no-files-found: error
+          retention-days: 1
