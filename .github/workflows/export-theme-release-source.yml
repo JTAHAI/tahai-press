@@ -14,35 +14,27 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Create clean source archive
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate normalized release lockfile
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          import zipfile
-          root = Path('.').resolve()
-          out = root / 'tahai-press-branch-source.zip'
-          excluded_parts = {'.git', 'node_modules', 'dist', '.artifacts'}
-          files = []
-          for path in root.rglob('*'):
-              if not path.is_file() or path == out:
-                  continue
-              rel = path.relative_to(root)
-              if any(part in excluded_parts for part in rel.parts):
-                  continue
-              files.append((rel.as_posix(), path))
-          with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-              for rel, path in sorted(files):
-                  info = zipfile.ZipInfo(rel, (1980, 1, 1, 0, 0, 0))
-                  info.compress_type = zipfile.ZIP_DEFLATED
-                  info.external_attr = 0o100644 << 16
-                  archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
-          print(f'Archived {len(files)} files')
-          PY
-      - name: Upload clean source
+          node - <<'NODE'
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.version = '2.3.3';
+          pkg.dependencies = { ...(pkg.dependencies || {}), sharp: '0.34.1' };
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          NODE
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          node -e "const p=require('./package-lock.json'); if(p.version!=='2.3.3'||p.packages[''].dependencies.sharp!=='0.34.1') process.exit(1)"
+      - name: Upload normalized lockfile
         uses: actions/upload-artifact@v4
         with:
-          name: tahai-press-branch-source
-          path: tahai-press-branch-source.zip
+          name: tahai-press-normalized-lockfile
+          path: package-lock.json
           if-no-files-found: error
           retention-days: 1
