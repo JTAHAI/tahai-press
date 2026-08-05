@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "product": "TAHAI Press",
+  "release": "2.10.0",
+  "title": "Forms and Private Submission Inbox",
+  "generatedAt": "2026-08-05T02:10:00Z",
+  "compatibility": {
+    "minimumTahaiPress": "2.9.0",
+    "maximumExclusive": "3.0.0",
+    "staticPublicationRequired": false,
+    "optionalService": true
+  },
+  "dependencies": {
+    "hono": "4.12.32",
+    "wrangler": "4.113.0",
+    "yjsOptional": "13.6.31"
+  },
+  "verification": {
+    "cumulativeTests": 124,
+    "passed": 124,
+    "failed": 0,
+    "cleanExtractions": 2,
+    "deterministicOverlay": true,
+    "doctorPassed": true,
+    "releaseVerifierPassed": true,
+    "jsonFilesParsedPerExtraction": 88,
+    "honoRuntimeInstalled": false,
+    "honoRuntimeReason": "Internal verification registry returned 404; framework was not vendored or substituted."
+  },
+  "capabilities": [
+    "contact submissions",
+    "anonymous-capable public-record tips",
+    "contributor proposals",
+    "server-side Turnstile validation",
+    "exact-origin CORS",
+    "optional salted-hash rate limiting",
+    "D1 private inbox",
+    "optional R2 attachments",
+    "signature and checksum validation",
+    "editorial status workflow",
+    "single JSON export",
+    "filtered NDJSON export",
+    "private attachment download",
+    "record deletion",
+    "scheduled retention purge",
+    "redacted logs",
+    "three accessible form templates"
+  ],
+  "limits": {
+    "attachmentCount": 3,
+    "attachmentBytesEach": 5242880,
+    "attachmentBytesCombined": 10485760,
+    "retentionDaysDefault": 90,
+    "adminListMaximum": 100,
+    "turnstileTokenCharactersMaximum": 2048
+  },
+  "artifacts": {
+    "cumulativeOverlay": {
+      "file": "TAHAI_PRESS_V2.10.0_FORMS_PRIVATE_SUBMISSION_INBOX_OVERLAY.zip",
+      "sha256": "b5744b80d17769bcb7170b951e5ee8a61708780d293b69f21111c2743bd5fe8e",
+      "bytes": 529319
+    },
+    "workerSource": {
+      "file": "TAHAI_PRESS_V2.10.0_SUBMISSION_INBOX_WORKER_SOURCE.zip",
+      "sha256": "0ce2223c13f759c7be40bc82f583d99f90546f14f96dffe95e97fa000ebb1a38",
+      "bytes": 21281
+    },
+    "ciLog": {
+      "file": "TAHAI_PRESS_V2.10.0_FORMS_PRIVATE_INBOX_CI.log",
+      "sha256": "c628b7bd1af657362f47982a8eb423cbd6deca7cf7e1b18c9c37e95feacb1541",
+      "bytes": 46424
+    }
+  }
+}
