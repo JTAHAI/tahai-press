@@ -1,15 +1,15 @@
 name: Quality checks
 
+# Automatic GitHub Actions are intentionally disabled.
+# Run this workflow only when a maintainer explicitly requests it from GitHub.
 on:
-  push:
-  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: quality-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: quality-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
