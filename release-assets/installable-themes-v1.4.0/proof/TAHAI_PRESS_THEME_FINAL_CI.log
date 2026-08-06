@@ -1,0 +1,51 @@
+TAHAI Press Installable Themes — Final Cumulative Release Proof
+================================================================
+
+Release versions
+----------------
+Overlay: 1.4.0
+Theme engine: 1.4.0
+Theme Manager: 1.4.0
+Theme hardening: 1.0.0
+Layout contracts: 1.0.0
+Official collection: 1.1.0
+TAHAI Press compatibility: >=2.9.0 and <3.0.0
+
+Verification completed
+----------------------
+PASS JSON parse validation for all JSON sources and schemas
+PASS cumulative Node test suite: 82/82
+PASS official collection strict hardening: 8/8 themes
+PASS official contrast matrix: 280/280 checks
+PASS official theme install-all into simulated TAHAI Press 2.9.0 repository
+PASS High Contrast 1.1.0 activation
+PASS active-theme build-context staging
+PASS installed-theme strict hardening: 8/8 themes
+PASS isolated install/switch/rollback/stage recovery drill
+PASS deterministic export of 8 standalone theme ZIPs
+PASS strict validation of all 8 exported theme ZIPs
+PASS clean extraction cumulative test suite: 82/82
+PASS cumulative overlay byte-for-byte reproduction
+PASS official collection bundle generation
+
+Hardening coverage
+------------------
+- complete checksums.sha256 inventory and byte verification
+- ZIP traversal, duplicate path, symlink, encryption, ZIP64, CRC, size, and ratio checks
+- scripts, executables, remote CSS, active SVG, and unsafe asset rejection
+- manifest and TAHAI Press compatibility gates
+- component, region, variant, and layout contract boundaries
+- install metadata schema 2 and installed-byte digest comparison
+- active-state digest verification before resolution and staging
+- 20 required design tokens
+- default, paper, sepia, dark, and high-contrast surfaces
+- text, muted text, links, visited links, controls, and focus contrast
+- visible focus, forced-colors, reduced-motion, and print requirements
+- package, CSS, asset, and file-count budgets
+
+Environment limitation
+----------------------
+PowerShell was not installed in the Linux verification environment. The Windows
+installer was source-reviewed. Every Node command invoked by the installer was
+executed independently and passed. Runtime execution of the .ps1 remains a
+Windows-side verification item.

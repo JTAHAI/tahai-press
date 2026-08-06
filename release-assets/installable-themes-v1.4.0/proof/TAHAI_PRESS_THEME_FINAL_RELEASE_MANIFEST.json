@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "product": "TAHAI Press Installable Themes",
+  "release": "Final cumulative theme system",
+  "overlayVersion": "1.4.0",
+  "themeEngineVersion": "1.4.0",
+  "themeManagerVersion": "1.4.0",
+  "hardeningVersion": "1.0.0",
+  "layoutContractVersion": "1.0.0",
+  "officialCollectionVersion": "1.1.0",
+  "pressCompatibility": {
+    "minimum": "2.9.0",
+    "maximumExclusive": "3.0.0"
+  },
+  "verification": {
+    "tests": 82,
+    "passed": 82,
+    "failed": 0,
+    "officialThemes": 8,
+    "officialThemesHardened": 8,
+    "layoutSurfaces": 7,
+    "themeSurfaceCombinations": 56,
+    "contrastChecksPerTheme": 35,
+    "officialContrastChecks": 280,
+    "cleanExtractionPassed": true,
+    "byteReproductionPassed": true,
+    "officialAuditPassed": true,
+    "installedAuditPassed": true,
+    "recoveryDrillPassed": true,
+    "buildContextTheme": "tahai.high-contrast@1.1.0",
+    "standaloneThemePackagesValidated": 8,
+    "powershellRuntimeTested": false,
+    "powershellNote": "PowerShell was not available in the Linux verification environment; the installer was source-reviewed and its Node commands were executed independently."
+  },
+  "securityControls": [
+    "complete SHA-256 package inventory",
+    "ZIP traversal and decompression defenses",
+    "script and executable rejection",
+    "local-only CSS and assets",
+    "sanitized SVG",
+    "stable bounded layout contracts",
+    "installed-theme digest verification",
+    "active-state digest verification",
+    "accessibility contrast gates",
+    "focus and forced-colors gates",
+    "reduced-motion gate",
+    "print gate",
+    "performance budgets",
+    "isolated recovery drill"
+  ],
+  "artifacts": [
+    {
+      "name": "TAHAI_PRESS_THEME_FINAL_OVERLAY_v1.4.0.zip",
+      "bytes": 835980,
+      "sha256": "8c17e366e49d497a3fe07482bbd02c72af0ed10d5af51a10d91b6f13c91c1e30"
+    },
+    {
+      "name": "TAHAI_PRESS_OFFICIAL_THEME_COLLECTION_v1.1.0.zip",
+      "bytes": 560497,
+      "sha256": "2bf45d4fb696e7868f336d7d4ff007618a56eee724c79e2f8d27cbf6b8fecd50"
+    },
+    {
+      "name": "themes/TAHAI_PRESS_THEME_ARTS_AND_CULTURE_v1.1.0.zip",
+      "bytes": 69411,
+      "sha256": "e8b1a452c32abbd70925368aef64e50296f0f2c3d1a6eb4cdd94e21714f9501a"
+    },
+    {
+      "name": "themes/TAHAI_PRESS_THEME_CIVIC_RECORD_v1.1.0.zip",
+      "bytes": 68743,
+      "sha256": "6f9a2c7aafa4f37a27b75f41e09cc6e7dec5c1d09434bc62c07ded135103a9bd"
+    },
+    {
+      "name": "themes/TAHAI_PRESS_THEME_CLASSIC_BROADSHEET_v1.3.0.zip",
+      "bytes": 68395,
+      "sha256": "7602e18d8965ba179ecfb2a7f3f29dff22351c616a0331cd94e9181a78477cb2"
+    },
+    {
+      "name": "themes/TAHAI_PRESS_THEME_COMMUNITY_WEEKLY_v1.1.0.zip",
+      "bytes": 70244,
+      "sha256": "42a391e33f82a5e18196839ad33fbbe0952d00e0b4e6e925b63fbf61af553769"
+    },
+    {
+      "name": "themes/TAHAI_PRESS_THEME_HIGH_CONTRAST_v1.1.0.zip",
+      "bytes": 64965,
+      "sha256": "438a66fa667e61183894c57069b555229bef263ece28e02133a7da1eac9e235d"
+    },
+    {
+      "name": "themes/TAHAI_PRESS_THEME_INVESTIGATIVE_JOURNAL_v1.1.0.zip",
+      "bytes": 69594,
+      "sha256": "4f88f8dca601a7ceb687976f5d8a646525d76434987be0b510870af3b1dfe0fc"
+    },
+    {
+      "name": "themes/TAHAI_PRESS_THEME_MODERN_DAILY_v1.1.0.zip",
+      "bytes": 69314,
+      "sha256": "c893f8aace7b0035711f59e563b000945d892409c7a12d078ff32e113bbe007f"
+    },
+    {
+      "name": "themes/TAHAI_PRESS_THEME_WARM_READING_EDITION_v1.1.0.zip",
+      "bytes": 70616,
+      "sha256": "6ddd106fa0114c1a8e9c7df37bd27baf1f89b8be25f3cc1807af7e3ec0c38584"
+    }
+  ]
+}
