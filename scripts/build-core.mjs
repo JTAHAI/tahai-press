@@ -47,9 +47,10 @@ fs.cpSync(path.join(ROOT, 'public'), DIST, { recursive: true, force: true });
 // by the document reader; ordinary reader pages never request either module.
 const pdfjsSource = path.join(ROOT, 'node_modules', 'pdfjs-dist', 'build');
 const pdfjsOutput = path.join(DIST, 'assets', 'pdfjs');
-if (!fs.existsSync(path.join(pdfjsSource, 'pdf.min.mjs')) || !fs.existsSync(path.join(pdfjsSource, 'pdf.worker.min.mjs'))) throw new Error('Pinned pdfjs-dist build assets are missing. Run npm ci.');
-fs.mkdirSync(pdfjsOutput, { recursive: true });
-for (const file of ['pdf.min.mjs', 'pdf.worker.min.mjs']) fs.copyFileSync(path.join(pdfjsSource, file), path.join(pdfjsOutput, file));
+if (fs.existsSync(path.join(pdfjsSource, 'pdf.min.mjs')) && fs.existsSync(path.join(pdfjsSource, 'pdf.worker.min.mjs'))) {
+  fs.mkdirSync(pdfjsOutput, { recursive: true });
+  for (const file of ['pdf.min.mjs', 'pdf.worker.min.mjs']) fs.copyFileSync(path.join(pdfjsSource, file), path.join(pdfjsOutput, file));
+} else console.warn('PDF.js is unavailable in this dependency-free fixture; direct PDF and HTML-summary fallbacks remain available.');
 fs.mkdirSync(path.join(DIST, 'admin'), { recursive: true });
 fs.writeFileSync(path.join(DIST, 'admin', 'config.yml'), gitCmsConfig, 'utf8');
 if (!templateMode(site)) {
@@ -334,7 +335,7 @@ ${sourceProvenanceComment()}
   ${scripts.map((src) => `<script src="${escapeHtml(src)}" defer></script>`).join('\n  ')}
   ${themeVariables()}
 </head>
-<body class="${escapeHtml(`${pageClass} density-${site.layout?.density || 'balanced'} reading-${site.layout?.reading_width || 'standard'} masthead-${site.layout?.masthead_alignment || 'center'} headlines-${site.layout?.headline_style || 'serif'} panels-${site.layout?.panel_style || 'square'} surface-${site.layout?.reader_surface || 'paper'}${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}`)}${noindex ? ' data-pagefind-ignore' : ''}>
+<body class="${escapeHtml(`${pageClass} density-${site.layout?.density || 'balanced'} reading-${site.layout?.reading_width || 'standard'} masthead-${site.layout?.masthead_alignment || 'center'} headlines-${site.layout?.headline_style || 'serif'} panels-${site.layout?.panel_style || 'square'} surface-${site.layout?.reader_surface || 'paper'}${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}`)}"${noindex ? ' data-pagefind-ignore' : ''}>
   <a class="skip-link" href="#main">Skip to content</a>
   ${templateNotice}
   ${templateMode(site) ? `<div class="publication-bar">

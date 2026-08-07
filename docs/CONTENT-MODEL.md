@@ -105,7 +105,7 @@ Articles store stable slugs for authors, categories, and hubs. Pages CMS display
 
 ## PDF reader behavior
 
-Local and remotely hosted PDFs used by `pdf` or `mixed` articles render inside a responsive native-browser frame. The site does not bundle a third-party PDF rendering engine. This keeps the starter small and avoids a separate PDF-library update stream, but preview behavior can vary by browser.
+Local and remotely hosted PDFs used by `pdf` or `mixed` articles render in a responsive, route-scoped PDF.js canvas reader. The pinned PDF.js modules are copied as same-origin generated output and loaded only by document routes; direct links and the HTML alternative remain the reliable fallback.
 
 The generated page always includes direct access outside the embedded preview:
 
@@ -115,7 +115,7 @@ The generated page always includes direct access outside the embedded preview:
 - print output suppresses the embedded viewer and prints an absolute document URL;
 - a no-JavaScript message explains that the file and direct links still work.
 
-JavaScript progressively adds fit-width, fit-page, full-screen, loading status, and print-page controls. These controls are hidden when JavaScript is unavailable, preventing dead or misleading UI. Local PDF file size is derived during the build and displayed automatically.
+JavaScript progressively adds page navigation, zoom, fit-width, fit-page, full-screen, loading status, and print-page controls. These controls are hidden when JavaScript is unavailable, preventing dead or misleading UI. Local PDF file size is derived during the build and displayed automatically.
 
 
 ## Pages CMS publication gates

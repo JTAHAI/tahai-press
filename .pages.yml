@@ -1022,6 +1022,16 @@ content:
             description: "Optional internal notes stored in Git. The site generator never renders this field publicly."
             options:
               maxlength: 2000
+          - name: search_metadata
+            label: Search metadata (explicit public labels)
+            type: object
+            description: "Optional public labels only. Do not infer sensitive relationships from article text."
+            fields:
+              - { name: organization, label: Organization, type: string, required: false }
+              - { name: section, label: Section, type: string, required: false }
+              - { name: agency, label: Agency, type: string, required: false }
+              - { name: jurisdiction, label: Jurisdiction, type: string, required: false }
+              - { name: place, label: Place, type: string, required: false }
 
   - name: newsroom
     label: Publication data
