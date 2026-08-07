@@ -35,6 +35,7 @@
     "audit:reader": "node scripts/audit-reader-experience.mjs --report .artifacts/reader-experience-audit.json",
     "audit:media": "node scripts/audit-media.mjs --report .artifacts/media-health.json --strict",
     "audit:performance": "node scripts/audit-performance.mjs --report .artifacts/performance-audit.json",
+    "audit:security": "node scripts/create-security-report.mjs",
     "newsroom:health": "node scripts/create-newsroom-dashboard.mjs",
     "newsroom:promote": "node scripts/promote-newsroom-draft.mjs",
     "launch:apply": "node scripts/apply-launch-package.mjs",
