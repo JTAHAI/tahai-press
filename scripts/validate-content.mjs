@@ -206,6 +206,19 @@ function validateStoryBlocks(article) {
       if (!validWebOrLocalUrl(block.url || '')) publishIssue(article, `${base}.url must be site-relative or HTTP(S)`);
       validateLocalAsset(block.url, article.__file, `${base}.url`);
     }
+    if (['numbered_findings', 'source_list', 'related_coverage'].includes(block.type)) {
+      if (!Array.isArray(block.items) || block.items.length < 1 || block.items.length > 30) publishIssue(article, `${base}.items must contain between 1 and 30 entries`);
+      else for (const [itemIndex, item] of block.items.entries()) if (typeof item !== 'string' || !item.trim() || item.length > 1000) issue(errors, article.__file, `${base}.items[${itemIndex}] must be 1 to 1000 characters`);
+    }
+    if (block.type === 'data_table') {
+      if (!Array.isArray(block.columns) || block.columns.length < 1 || block.columns.length > 12) publishIssue(article, `${base}.columns must contain between 1 and 12 labels`);
+      if (!Array.isArray(block.rows) || block.rows.length < 1 || block.rows.length > 100) publishIssue(article, `${base}.rows must contain between 1 and 100 rows`);
+      else for (const [rowIndex, row] of block.rows.entries()) {
+        const cells = Array.isArray(row) ? row : typeof row === 'string' ? row.split('|').map((cell) => cell.trim()) : [];
+        if (cells.length !== block.columns.length || cells.some((cell) => typeof cell !== 'string' || cell.length > 1000)) issue(errors, article.__file, `${base}.rows[${rowIndex}] must match columns with cells of 1000 characters or fewer`);
+      }
+    }
+    if (['correction_notice', 'update_notice', 'editor_note', 'definition_box', 'methodology_box'].includes(block.type) && !String(block.body || '').trim()) publishIssue(article, `${base}.body is required`);
   }
 }
 

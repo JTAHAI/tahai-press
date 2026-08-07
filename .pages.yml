@@ -490,6 +490,133 @@ content:
                     type: text
                     options:
                       maxlength: 600
+              - name: numbered_findings
+                label: Numbered findings
+                fields:
+                  - name: heading
+                    label: Heading
+                    type: string
+                    default: Findings
+                  - name: items
+                    label: Findings
+                    type: string
+                    required: true
+                    list:
+                      min: 1
+                      max: 30
+              - name: source_list
+                label: Source list
+                fields:
+                  - name: heading
+                    label: Heading
+                    type: string
+                    default: Sources
+                  - name: items
+                    label: Sources
+                    type: string
+                    required: true
+                    list:
+                      min: 1
+                      max: 30
+              - name: data_table
+                label: Accessible data table
+                fields:
+                  - name: heading
+                    label: Table heading
+                    type: string
+                    default: Data table
+                  - name: description
+                    label: What this table shows
+                    type: text
+                  - name: columns
+                    label: Column labels
+                    type: string
+                    required: true
+                    list:
+                      min: 1
+                      max: 12
+                  - name: rows
+                    label: Rows
+                    type: string
+                    required: true
+                    description: "One row per entry. Separate cells with | in the same order as the columns."
+                    list:
+                      min: 1
+                      max: 100
+              - name: correction_notice
+                label: Correction notice
+                fields:
+                  - name: heading
+                    label: Heading
+                    type: string
+                    default: Correction
+                  - name: body
+                    label: Correction text
+                    type: rich-text
+                    required: true
+                    options: { format: markdown, switcher: true }
+              - name: update_notice
+                label: Update notice
+                fields:
+                  - name: heading
+                    label: Heading
+                    type: string
+                    default: Update
+                  - name: body
+                    label: Update text
+                    type: rich-text
+                    required: true
+                    options: { format: markdown, switcher: true }
+              - name: related_coverage
+                label: Related coverage list
+                fields:
+                  - name: heading
+                    label: Heading
+                    type: string
+                    default: Related coverage
+                  - name: items
+                    label: Coverage links or notes
+                    type: string
+                    required: true
+                    list:
+                      min: 1
+                      max: 30
+              - name: editor_note
+                label: Editor’s note
+                fields:
+                  - name: heading
+                    label: Heading
+                    type: string
+                    default: Editor’s note
+                  - name: body
+                    label: Note
+                    type: rich-text
+                    required: true
+                    options: { format: markdown, switcher: true }
+              - name: definition_box
+                label: Definition or background box
+                fields:
+                  - name: heading
+                    label: Heading
+                    type: string
+                    default: Background
+                  - name: body
+                    label: Definition or background
+                    type: rich-text
+                    required: true
+                    options: { format: markdown, switcher: true }
+              - name: methodology_box
+                label: Methodology box
+                fields:
+                  - name: heading
+                    label: Heading
+                    type: string
+                    default: Methodology
+                  - name: body
+                    label: Methodology
+                    type: rich-text
+                    required: true
+                    options: { format: markdown, switcher: true }
           - name: author
             label: Author or contributor
             type: reference
