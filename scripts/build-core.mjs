@@ -322,7 +322,7 @@ ${sourceProvenanceComment()}
   ${head.html}
   <link rel="stylesheet" href="/assets/styles.css">
   <link rel="stylesheet" href="/assets/navigation.css?v=${assetVersion}">
-  <script src="/assets/pdf-reader.js" defer></script>
+  ${article && ['pdf', 'mixed'].includes(article.article_type) ? '<script src="/assets/pdf-reader.js" defer></script>' : ''}
   <script src="/assets/search.js" defer></script>
   <script src="/assets/crossword.js" defer></script>
   <script src="/assets/media-gallery.js" defer></script>
@@ -650,18 +650,24 @@ function renderPdfDocument(article, pdf, { primary = false } = {}) {
     <div class="pdf-reader" id="${readerId}" data-pdf-reader data-pdf-source="${directUrl}" data-default-view="${defaultView}">
       <div class="pdf-toolbar" role="toolbar" aria-label="PDF preview controls">
         <div class="pdf-toolbar-status"><span class="pdf-status-dot" aria-hidden="true"></span><span data-pdf-status aria-live="polite">PDF preview</span></div>
+        <div class="pdf-toolbar-group" role="group" aria-label="Page navigation">
+          <button class="pdf-control" type="button" data-pdf-previous disabled><span>Previous</span></button>
+          <span class="pdf-page-count" data-pdf-page-count>Page 0 of 0</span>
+          <button class="pdf-control" type="button" data-pdf-next disabled><span>Next</span></button>
+        </div>
         <div class="pdf-toolbar-group pdf-view-controls" role="group" aria-label="Page fit">
           <button class="pdf-control" type="button" data-pdf-view="FitH" aria-pressed="${defaultView === 'FitH'}">${icon('fitWidth')}<span>Fit width</span></button>
           <button class="pdf-control" type="button" data-pdf-view="Fit" aria-pressed="${defaultView === 'Fit'}">${icon('fitPage')}<span>Fit page</span></button>
         </div>
+        <div class="pdf-toolbar-group" role="group" aria-label="Zoom controls"><button class="pdf-control" type="button" data-pdf-zoom-out><span>Zoom out</span></button><button class="pdf-control" type="button" data-pdf-zoom-in><span>Zoom in</span></button></div>
         <div class="pdf-toolbar-group pdf-toolbar-actions" role="group" aria-label="Preview actions">
           <button class="pdf-control" type="button" data-pdf-fullscreen aria-controls="${readerId}" aria-pressed="false">${icon('expand')}<span>Full screen</span></button>
           <a class="pdf-control" href="${directUrl}" target="_blank" rel="noopener noreferrer">${icon('open')}<span>Open</span>${newTabNote()}</a>
         </div>
       </div>
-      <div class="pdf-frame pdf-stage" id="${frameId}" data-pdf-stage tabindex="-1" role="region" aria-label="Embedded PDF preview: ${escapeHtml(title)}">
-        <div class="pdf-loading" data-pdf-loading><span class="pdf-loading-spinner" aria-hidden="true"></span><p>Preparing the browser PDF preview…</p></div>
-        <iframe src="${previewUrl}" data-pdf-frame title="${escapeHtml(title)} PDF preview" aria-describedby="${summaryId} ${supportId}" loading="${primary ? 'eager' : 'lazy'}" referrerpolicy="strict-origin-when-cross-origin" allow="fullscreen"></iframe>
+      <div class="pdf-frame pdf-stage" id="${frameId}" data-pdf-stage tabindex="-1" role="region" aria-label="Embedded PDF preview: ${escapeHtml(title)}" aria-describedby="${summaryId} ${supportId}">
+        <div class="pdf-loading" data-pdf-loading><span class="pdf-loading-spinner" aria-hidden="true"></span><p>Preparing the accessible PDF preview…</p></div>
+        <canvas data-pdf-canvas hidden></canvas>
       </div>
       <div class="pdf-mobile-actions" aria-label="Mobile PDF actions">
         <a class="pdf-action" href="${directUrl}" target="_blank" rel="noopener noreferrer">${icon('open')}<span>Open in browser</span>${newTabNote()}</a>${download}

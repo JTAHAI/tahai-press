@@ -17,7 +17,8 @@ test('PDF record renders a progressively enhanced reader with direct fallbacks',
   assert.match(html, /data-pdf-view="FitH" aria-pressed="true"/);
   assert.match(html, /data-pdf-view="Fit" aria-pressed="false"/);
   assert.match(html, /data-pdf-fullscreen aria-controls="pdf-reader-sample-pdf-record"/);
-  assert.match(html, /loading="eager"/);
+  assert.match(html, /data-pdf-canvas hidden/);
+  assert.match(html, /data-pdf-previous disabled/);
   assert.match(html, /Preview not working\?/);
   assert.match(html, /<noscript>/);
   assert.match(html, /https:\/\/example\.pages\.dev\/uploads\/documents\/sample-document\.pdf/);
@@ -27,8 +28,8 @@ test('mixed article honors fit-page default and lazy-loads its supporting previe
   const html = article('sample-pdf-story');
   assert.match(html, /data-default-view="Fit"/);
   assert.match(html, /data-pdf-view="Fit" aria-pressed="true"/);
-  assert.match(html, /#view=Fit&amp;toolbar=1&amp;navpanes=0/);
-  assert.match(html, /loading="lazy"/);
+  assert.match(html, /data-default-view="Fit"/);
+  assert.match(html, /data-pdf-zoom-in/);
 });
 
 test('local document metadata includes an automatically derived PDF file size', () => {
@@ -42,10 +43,10 @@ test('PDF reader script provides loading, view switching, and fullscreen state',
   assert.match(script, /data-pdf-view/);
   assert.match(script, /requestFullscreen/);
   assert.match(script, /fullscreenchange/);
-  assert.match(script, /12000/);
-  assert.match(script, /initialLoadingMessage/);
-  assert.match(script, /message === 'Loading preview…' \? initialLoadingMessage : message/);
-  assert.match(script, /Preview may still be loading/);
+  assert.match(script, /import\('\/assets\/pdfjs\/pdf\.min\.mjs'\)/);
+  assert.match(script, /GlobalWorkerOptions\.workerSrc/);
+  assert.match(script, /getDocument/);
+  assert.match(script, /data-pdf-previous/);
   assert.match(script, /window\.print\(\)/);
   const builder = read('scripts/build.mjs');
   assert.match(builder, /split\('#'\)\[0\]/);
@@ -60,6 +61,12 @@ test('PDF reader CSS includes compact mobile actions, fullscreen layout, and pri
   assert.match(css, /\.print-document-link/);
   assert.match(css, /@media print/);
   assert.match(css, /\.js \.pdf-view-controls/);
+});
+
+test('PDF.js enhancement is loaded only on document routes', () => {
+  assert.match(article('sample-pdf-record'), /\/assets\/pdf-reader\.js/);
+  const home = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
+  assert.doesNotMatch(home, /\/assets\/pdf-reader\.js/);
 });
 
 test('schema, CMS, and validator agree on PDF default-view options', () => {
