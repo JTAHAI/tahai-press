@@ -857,6 +857,35 @@ function renderHomeModule(module) {
   const type = module.type;
   if (module.enabled === false) return '';
   if (['setup', 'license', 'product'].includes(type) && !templateMode(site)) return '';
+  if (type === 'lead_story') return renderHomeModule({ ...module, type: 'featured' });
+  if (type === 'secondary_headlines') return renderHomeModule({ ...module, type: 'latest', heading: module.heading || 'More headlines', count: module.count || 3 });
+  if (type === 'coverage_hub') return renderHomeModule({ ...module, type: 'hubs' });
+  if (type === 'submission_callout') return renderHomeModule({ ...module, type: 'submit' });
+  if (type === 'category_strip') {
+    return `<section class="section shell" aria-labelledby="category-strip-heading"><div class="section-heading"><div><p class="eyebrow">Browse by desk</p><h2 id="category-strip-heading">${escapeHtml(module.heading || 'Categories')}</h2></div></div><div class="topic-chip-list">${categories.map((category) => `<a class="topic-chip" href="/categories/${escapeHtml(category.slug)}/">${escapeHtml(category.name)}</a>`).join('')}</div></section>`;
+  }
+  if (type === 'public_record_desk' || type === 'featured_investigation') {
+    const classification = type === 'public_record_desk' ? 'public-record' : 'investigation';
+    const items = published.filter((article) => classificationInfo(article.classification).key === classification).slice(0, Math.max(1, Math.min(12, Number(module.count || 3))));
+    const label = type === 'public_record_desk' ? 'Public record desk' : 'Featured investigation';
+    return `<section class="section shell" aria-labelledby="${type}-heading"><div class="section-heading"><div><p class="eyebrow">${label}</p><h2 id="${type}-heading">${escapeHtml(module.heading || label)}</h2></div></div>${items.length ? `<div class="story-grid">${items.map((article) => articleCard(article)).join('')}</div>` : '<div class="empty-state"><p>Published coverage will appear here.</p></div>'}</section>`;
+  }
+  if (type === 'editors_note' || type === 'custom_text_panel') {
+    const label = type === 'editors_note' ? 'From the editor' : 'Information';
+    const heading = module.heading || (type === 'editors_note' ? 'Editor’s note' : 'Community notice');
+    const body = module.body || module.text || site.editorial_promise || site.description;
+    return `<section class="section shell"><aside class="story-block story-block-callout callout-context"><p class="eyebrow">${label}</p><h2>${escapeHtml(heading)}</h2><div class="prose">${renderMarkdown(String(body))}</div></aside></section>`;
+  }
+  if (type === 'recently_updated') {
+    const items = [...published].sort((a, b) => new Date(b.updated_at || b.published_at) - new Date(a.updated_at || a.published_at)).slice(0, Math.max(1, Math.min(12, Number(module.count || 5))));
+    return `<section class="section shell" aria-labelledby="recently-updated-heading"><div class="section-heading"><div><p class="eyebrow">Revision ledger</p><h2 id="recently-updated-heading">${escapeHtml(module.heading || 'Most recently updated')}</h2></div></div><div class="story-grid">${items.map((article) => articleCard(article)).join('')}</div></section>`;
+  }
+  if (type === 'document_spotlight') {
+    const item = published.find((article) => ['pdf', 'mixed'].includes(article.article_type));
+    return item ? `<section class="section shell" aria-labelledby="document-spotlight-heading"><div class="section-heading"><div><p class="eyebrow">Document spotlight</p><h2 id="document-spotlight-heading">${escapeHtml(module.heading || 'Read the record')}</h2></div></div>${articleCard(item)}</section>` : '';
+  }
+  if (type === 'crossword_promotion') return `<section class="section shell"><aside class="story-block story-block-callout callout-note"><p class="eyebrow">Reader break</p><h2>${escapeHtml(module.heading || 'Crossword')}</h2><p>Take a short break with a publication-owned crossword—no account or tracking required.</p><a class="button button-secondary" href="/puzzles/">Open the crossword ${icon('arrow')}</a></aside></section>`;
+  if (type === 'accessibility_notice') return `<section class="section shell"><aside class="story-block story-block-callout callout-context"><p class="eyebrow">Accessibility</p><h2>${escapeHtml(module.heading || 'Designed for more readers')}</h2><p>${escapeHtml(module.body || 'Use the reader controls to adjust text, spacing, contrast, and motion. Contact the editor when an alternative format would help.')}</p></aside></section>`;
   if (type === 'intro') {
     return `<section class="home-intro">
   <div class="shell home-intro-grid">
@@ -1217,7 +1246,7 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
         <p class="eyebrow">Step 4 of 13 · about two minutes</p><h2 id="launch-step-4-title" tabindex="-1">Keep only what helps a reader find the news.</h2>
         <p class="launch-step-lede">The recommended front page uses a lead story, latest stories, coverage sections, reader tools, and a clear contact path. Demo-only sections disappear at launch.</p>
         <button class="recommended-button" type="button" data-use-recommended>Use the recommended front page and menu</button>
-        <details class="launch-advanced" open><summary>Front-page sections</summary><p>Turn sections on or off. Use the arrow buttons to change reading order.</p><ol class="module-order-list" data-module-list></ol></details>
+        <details class="launch-advanced" open><summary>Front-page sections</summary><p>Turn sections on or off. Use the arrow buttons to change reading order, remove a section, or add a reader-facing module.</p><ol class="module-order-list" data-module-list></ol><div class="button-row"><label for="setup-add-home-module">Add a section<select id="setup-add-home-module" data-add-home-module><option value="lead_story">Lead story</option><option value="secondary_headlines">Secondary headlines</option><option value="latest">Latest stories</option><option value="category_strip">Category strip</option><option value="coverage_hub">Coverage hub</option><option value="public_record_desk">Public-record desk</option><option value="featured_investigation">Featured investigation</option><option value="editors_note">Editor’s note</option><option value="recently_updated">Most recently updated</option><option value="document_spotlight">Document spotlight</option><option value="crossword_promotion">Crossword promotion</option><option value="submission_callout">Submission callout</option><option value="accessibility_notice">Accessibility notice</option><option value="custom_text_panel">Custom text panel</option></select></label><button class="button button-secondary" type="button" data-add-home-module>Add section</button></div></details>
         <details class="launch-advanced"><summary>Edit the menu</summary><label for="setup-navigation">One link per line: <strong>Label | /path/</strong><textarea id="setup-navigation" name="navigation" rows="7" spellcheck="false" aria-describedby="navigation-help"></textarea><small id="navigation-help">The recommended menu already covers the common newsroom pages.</small></label></details>
         <details class="field-help"><summary>Why is reading order different from visual layout?</summary><p>Screen readers and keyboard users follow the document order. Launch Desk preserves that order even when the newspaper design places sections side by side.</p></details>
         <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Connect the editor ${icon('arrow')}</button></div>

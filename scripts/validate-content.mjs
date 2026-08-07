@@ -22,7 +22,11 @@ const THEME_FIELDS = ['brand', 'brand_deep', 'brand_soft', 'accent', 'accent_dar
 const PUBLISH_REVIEW_FIELDS = ['review_content', 'review_rights', 'review_accessibility'];
 const PUBLISHER_TYPES = new Set(['Organization', 'NewsMediaOrganization']);
 const ARTICLE_SCHEMA_TYPES = new Set(['Article', 'NewsArticle', 'BlogPosting']);
-const HOME_MODULE_TYPES = new Set(['intro', 'setup', 'license', 'featured', 'latest', 'reach', 'studio', 'console', 'product', 'pillars', 'hubs', 'submit']);
+const HOME_MODULE_TYPES = new Set([
+  'intro', 'setup', 'license', 'featured', 'latest', 'reach', 'studio', 'console', 'product', 'pillars', 'hubs', 'submit',
+  'lead_story', 'secondary_headlines', 'category_strip', 'coverage_hub', 'public_record_desk', 'featured_investigation',
+  'editors_note', 'recently_updated', 'document_spotlight', 'crossword_promotion', 'submission_callout', 'accessibility_notice', 'custom_text_panel'
+]);
 const AUTHOR_ENTITY_TYPES = new Set(['Person', 'Organization']);
 const PUBLICATION_WORKFLOWS = new Set(['editorial_review', 'strict_review']);
 const RESERVED_INTERNAL_PATHS = [
@@ -370,7 +374,7 @@ if (rawSite.homepage !== undefined) {
   if (!rawSite.homepage || typeof rawSite.homepage !== 'object' || Array.isArray(rawSite.homepage)) issue(errors, siteFile, 'homepage must be an object');
   else if (!Array.isArray(rawSite.homepage.modules)) issue(errors, siteFile, 'homepage.modules must be an array');
   else {
-    if (rawSite.homepage.modules.length < 1 || rawSite.homepage.modules.length > 12) issue(errors, siteFile, 'homepage.modules must contain between 1 and 12 sections');
+    if (rawSite.homepage.modules.length < 1 || rawSite.homepage.modules.length > 24) issue(errors, siteFile, 'homepage.modules must contain between 1 and 24 sections');
     const seenModules = new Set();
     for (const [index, module] of rawSite.homepage.modules.entries()) {
       if (!module || typeof module !== 'object' || Array.isArray(module)) { issue(errors, siteFile, `homepage.modules[${index}] must be an object`); continue; }
@@ -380,6 +384,7 @@ if (rawSite.homepage !== undefined) {
       if (module.enabled !== undefined && typeof module.enabled !== 'boolean') issue(errors, siteFile, `homepage.modules[${index}].enabled must be true or false`);
       if (module.heading !== undefined && (typeof module.heading !== 'string' || module.heading.length > 120)) issue(errors, siteFile, `homepage.modules[${index}].heading must be 120 characters or fewer`);
       if (module.count !== undefined && (!Number.isInteger(Number(module.count)) || Number(module.count) < 1 || Number(module.count) > 24)) issue(errors, siteFile, `homepage.modules[${index}].count must be an integer between 1 and 24`);
+      if (module.body !== undefined && (typeof module.body !== 'string' || module.body.length > 5000)) issue(errors, siteFile, `homepage.modules[${index}].body must be 5000 characters or fewer`);
       if (module.type === 'console' && module.heading !== undefined && String(module.heading).length < 5) issue(errors, siteFile, `homepage.modules[${index}].heading must contain at least 5 characters`);
     }
     if (!rawSite.homepage.modules.some((module) => module.type === 'intro' && module.enabled !== false)) issue(warnings, siteFile, 'homepage introduction is disabled; readers may lack a clear page heading and publication summary');

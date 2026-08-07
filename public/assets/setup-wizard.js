@@ -176,11 +176,15 @@
     const labels = {
       intro: 'Lead introduction', setup: 'Start here panel', license: 'License explanation', featured: 'Lead story',
       latest: 'Latest stories', reach: 'Reader tools and offline reading', studio: 'Contributor Composer',
-      product: 'TAHAI Press project panel', pillars: 'Publishing principles', hubs: 'Coverage hubs', submit: 'Submission callout'
+      product: 'TAHAI Press project panel', pillars: 'Publishing principles', hubs: 'Coverage hubs', submit: 'Submission callout',
+      lead_story: 'Lead story', secondary_headlines: 'Secondary headlines', category_strip: 'Category strip', coverage_hub: 'Coverage hub',
+      public_record_desk: 'Public-record desk', featured_investigation: 'Featured investigation', editors_note: 'Editor’s note',
+      recently_updated: 'Most recently updated', document_spotlight: 'Document spotlight', crossword_promotion: 'Crossword promotion',
+      submission_callout: 'Submission callout', accessibility_notice: 'Accessibility notice', custom_text_panel: 'Custom text panel'
     };
     const item = document.createElement('li');
     item.dataset.moduleType = module.type;
-    item.innerHTML = `<label><input type="checkbox" ${module.enabled === false ? '' : 'checked'}> <span>${labels[module.type] || module.type}</span></label><span class="module-actions"><button type="button" data-move="up" aria-label="Move ${labels[module.type] || module.type} earlier">↑</button><button type="button" data-move="down" aria-label="Move ${labels[module.type] || module.type} later">↓</button></span>`;
+    item.innerHTML = `<label><input type="checkbox" ${module.enabled === false ? '' : 'checked'}> <span>${labels[module.type] || module.type}</span></label><span class="module-actions"><button type="button" data-move="up" aria-label="Move ${labels[module.type] || module.type} earlier">↑</button><button type="button" data-move="down" aria-label="Move ${labels[module.type] || module.type} later">↓</button><button type="button" data-remove-module aria-label="Remove ${labels[module.type] || module.type}">Remove</button></span>`;
     return item;
   }
 
@@ -588,6 +592,12 @@
 
   moduleList.addEventListener('click', (event) => {
     const button = event.target.closest('[data-move]');
+    const remove = event.target.closest('[data-remove-module]');
+    if (remove) {
+      remove.closest('[data-module-type]')?.remove();
+      syncState();
+      return;
+    }
     if (!button) return;
     const item = button.closest('[data-module-type]');
     if (button.dataset.move === 'up' && item.previousElementSibling) moduleList.insertBefore(item, item.previousElementSibling);
@@ -604,6 +614,17 @@
     if (jump) moveTo(Number(jump.dataset.stepJump));
     const recommended = event.target.closest('[data-use-recommended]');
     if (recommended) applyRecommended(Number(recommended.closest('[data-launch-step]').dataset.launchStep));
+    if (event.target.closest('[data-add-home-module]')) {
+      const type = root.querySelector('[data-add-home-module]')?.value;
+      if (!type) return;
+      if (moduleList.querySelector(`[data-module-type="${CSS.escape(type)}"]`)) {
+        announce('That homepage section is already present. Use its controls to reorder or enable it.');
+        return;
+      }
+      moduleList.append(createModuleItem({ type, enabled: true }));
+      syncState();
+      announce('Homepage section added. You can reorder it with the arrow buttons.');
+    }
     if (event.target.closest('[data-download-backup]')) {
       download(`tahai-press-before-launch-${new Date().toISOString().slice(0, 10)}.json`, `${JSON.stringify({ schema_version: 1, saved_at: new Date().toISOString(), site_config: initial, sample_article: sampleArticle }, null, 2)}\n`);
       announce('Backup downloaded. Keep it until the new publication is live.');

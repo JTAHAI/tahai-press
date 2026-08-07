@@ -148,6 +148,7 @@ function normalizeHomepage(value) {
       type: item.type,
       enabled: item.enabled !== false,
       heading: cleanString(item.heading),
+      body: cleanString(item.body || item.text),
       count: Number.isInteger(Number(item.count)) ? Number(item.count) : undefined,
       category: cleanString(item.category),
       hub: cleanString(item.hub)
