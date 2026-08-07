@@ -4,7 +4,7 @@ This repository follows the v3 Independent Press Edition master prompt. Completi
 
 | Phase | Scope | Status |
 | --- | --- | --- |
-| 0 | Preserve, discover, establish source truth | In progress |
+| 0 | Preserve, discover, establish source truth | Passed |
 | 1 | Core publisher experience | Not started |
 | 2 | Installable themes and Theme Manager | Not started |
 | 3 | Search and Knowledge Desk | Not started |

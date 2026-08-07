@@ -11,4 +11,4 @@
 - Active source identity is `3.0.0-alpha.1`; package and lockfile agree.
 - All source workflows are manually dispatched only, and a repository test rejects automatic triggers and bootstrap references.
 
-The uncommitted candidate is accepted only for the behavior covered by the executed baseline. Release archives and historical version labels remain non-authoritative until the later release gates are complete.
+Phase 0 completed at commit `ad435c25ae837fce3de601a8dd956eed84ec246e`. The accepted candidate is limited to the behavior covered by the executed baseline. Release archives and historical version labels remain non-authoritative until the later release gates are complete.
