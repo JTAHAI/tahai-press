@@ -111,7 +111,7 @@ The manual `preserve_query_string` switch applies to the optional Bulk Redirect 
 
 ## Launch Desk handoff
 
-The first-deploy `/setup/` route is a seven-step Launch Desk for nontechnical publishers. It covers identity, an accessible theme, a safe front-page arrangement, editor connection, a first article, and launch review. Progress, undo, previews, and backups remain in the browser; no setup data is sent to a service.
+The first-deploy `/setup/` route is a thirteen-step Launch Desk for nontechnical publishers. It covers identity, an accessible theme, a safe front-page arrangement, editorial trust, import planning, a first article and record, ownership, recovery, deployment, and launch review. Progress, undo, previews, and backups remain in the browser; no setup data is sent to a service.
 
 The desk exports a normal launch package rather than creating a second content system. After it is applied and committed, Pages CMS edits the resulting `content/site.json`, first article, author record, media, and all later publication work in the same repository.
 

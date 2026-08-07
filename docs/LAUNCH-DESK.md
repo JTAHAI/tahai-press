@@ -1,6 +1,6 @@
 # Launch Desk
 
-Launch Desk is the TAHAI Press first-day newsroom experience. It converts the technical sequence of editing configuration, removing example content, preparing an author record, and creating a first article into seven short browser screens.
+Launch Desk is the TAHAI Press first-day newsroom experience. It converts the technical sequence of editing configuration, defining an editorial mission, planning safe import and recovery, removing example content, preparing an author record, and creating a first article into thirteen short browser screens.
 
 ## User experience contract
 

@@ -348,7 +348,7 @@ ${sourceProvenanceComment()}
         ${brandMark()}
         <span class="brand-copy"><strong>${escapeHtml(site.title)}</strong><small>${escapeHtml(site.tagline)}</small></span>
       </a>
-      <div class="masthead-actions">${templateMode(site) ? `<a class="header-contact launch-start-link" href="/setup/">${icon('edit')}<span>Start here <strong data-launch-progress>0/7</strong></span></a>` : ''}${renderReadingTools()}${readerReach.enabled && readerReach.savedArticlesEnabled ? `<a class="header-contact" href="/saved/">${icon('bookmark')}<span>Saved <span class="saved-count-badge" data-saved-count>0</span></span></a>` : ''}${readerReach.enabled && readerReach.offlineEnabled ? `<button class="header-contact header-install js-only" type="button" data-install-publication hidden>${icon('install')}<span>Install</span></button>` : ''}<a class="header-contact" href="${escapeHtml(site.contact_url || '/contact/')}">${icon('mail')}<span>Contact</span></a>${templateMode(site) ? `<a class="header-contact" href="${PROJECT_REPOSITORY}" target="_blank" rel="noopener noreferrer">${icon('github')}<span>GitHub</span>${newTabNote()}</a>` : ''}</div>
+      <div class="masthead-actions">${templateMode(site) ? `<a class="header-contact launch-start-link" href="/setup/">${icon('edit')}<span>Start here <strong data-launch-progress>0/13</strong></span></a>` : ''}${renderReadingTools()}${readerReach.enabled && readerReach.savedArticlesEnabled ? `<a class="header-contact" href="/saved/">${icon('bookmark')}<span>Saved <span class="saved-count-badge" data-saved-count>0</span></span></a>` : ''}${readerReach.enabled && readerReach.offlineEnabled ? `<button class="header-contact header-install js-only" type="button" data-install-publication hidden>${icon('install')}<span>Install</span></button>` : ''}<a class="header-contact" href="${escapeHtml(site.contact_url || '/contact/')}">${icon('mail')}<span>Contact</span></a>${templateMode(site) ? `<a class="header-contact" href="${PROJECT_REPOSITORY}" target="_blank" rel="noopener noreferrer">${icon('github')}<span>GitHub</span>${newTabNote()}</a>` : ''}</div>
     </div>
     <div class="navigation-wrap">
       <div class="shell navigation-inner">
@@ -878,7 +878,7 @@ function renderHomeModule(module) {
 </section>`;
   }
   if (type === 'setup') {
-    return `<section class="section shell easy-setup-frontispiece" aria-labelledby="easy-setup-heading"><div class="easy-setup-copy"><p class="eyebrow">Make it easy. Make it fast.</p><h2 id="easy-setup-heading">Launch a publication in seven short, guided steps.</h2><p>Launch Desk remembers progress on this device, supplies safe defaults, previews every change, creates the first-story draft, and prepares one clean launch package. No screen asks for more than the next decision.</p><div class="button-row"><a class="button" href="/setup/">Start or resume setup <span class="launch-progress-pill" data-launch-progress>0/7</span> ${icon('arrow')}</a><a class="button button-secondary" href="https://pagescms.org" target="_blank" rel="noopener noreferrer">Open Pages CMS${newTabNote()}</a></div></div><ol class="setup-step-list"><li><strong>Start here</strong><span>See the whole ten-minute path.</span></li><li><strong>Identity</strong><span>Name, web address, and contact.</span></li><li><strong>Appearance</strong><span>Choose a tested newspaper look.</span></li><li><strong>Front page</strong><span>Keep only the sections readers need.</span></li><li><strong>Editor</strong><span>Confirm GitHub, Pages CMS, and Cloudflare.</span></li><li><strong>First story</strong><span>Replace a guided example draft.</span></li><li><strong>Launch</strong><span>Back up, preview, remove the demo, and apply.</span></li></ol></section>`;
+    return `<section class="section shell easy-setup-frontispiece" aria-labelledby="easy-setup-heading"><div class="easy-setup-copy"><p class="eyebrow">Make it easy. Make it fast.</p><h2 id="easy-setup-heading">Launch a publication in thirteen short, guided steps.</h2><p>Launch Desk remembers progress on this device, supplies safe defaults, previews every change, creates first drafts and records, and prepares one clean launch package. No screen asks for more than the next decision.</p><div class="button-row"><a class="button" href="/setup/">Start or resume setup <span class="launch-progress-pill" data-launch-progress>0/13</span> ${icon('arrow')}</a><a class="button button-secondary" href="https://pagescms.org" target="_blank" rel="noopener noreferrer">Open Pages CMS${newTabNote()}</a></div></div><ol class="setup-step-list"><li><strong>Identity</strong><span>Name, web address, and contact.</span></li><li><strong>Appearance</strong><span>Choose a tested newspaper look.</span></li><li><strong>Front page</strong><span>Keep only the sections readers need.</span></li><li><strong>Trust</strong><span>Set the mission and editorial promises.</span></li><li><strong>First publication</strong><span>Prepare a story and public record.</span></li><li><strong>Ownership</strong><span>Back up and plan recovery.</span></li><li><strong>Launch</strong><span>Preview, connect, and apply.</span></li></ol></section>`;
   }
   if (type === 'license') {
     return `<section class="section shell license-frontispiece" aria-labelledby="license-heading"><div><p class="eyebrow">Apache 2.0 · Publisher freedom</p><h2 id="license-heading">Keep the license in the source. Keep your public pages entirely your own.</h2></div><div class="license-frontispiece-copy"><p>TAHAI Press is released under the Apache License, Version 2.0. When redistributing the software or a modified source distribution, retain the license and required notices and identify material changes as the license requires.</p><p><strong>No public-facing platform credit is required.</strong> A publisher does not have to display a TAHAI Press banner, “Powered by” line, footer note, logo, backlink, hidden link, or other visible attribution on a website built with this system.</p><p><a class="text-link" href="${PROJECT_REPOSITORY}/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Read the Apache 2.0 license ${icon('arrow')}${newTabNote()}</a></p></div></section>`;
@@ -1165,8 +1165,8 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
 <section class="section shell launch-desk" data-launch-desk>
   <noscript><p class="setup-noscript"><strong>Launch Desk requires JavaScript.</strong> The publication remains readable without it. Use Pages CMS or edit <code>content/site.json</code> when scripting is unavailable.</p></noscript>
   <header class="launch-desk-header">
-    <div><p class="eyebrow">Start here</p><h2 data-current-step-title tabindex="-1">Step 1</h2><p data-progress-text>0 of 7 launch steps complete</p></div>
-    <progress data-progress-bar max="7" value="0">0 of 7</progress>
+    <div><p class="eyebrow">Start here</p><h2 data-current-step-title tabindex="-1">Step 1</h2><p data-progress-text>0 of 13 launch steps complete</p></div>
+    <progress data-progress-bar max="13" value="0">0 of 13</progress>
     <div class="launch-desk-utilities" aria-label="Setup utilities"><button class="button button-quiet" type="button" data-undo-change disabled>Undo last change</button><button class="button button-quiet" type="button" data-download-backup>Download backup</button><button class="button button-quiet" type="button" data-reset-launch>Reset</button></div>
   </header>
   <div class="launch-desk-layout">
@@ -1178,10 +1178,16 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       <li><button type="button" data-step-jump="5"><span>5</span><strong>Connect the editor</strong><small>GitHub and Cloudflare</small></button></li>
       <li><button type="button" data-step-jump="6"><span>6</span><strong>Write the first story</strong><small>Replace the example</small></button></li>
       <li><button type="button" data-step-jump="7"><span>7</span><strong>Review and launch</strong><small>Backup and apply</small></button></li>
+      <li><button type="button" data-step-jump="8"><span>8</span><strong>Mission and structure</strong><small>Purpose and beats</small></button></li>
+      <li><button type="button" data-step-jump="9"><span>9</span><strong>Trust policies</strong><small>Standards and corrections</small></button></li>
+      <li><button type="button" data-step-jump="10"><span>10</span><strong>Existing content</strong><small>Import safely</small></button></li>
+      <li><button type="button" data-step-jump="11"><span>11</span><strong>First public record</strong><small>Evidence-led publishing</small></button></li>
+      <li><button type="button" data-step-jump="12"><span>12</span><strong>Ownership and recovery</strong><small>Backups and transfer</small></button></li>
+      <li><button type="button" data-step-jump="13"><span>13</span><strong>Final readiness</strong><small>Deploy when ready</small></button></li>
     </ol></nav>
     <form class="launch-step-workspace" novalidate>
       <section class="launch-step" data-launch-step="1" data-step-title="Start here" aria-labelledby="launch-step-1-title">
-        <p class="eyebrow">Step 1 of 7 · about one minute</p><h2 id="launch-step-1-title" tabindex="-1">You will make seven small decisions.</h2>
+        <p class="eyebrow">Step 1 of 13 · about one minute</p><h2 id="launch-step-1-title" tabindex="-1">You will make thirteen small decisions.</h2>
         <p class="launch-step-lede">Launch Desk remembers where you stopped. Safe answers are filled in automatically, advanced controls stay out of the way, and the last change can always be undone.</p>
         <ol class="launch-path"><li><strong>Name the publication.</strong><span>Add the web address and contact email.</span></li><li><strong>Choose a tested look.</strong><span>Every built-in theme meets the project contrast rules.</span></li><li><strong>Keep the front page simple.</strong><span>Use recommended sections, then change only what matters.</span></li><li><strong>Confirm the free publishing path.</strong><span>GitHub stores files, Pages CMS edits them, and Cloudflare publishes them.</span></li><li><strong>Replace one example story.</strong><span>Start from useful sample text instead of a blank page.</span></li><li><strong>Preview and back up.</strong><span>Nothing is applied without a final review.</span></li><li><strong>Remove the demo and launch.</strong><span>Create one package or apply it directly to a local repository.</span></li></ol>
         <aside class="launch-help"><strong>No new accounts are required.</strong><p>TAHAI Press uses the GitHub and Cloudflare accounts already needed for the site. Pages CMS signs in through GitHub and remains free.</p></aside>
@@ -1189,7 +1195,7 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       </section>
 
       <section class="launch-step" data-launch-step="2" data-step-title="Name the publication" aria-labelledby="launch-step-2-title" hidden>
-        <p class="eyebrow">Step 2 of 7 · about two minutes</p><h2 id="launch-step-2-title" tabindex="-1">What should readers call this publication?</h2>
+        <p class="eyebrow">Step 2 of 13 · about two minutes</p><h2 id="launch-step-2-title" tabindex="-1">What should readers call this publication?</h2>
         <p class="launch-step-lede">Only the name, web address, and contact email are required. Everything else has a useful default.</p>
         <div class="setup-grid launch-essential-fields"><label for="setup-title">Publication name<input id="setup-title" name="title" required maxlength="100" autocomplete="organization" placeholder="The Community Ledger"><small>The name shown in the masthead and browser title.</small></label><label for="setup-editor-email">Public contact email<input id="setup-editor-email" name="editor_email" type="email" autocomplete="email" placeholder="editor@yourdomain.org"><small>Used for corrections, accessibility feedback, and submissions.</small></label><label class="field-wide" for="setup-site-url">Live web address<input id="setup-site-url" name="site_url" type="url" inputmode="url" placeholder="https://news.example.org"><small>Use the final custom domain or the Cloudflare <code>pages.dev</code> address.</small></label></div>
         <button class="recommended-button" type="button" data-use-recommended>Use recommended wording and remove the demo logo</button>
@@ -1199,7 +1205,7 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       </section>
 
       <section class="launch-step" data-launch-step="3" data-step-title="Choose the look" aria-labelledby="launch-step-3-title" hidden>
-        <p class="eyebrow">Step 3 of 7 · about one minute</p><h2 id="launch-step-3-title" tabindex="-1">Choose one accessible newspaper style.</h2>
+        <p class="eyebrow">Step 3 of 13 · about one minute</p><h2 id="launch-step-3-title" tabindex="-1">Choose one accessible newspaper style.</h2>
         <p class="launch-step-lede">Classic Broadsheet is the recommended starting point. All eight presets pass TAHAI Press contrast checks.</p>
         <label class="launch-feature-field" for="setup-theme-preset">Newspaper theme<select id="setup-theme-preset" name="theme_preset">${themePresetList().map((preset) => `<option value="${escapeHtml(preset.id)}">${escapeHtml(preset.label)}</option>`).join('')}</select></label>
         <button class="recommended-button" type="button" data-use-recommended>Use the recommended accessible appearance</button>
@@ -1208,7 +1214,7 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       </section>
 
       <section class="launch-step" data-launch-step="4" data-step-title="Shape the front page" aria-labelledby="launch-step-4-title" hidden>
-        <p class="eyebrow">Step 4 of 7 · about two minutes</p><h2 id="launch-step-4-title" tabindex="-1">Keep only what helps a reader find the news.</h2>
+        <p class="eyebrow">Step 4 of 13 · about two minutes</p><h2 id="launch-step-4-title" tabindex="-1">Keep only what helps a reader find the news.</h2>
         <p class="launch-step-lede">The recommended front page uses a lead story, latest stories, coverage sections, reader tools, and a clear contact path. Demo-only sections disappear at launch.</p>
         <button class="recommended-button" type="button" data-use-recommended>Use the recommended front page and menu</button>
         <details class="launch-advanced" open><summary>Front-page sections</summary><p>Turn sections on or off. Use the arrow buttons to change reading order.</p><ol class="module-order-list" data-module-list></ol></details>
@@ -1218,7 +1224,7 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       </section>
 
       <section class="launch-step" data-launch-step="5" data-step-title="Connect the editor" aria-labelledby="launch-step-5-title" hidden>
-        <p class="eyebrow">Step 5 of 7 · about one minute</p><h2 id="launch-step-5-title" tabindex="-1">Confirm the free publishing path.</h2>
+        <p class="eyebrow">Step 5 of 13 · about one minute</p><h2 id="launch-step-5-title" tabindex="-1">Confirm the free publishing path.</h2>
         <p class="launch-step-lede">GitHub stores the publication, Pages CMS provides the browser editor, and Cloudflare Pages publishes each approved change.</p>
         <div class="launch-connection-cards"><article><span>1</span><h3>GitHub</h3><p>The repository must be visible to the publisher and connected to Pages CMS.</p><a class="text-link" href="${PROJECT_REPOSITORY}" target="_blank" rel="noopener noreferrer">Open the repository${newTabNote()}</a></article><article><span>2</span><h3>Pages CMS</h3><p>Sign in with GitHub, choose the repository, and confirm that Publication settings and Articles appear.</p><a class="text-link" href="https://pagescms.org" target="_blank" rel="noopener noreferrer">Open Pages CMS${newTabNote()}</a></article><article><span>3</span><h3>Cloudflare Pages</h3><p>Connect the <code>main</code> branch, run <code>npm run build:cloudflare</code>, and publish the <code>dist</code> directory.</p></article></div>
         <div class="launch-confirmations"><label class="setup-toggle" for="launch-editor-ready"><input id="launch-editor-ready" name="editor_ready" type="checkbox"> I can open the repository in Pages CMS.</label><label class="setup-toggle" for="launch-deployment-ready"><input id="launch-deployment-ready" name="deployment_ready" type="checkbox"> Cloudflare Pages is connected to the repository's main branch.</label></div>
@@ -1227,7 +1233,7 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       </section>
 
       <section class="launch-step" data-launch-step="6" data-step-title="Write the first story" aria-labelledby="launch-step-6-title" hidden>
-        <p class="eyebrow">Step 6 of 7 · about two minutes</p><h2 id="launch-step-6-title" tabindex="-1">Replace the example instead of starting from a blank page.</h2>
+        <p class="eyebrow">Step 6 of 13 · about two minutes</p><h2 id="launch-step-6-title" tabindex="-1">Replace the example instead of starting from a blank page.</h2>
         <p class="launch-step-lede">This creates a draft, not an immediate public story. Review sources, image rights, and accessibility in Pages CMS before changing its status to Published.</p>
         <button class="recommended-button" type="button" data-use-recommended>Use a welcoming first-story example</button>
         <div class="setup-grid launch-article-fields"><label class="field-wide" for="launch-article-title">Headline<input id="launch-article-title" name="article_title" maxlength="160" required></label><label class="field-wide" for="launch-article-excerpt">Two-sentence summary<textarea id="launch-article-excerpt" name="article_excerpt" rows="3" maxlength="500" required></textarea></label><label class="field-wide" for="launch-article-body">Article text<textarea id="launch-article-body" name="article_body" rows="10" required></textarea><small>Use <code>##</code> for a section heading. The generated file remains a draft.</small></label><label for="launch-article-author">Author record<input id="launch-article-author" name="article_author" value="editorial-team"></label><label for="launch-article-category">Category record<input id="launch-article-category" name="article_category" value="community-reporting"></label></div>
@@ -1238,10 +1244,54 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       </section>
 
       <section class="launch-step" data-launch-step="7" data-step-title="Review and launch" aria-labelledby="launch-step-7-title" hidden>
-        <p class="eyebrow">Step 7 of 7 · final review</p><h2 id="launch-step-7-title" tabindex="-1">Preview first. Back up. Then remove the demonstration.</h2>
+        <p class="eyebrow">Step 7 of 13 · early review</p><h2 id="launch-step-7-title" tabindex="-1">Preview the foundation before adding newsroom commitments.</h2>
         <p class="launch-step-lede">The launch package turns off demo mode, removes the sample stories, preserves a backup, and adds the first-story draft. Nothing is published until the repository change is committed.</p>
         <ul class="launch-checklist" data-launch-checklist></ul>
         <div class="launch-license-note"><h3>Your publication does not owe a public platform credit.</h3><p>Keep the Apache 2.0 license and required notices in redistributed source. No TAHAI Press banner, logo, footer credit, backlink, hidden link, or “Powered by” notice is required on the publisher's public pages.</p></div>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Set the mission ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="8" data-step-title="Mission and newsroom structure" aria-labelledby="launch-step-8-title" hidden>
+        <p class="eyebrow">Step 8 of 13 · about one minute</p><h2 id="launch-step-8-title" tabindex="-1">State the purpose readers can hold you to.</h2>
+        <p class="launch-step-lede">A short mission makes editorial choices easier. It can be refined later, but it should be plain about whom you serve and what reporting you will do.</p>
+        <label class="field-wide" for="launch-mission">Publication mission<textarea id="launch-mission" name="mission" rows="4" maxlength="600" placeholder="We report on our community, public decisions, and the records behind them."></textarea></label>
+        <label class="setup-toggle" for="launch-mission-ready"><input id="launch-mission-ready" name="mission_ready" type="checkbox"> This mission describes the publication in plain language.</label>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Set editorial commitments ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="9" data-step-title="Editorial trust and policies" aria-labelledby="launch-step-9-title" hidden>
+        <p class="eyebrow">Step 9 of 13 · about one minute</p><h2 id="launch-step-9-title" tabindex="-1">Make the trust commitments visible from day one.</h2>
+        <p class="launch-step-lede">The publication already supports sources, corrections, updates, methodology, and accessibility feedback. Confirm the editorial team will use them before publishing.</p>
+        <div class="launch-confirmations"><label class="setup-toggle" for="launch-standards-ready"><input id="launch-standards-ready" name="standards_ready" type="checkbox"> We will distinguish reporting, analysis, and opinion and correct mistakes visibly.</label><label class="setup-toggle" for="launch-accessibility-ready"><input id="launch-accessibility-ready" name="accessibility_ready" type="checkbox"> We will provide useful image descriptions and HTML summaries for public documents.</label></div>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Plan the import ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="10" data-step-title="Existing-content import" aria-labelledby="launch-step-10-title" hidden>
+        <p class="eyebrow">Step 10 of 13 · about one minute</p><h2 id="launch-step-10-title" tabindex="-1">Bring existing work in safely, not all at once.</h2>
+        <p class="launch-step-lede">Migration Studio always starts as a dry run. Unsupported material is quarantined with a reason; it is never silently discarded or published.</p>
+        <details class="launch-advanced" open><summary>Choose a safe first import</summary><p>Use <code>npm run import:help</code> to see supported WordPress, Markdown, JSON, CSV, and PDF-folder formats. Begin with a copy and review the generated plan before applying it.</p></details>
+        <label class="setup-toggle" for="launch-import-ready"><input id="launch-import-ready" name="import_ready" type="checkbox"> I will run an import dry run before changing existing content.</label>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Prepare the first record ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="11" data-step-title="First public record" aria-labelledby="launch-step-11-title" hidden>
+        <p class="eyebrow">Step 11 of 13 · about one minute</p><h2 id="launch-step-11-title" tabindex="-1">Publish evidence with context, not just a file.</h2>
+        <p class="launch-step-lede">A public record should retain its original file, an accessible HTML summary, source context, and any necessary rights information. The PDF-led article workflow blocks incomplete published summaries.</p>
+        <label class="setup-toggle" for="launch-record-ready"><input id="launch-record-ready" name="record_ready" type="checkbox"> I will create the first public-record draft with an HTML summary before publishing it.</label>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Protect publisher ownership ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="12" data-step-title="Ownership, backup, and recovery" aria-labelledby="launch-step-12-title" hidden>
+        <p class="eyebrow">Step 12 of 13 · about one minute</p><h2 id="launch-step-12-title" tabindex="-1">Keep the files, the history, and a safe copy.</h2>
+        <p class="launch-step-lede">Your articles, media, redirects, and configuration remain ordinary files. This launch flow downloads a pre-launch backup; Git records revisions, and the repository can be transferred without a TAHAI account.</p>
+        <label class="setup-toggle" for="launch-ownership-ready"><input id="launch-ownership-ready" name="ownership_ready" type="checkbox"> I downloaded or stored a backup and understand that Git is the revision ledger.</label>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Final readiness ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="13" data-step-title="Final readiness" aria-labelledby="launch-step-13-title" hidden>
+        <p class="eyebrow">Step 13 of 13 · final review</p><h2 id="launch-step-13-title" tabindex="-1">Preview first. Back up. Then remove the demonstration.</h2>
+        <p class="launch-step-lede">The launch package turns off demo mode, removes the sample stories, preserves a backup, and adds the first-story draft. Nothing is published until the repository change is committed.</p>
+        <ul class="launch-checklist" data-final-launch-checklist></ul>
         <div class="launch-final-actions"><button class="button" type="button" data-download-launch>Remove demo and prepare launch package</button><button class="button button-secondary" type="button" data-apply-local>Apply to a local repository</button><button class="button button-quiet" type="button" data-download-config>Download only site.json</button><button class="button button-quiet" type="button" data-copy-config>Copy settings</button></div>
         <p class="launch-apply-note">The local-repository button is shown only in browsers that support secure folder access. The download works everywhere.</p>
         <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button></div>
@@ -1262,7 +1312,7 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
 <script id="setup-initial-config" type="application/json">${jsonForHtml(site)}</script>
 <script id="setup-theme-presets" type="application/json">${jsonForHtml(presetMap)}</script>
 <script id="setup-sample-article" type="application/json">${jsonForHtml(setupSampleArticle)}</script>`;
-writeRoute('/setup/', layout({ route: '/setup/', title: 'Launch Desk', description: 'A seven-step first-day newsroom guide for configuring and launching TAHAI Press.', canonical: absoluteUrl('/setup/'), noindex: true, pageClass: 'setup-page launch-desk-page', scripts: ['/assets/setup-wizard.js'], body: setupBody }), { sitemap: false });
+writeRoute('/setup/', layout({ route: '/setup/', title: 'Launch Desk', description: 'A thirteen-step first-day newsroom guide for configuring and launching TAHAI Press.', canonical: absoluteUrl('/setup/'), noindex: true, pageClass: 'setup-page launch-desk-page', scripts: ['/assets/setup-wizard.js'], body: setupBody }), { sitemap: false });
 }
 
 writePaginatedArchive({

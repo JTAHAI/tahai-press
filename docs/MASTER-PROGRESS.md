@@ -12,3 +12,7 @@
 - All source workflows are manually dispatched only, and a repository test rejects automatic triggers and bootstrap references.
 
 Phase 0 completed at commit `ad435c25ae837fce3de601a8dd956eed84ec246e`. The accepted candidate is limited to the behavior covered by the executed baseline. Release archives and historical version labels remain non-authoritative until the later release gates are complete.
+
+## Phase 1 — core publisher experience
+
+In progress. Launch Desk now contains thirteen locally persisted, publisher-facing steps and blocks package generation or local application until its mission, trust, import, public-record, ownership, and final-readiness gates are complete. The completed steps remain only one portion of the Phase 1 acceptance criteria; the phase is not marked passed until its full evidence suite is produced.

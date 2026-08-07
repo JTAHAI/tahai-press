@@ -4,7 +4,7 @@
 
 1. Deploy the repository to Cloudflare Pages.
 2. Open `/setup/` and choose **Start here**.
-3. Follow the seven short launch steps; each screen presents one primary action.
+3. Follow the thirteen short launch steps; each screen presents one primary action.
 4. Use **Recommended settings** whenever the safe default fits.
 5. Review the live publication preview before applying anything.
 6. Download a backup before the launch change.

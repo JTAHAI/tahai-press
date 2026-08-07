@@ -69,7 +69,7 @@ Shared components render publication metadata, contributor identity, sources, to
 
 ## Launch Desk architecture
 
-`/setup/` is a static, browser-local first-day newsroom. It presents seven bounded steps, stores progress and a short undo history in local storage, renders an in-browser publication preview, and exports an ordinary JSON launch package. The setup code has no network request, authentication layer, tracking script, or application database.
+`/setup/` is a static, browser-local first-day newsroom. It presents thirteen bounded steps, stores progress and a short undo history in local storage, renders an in-browser publication preview, and exports an ordinary JSON launch package. The setup code has no network request, authentication layer, tracking script, or application database.
 
 The launch package contains only publisher-approved configuration, a first draft article, an editorial-team record, and the known demonstration filenames to remove. Publishers can apply it in either of two ways:
 

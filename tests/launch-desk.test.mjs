@@ -60,21 +60,23 @@ test('current package preserves Launch Desk and a safe launch-package applicator
   assert.equal(fs.existsSync(path.join(ROOT, 'scripts', 'apply-launch-package.mjs')), true);
 });
 
-test('Launch Desk generates seven low-friction steps, persistent progress, preview, backup, undo, and first-story guidance', () => {
+test('Launch Desk generates thirteen low-friction steps, persistent progress, preview, backup, ownership guidance, and first-story guidance', () => {
   build();
   const html = fs.readFileSync(path.join(DIST, 'setup', 'index.html'), 'utf8');
   assert.match(html, /data-launch-desk/);
-  assert.equal((html.match(/data-launch-step="\d"/g) || []).length, 7);
-  assert.match(html, /0 of 7 launch steps complete/);
+  assert.equal((html.match(/data-launch-step="\d+"/g) || []).length, 13);
+  assert.match(html, /0 of 13 launch steps complete/);
   assert.match(html, /data-download-backup/);
   assert.match(html, /data-undo-change/);
   assert.match(html, /data-publication-preview/);
   assert.match(html, /Replace the example instead of starting from a blank page/);
+  assert.match(html, /Ownership, backup, and recovery/);
+  assert.match(html, /Existing-content import/);
   assert.match(html, /Remove demo and prepare launch package/);
   assert.match(html, /No TAHAI Press banner, logo, footer credit, backlink, hidden link, or “Powered by” notice is required/);
   const home = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
   assert.match(home, /Start or resume setup/);
-  assert.match(home, /data-launch-progress>0\/7/);
+  assert.match(home, /data-launch-progress>0\/13/);
 });
 
 test('Launch Desk stays browser-local and progressively enhances direct repository application', () => {

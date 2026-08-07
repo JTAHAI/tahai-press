@@ -25,7 +25,7 @@ Launch Desk stores progress in local browser storage. The data remains on that d
 The publisher can:
 
 - resume at the last step;
-- see progress such as “4 of 7 launch steps complete”;
+- see progress such as “4 of 13 launch steps complete”;
 - undo the most recent setup change;
 - reset the local setup state;
 - download the original configuration and sample article as a backup;

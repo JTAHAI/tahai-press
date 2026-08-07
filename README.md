@@ -141,7 +141,7 @@ This architecture is especially useful for:
 
 ### Easy setup and customization
 
-- Persistent seven-step Launch Desk generated only in demo mode
+- Persistent thirteen-step Launch Desk generated only in demo mode
 - Eight contrast-tested newspaper themes
 - Configurable density, reading measure, masthead alignment, headline style, panel shape, and reading surface
 - CMS-editable navigation labels, destinations, and order
@@ -216,7 +216,7 @@ Deploy the template once, then open:
 https://example.pages.dev/setup/
 ```
 
-TAHAI Press v1.8 replaces the long configuration form with a persistent seven-step first-day newsroom guide. It is designed for a publisher who should not need to understand JSON, repository layout, build systems, or deployment terminology.
+TAHAI Press v3 replaces the long configuration form with a persistent thirteen-step first-day newsroom guide. It is designed for a publisher who should not need to understand JSON, repository layout, build systems, or deployment terminology.
 
 Launch Desk walks through:
 

@@ -27,6 +27,7 @@
   const status = root.querySelector('[data-launch-status]');
   const preview = root.querySelector('[data-publication-preview]');
   const checklist = root.querySelector('[data-launch-checklist]');
+  const finalChecklist = root.querySelector('[data-final-launch-checklist]');
   const moduleList = root.querySelector('[data-module-list]');
   const progressBar = root.querySelector('[data-progress-bar]');
   const progressText = root.querySelector('[data-progress-text]');
@@ -73,6 +74,10 @@
     },
     editorReady: false,
     deploymentReady: false,
+    launchPlan: {
+      mission: '', missionReady: false, standardsReady: false, accessibilityReady: false,
+      importReady: false, recordReady: false, ownershipReady: false
+    },
     history: [],
     updatedAt: new Date().toISOString()
   });
@@ -158,6 +163,13 @@
     setValue('article_category', state.firstArticle.categories?.[0] || 'community-reporting');
     setValue('article_image', state.firstArticle.featured_image || '');
     setValue('article_image_alt', state.firstArticle.featured_image_alt || '');
+    setValue('mission', state.launchPlan?.mission || '');
+    setValue('mission_ready', state.launchPlan?.missionReady);
+    setValue('standards_ready', state.launchPlan?.standardsReady);
+    setValue('accessibility_ready', state.launchPlan?.accessibilityReady);
+    setValue('import_ready', state.launchPlan?.importReady);
+    setValue('record_ready', state.launchPlan?.recordReady);
+    setValue('ownership_ready', state.launchPlan?.ownershipReady);
   }
 
   function createModuleItem(module) {
@@ -316,13 +328,19 @@
     if (step === 5) return state.editorReady && state.deploymentReady;
     if (step === 6) return Boolean(article.title && article.excerpt && article.body && (!article.featured_image || article.featured_image_alt));
     if (step === 7) return launchIssues(config, article).every(([kind]) => kind !== 'blocker');
+    if (step === 8) return Boolean(state.launchPlan?.missionReady && state.launchPlan?.mission?.trim());
+    if (step === 9) return Boolean(state.launchPlan?.standardsReady && state.launchPlan?.accessibilityReady);
+    if (step === 10) return Boolean(state.launchPlan?.importReady);
+    if (step === 11) return Boolean(state.launchPlan?.recordReady);
+    if (step === 12) return Boolean(state.launchPlan?.ownershipReady);
+    if (step === 13) return launchIssues(config, article).every(([kind]) => kind !== 'blocker') && [8, 9, 10, 11, 12].every((index) => completionForStep(index, config, article));
     return false;
   }
 
   function persist() {
     state.updatedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify({ completed: state.completed, step: state.step, total: 7, updatedAt: state.updatedAt }));
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({ completed: state.completed, step: state.step, total: 13, updatedAt: state.updatedAt }));
   }
 
   function snapshot() {
@@ -331,6 +349,7 @@
       firstArticle: buildFirstArticle(),
       editorReady: Boolean(value('editor_ready')),
       deploymentReady: Boolean(value('deployment_ready')),
+      launchPlan: structuredClone(state.launchPlan || {}),
       step: state.step,
       completed: [...state.completed]
     };
@@ -352,7 +371,16 @@
     state.editorReady = Boolean(value('editor_ready'));
     state.deploymentReady = Boolean(value('deployment_ready'));
     const completed = [];
-    for (let index = 1; index <= 7; index += 1) if (completionForStep(index, state.config, state.firstArticle)) completed.push(index);
+    state.launchPlan = {
+      mission: String(value('mission') || '').trim(),
+      missionReady: Boolean(value('mission_ready')),
+      standardsReady: Boolean(value('standards_ready')),
+      accessibilityReady: Boolean(value('accessibility_ready')),
+      importReady: Boolean(value('import_ready')),
+      recordReady: Boolean(value('record_ready')),
+      ownershipReady: Boolean(value('ownership_ready'))
+    };
+    for (let index = 1; index <= 13; index += 1) if (completionForStep(index, state.config, state.firstArticle)) completed.push(index);
     state.completed = completed;
     if (record) {
       clearTimeout(historyTimer);
@@ -365,6 +393,7 @@
     state.firstArticle = structuredClone(snap.firstArticle);
     state.editorReady = snap.editorReady;
     state.deploymentReady = snap.deploymentReady;
+    state.launchPlan = structuredClone(snap.launchPlan || defaultState().launchPlan);
     state.step = snap.step;
     state.completed = [...snap.completed];
     initialFormValues();
@@ -396,7 +425,7 @@
   function render() {
     const config = buildConfig();
     const article = buildFirstArticle();
-    state.step = Math.max(1, Math.min(7, Number(state.step || 1)));
+    state.step = Math.max(1, Math.min(13, Number(state.step || 1)));
     steps.forEach((step) => {
       const active = Number(step.dataset.launchStep) === state.step;
       step.hidden = !active;
@@ -404,9 +433,9 @@
     });
     const current = steps.find((step) => Number(step.dataset.launchStep) === state.step);
     stepTitle.textContent = current?.dataset.stepTitle || `Step ${state.step}`;
-    const completedCount = state.completed.filter((step) => step <= 7).length;
-    progressText.textContent = `${completedCount} of 7 launch steps complete`;
-    progressBar.max = 7;
+    const completedCount = state.completed.filter((step) => step <= 13).length;
+    progressText.textContent = `${completedCount} of 13 launch steps complete`;
+    progressBar.max = 13;
     progressBar.value = completedCount;
     stepList.querySelectorAll('[data-step-jump]').forEach((button) => {
       const step = Number(button.dataset.stepJump);
@@ -417,14 +446,16 @@
     output.textContent = `${JSON.stringify(config, null, 2)}\n`;
     renderPreview(config, article);
     const issues = launchIssues(config, article);
-    checklist.innerHTML = issues.length
+    const checklistMarkup = issues.length
       ? issues.map(([kind, text]) => `<li class="${kind}"><strong>${kind === 'blocker' ? 'Before launch' : 'Review'}:</strong> ${text}</li>`).join('')
       : '<li class="ready"><strong>Ready:</strong> No launch blockers detected.</li>';
+    checklist.innerHTML = checklistMarkup;
+    if (finalChecklist) finalChecklist.innerHTML = checklistMarkup;
     root.querySelector('[data-first-article-slug]').textContent = `${slugify(article.title)}.json`;
     root.querySelector('[data-first-article-state]').textContent = completionForStep(6, config, article) ? 'Ready for editor review' : 'Needs a little more information';
     root.querySelectorAll('[data-next-step]').forEach((button) => {
       const from = Number(button.closest('[data-launch-step]')?.dataset.launchStep || 1);
-      button.disabled = from > 1 && from < 7 && !completionForStep(from, config, article);
+      button.disabled = from > 1 && from < 13 && !completionForStep(from, config, article);
     });
     undoButton.disabled = state.history.length < 2;
     if (localApplyButton) localApplyButton.hidden = typeof window.showDirectoryPicker !== 'function';
@@ -432,7 +463,7 @@
 
   function moveTo(step) {
     syncState({ record: false });
-    state.step = Math.max(1, Math.min(7, step));
+    state.step = Math.max(1, Math.min(13, step));
     persist();
     render();
     root.querySelector('[data-launch-step]:not([hidden]) h2')?.focus({ preventScroll: true });
@@ -483,6 +514,7 @@
       release: '1.9.0',
       generated_at: new Date().toISOString(),
       instructions: 'Apply with npm run launch:apply -- --package <file> --confirm, or use Apply to local repository in a supported browser.',
+      launch_plan: structuredClone(state.launchPlan || {}),
       remove_demo: true,
       demo_article_files: DEMO_ARTICLE_FILES,
       site_config: buildConfig({ launch: true }),
@@ -542,7 +574,7 @@
       await writeJsonFile(articlesDirectory, `${pack.first_article.slug}.json`, pack.first_article);
       await writeJsonFile(authorsDirectory, `${pack.author_record.slug}.json`, pack.author_record);
       announce(`Launch files applied. A backup was saved in .launch-backups/${stamp}. Commit the changes when ready.`);
-      state.completed = [1, 2, 3, 4, 5, 6, 7];
+      state.completed = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
       persist();
       render();
     } catch (error) {
@@ -577,6 +609,10 @@
       announce('Backup downloaded. Keep it until the new publication is live.');
     }
     if (event.target.closest('[data-download-launch]')) {
+      if (!completionForStep(13, buildConfig(), buildFirstArticle())) {
+        announce('Complete the remaining launch commitments before preparing the launch package.');
+        return;
+      }
       const pack = launchPackage();
       download('tahai-press-launch-package.json', `${JSON.stringify(pack, null, 2)}\n`);
       announce('Launch package downloaded. It includes the publication settings and first-story draft.');
@@ -607,7 +643,13 @@
       render();
       announce('Launch Desk reset.');
     }
-    if (event.target.closest('[data-apply-local]')) await applyToLocalRepository();
+    if (event.target.closest('[data-apply-local]')) {
+      if (!completionForStep(13, buildConfig(), buildFirstArticle())) {
+        announce('Complete the remaining launch commitments before applying files.');
+        return;
+      }
+      await applyToLocalRepository();
+    }
   });
 
   initialFormValues();
