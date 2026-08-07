@@ -38,7 +38,7 @@ const RESERVED_INTERNAL_PATHS = [
 ];
 const KNOWN_INTERNAL_PATHS = new Set([
   '/', '/stories/', '/search/', '/topics/', '/authors/', '/categories/', '/sections/', '/series/', '/records/',
-  '/archive/', '/hubs/', '/about/', '/accessibility/', '/submit/', '/contact/', '/edition/',
+  '/archive/', '/hubs/', '/about/', '/accessibility/', '/submit/', '/contact/', '/edition/', '/editions/', '/newsletters/',
   '/saved/', '/puzzles/', '/studio/', '/publisher/', '/media-desk/', '/setup/', '/admin/', '/offline/'
 ]);
 const KNOWN_INTERNAL_PREFIXES = [
@@ -53,7 +53,9 @@ const KNOWN_INTERNAL_PREFIXES = [
   /^\/archive\/\d{4}\/\d{2}\/?$/i,
   /^\/archive\/\d{4}\/\d{2}\/page\/\d+\/?$/i,
   /^\/stories\/[a-z0-9]+(?:-[a-z0-9]+)*\/page\/\d+\/?$/i,
-  /^\/records\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i
+  /^\/records\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i,
+  /^\/editions\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i,
+  /^\/newsletters\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i
 ];
 const errors = [];
 const warnings = [];
@@ -229,7 +231,7 @@ function validateStoryBlocks(article) {
   }
 }
 
-const { site, articles, authors, categories, hubs, crosswords, records } = loadContent();
+const { site, articles, authors, categories, hubs, crosswords, records, editions, newsletters } = loadContent();
 const siteFile = path.join(ROOT, 'content', 'site.json');
 const rawSite = JSON.parse(fs.readFileSync(siteFile, 'utf8'));
 validateSluggedCollection(authors, 'author', { requireActive: true });
@@ -261,12 +263,42 @@ const authorSlugs = new Set(authors.map((item) => item.slug));
 const categorySlugs = new Set(categories.map((item) => item.slug));
 const hubSlugs = new Set(hubs.map((item) => item.slug));
 const articleSlugs = new Set(articles.map((item) => item.slug));
+const recordIds = new Set(records.map((item) => item.id));
 const evidenceIds = new Set();
 for (const record of records) {
   if (evidenceIds.has(record.id)) issue(errors, record.__file, `duplicate evidence record id: ${record.id}`);
   evidenceIds.add(record.id);
   if (path.basename(record.__file, '.json') !== record.id) issue(errors, record.__file, `filename must match id (${record.id}.json)`);
   for (const message of validateEvidenceRecord(record, { articleSlugs })) issue(errors, record.__file, message);
+}
+const editionIds = new Set();
+for (const edition of editions) {
+  if (!SLUG.test(edition.id || '')) issue(errors, edition.__file, 'id must use lowercase letters, numbers, and single hyphens');
+  if (editionIds.has(edition.id)) issue(errors, edition.__file, `duplicate edition id: ${edition.id}`);
+  editionIds.add(edition.id);
+  if (path.basename(edition.__file, '.json') !== edition.id) issue(errors, edition.__file, `filename must match id (${edition.id}.json)`);
+  requiredString(edition, 'title', edition.__file, 3);
+  if (!['draft', 'published', 'archived'].includes(edition.status)) issue(errors, edition.__file, 'status must be draft, published, or archived');
+  if (!['daily', 'community-weekly', 'investigative-special', 'records-packet', 'arts', 'developing-bulletin'].includes(edition.template)) issue(errors, edition.__file, 'template is not supported');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(edition.date || '')) issue(errors, edition.__file, 'date must use YYYY-MM-DD');
+  if (!Array.isArray(edition.sections) || edition.sections.length < 1) issue(errors, edition.__file, 'sections must contain at least one section');
+  else for (const [index, section] of edition.sections.entries()) {
+    requiredString(section || {}, 'title', edition.__file, 2);
+    for (const storyId of section.story_ids || []) if (!articleSlugs.has(storyId)) issue(errors, edition.__file, `sections[${index}] references unknown article ${storyId}`);
+    for (const recordId of section.record_ids || []) if (!recordIds.has(recordId)) issue(errors, edition.__file, `sections[${index}] references unknown record ${recordId}`);
+  }
+}
+const newsletterIds = new Set();
+for (const newsletter of newsletters) {
+  if (!SLUG.test(newsletter.id || '')) issue(errors, newsletter.__file, 'id must use lowercase letters, numbers, and single hyphens');
+  if (newsletterIds.has(newsletter.id)) issue(errors, newsletter.__file, `duplicate newsletter id: ${newsletter.id}`);
+  newsletterIds.add(newsletter.id);
+  if (path.basename(newsletter.__file, '.json') !== newsletter.id) issue(errors, newsletter.__file, `filename must match id (${newsletter.id}.json)`);
+  requiredString(newsletter, 'title', newsletter.__file, 3);
+  requiredString(newsletter, 'subject', newsletter.__file, 3);
+  if (!['draft', 'published', 'archived'].includes(newsletter.status)) issue(errors, newsletter.__file, 'status must be draft, published, or archived');
+  if (!Array.isArray(newsletter.story_ids) || newsletter.story_ids.length < 1) issue(errors, newsletter.__file, 'story_ids must contain at least one article');
+  else for (const storyId of newsletter.story_ids) if (!articleSlugs.has(storyId)) issue(errors, newsletter.__file, `references unknown article ${storyId}`);
 }
 const seenArticleSlugs = new Set();
 const seenCanonicalUrls = new Map();

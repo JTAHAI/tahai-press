@@ -34,7 +34,9 @@ export function loadContent() {
     categories: readCollection('categories'),
     hubs: readCollection('hubs'),
     crosswords: readCollection('crosswords'),
-    records: readCollection('records')
+    records: readCollection('records'),
+    editions: readCollection('editions'),
+    newsletters: readCollection('newsletters')
   };
 }
 

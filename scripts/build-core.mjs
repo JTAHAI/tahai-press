@@ -21,8 +21,9 @@ import { readerReachConfig, serviceWorkerSource } from './lib/reader-reach.mjs';
 import { cmsBranch, cmsRepository, SVELTIA_CMS_LICENSE, SVELTIA_CMS_SCRIPT, SVELTIA_CMS_VERSION, sveltiaCmsConfig } from './lib/open-publishing.mjs';
 import { stableStringify, WORKFLOW_STATES, workflowTransitions } from './lib/publishing-console.mjs';
 import { mediaHealth } from './lib/operations.mjs';
+import { buildApi, buildAtom, renderNewsletter } from './lib/syndication.mjs';
 
-const { site, articles, authors, categories, hubs, crosswords, records } = loadContent();
+const { site, articles, authors, categories, hubs, crosswords, records, editions, newsletters } = loadContent();
 const packageInfo = readJson(path.join(ROOT, 'package.json'));
 const assetVersion = packageInfo.version;
 const deployment = deploymentContext();
@@ -892,6 +893,15 @@ const publicationSeries = seriesForArticles(published);
 const featured = published.find((article) => article.featured) || published[0];
 const latest = published.filter((article) => article.slug !== featured?.slug).slice(0, 6);
 const activeHubs = hubs.filter((hub) => hub.active !== false);
+const publicEditions = editions.filter((edition) => edition.status === 'published').map((edition) => ({
+  ...edition,
+  sections: Array.isArray(edition.sections) ? edition.sections.map((section) => ({
+    title: String(section.title || 'Untitled section'),
+    story_ids: Array.isArray(section.story_ids) ? section.story_ids : [],
+    record_ids: Array.isArray(section.record_ids) ? section.record_ids : []
+  })) : []
+}));
+const publicNewsletters = newsletters.filter((newsletter) => newsletter.status === 'published');
 
 function renderHomeModule(module) {
   const type = module.type;
@@ -1721,11 +1731,39 @@ for (const record of publicRecords) {
   writeRoute(`/records/${record.id}/`, layout({ route: `/records/${record.id}/`, title: record.title, description: `Public evidence record: ${record.title}.`, canonical: absoluteUrl(`/records/${record.id}/`), pageClass: 'record-page', body: recordBody }), { lastmod: machineDate(record.published_at || '') });
 }
 
+const publicRecordMap = new Map(publicRecords.map((record) => [record.id, record]));
+const editionCards = publicEditions.map((edition) => `<article class="story-card"><p class="eyebrow">${escapeHtml(edition.template.replaceAll('-', ' '))} · Volume ${escapeHtml(edition.volume || '—')} · Issue ${escapeHtml(edition.issue || '—')}</p><h2><a href="/editions/${escapeHtml(edition.id)}/">${escapeHtml(edition.title)}</a></h2><p>${escapeHtml(edition.editor_note || 'A print-ready selection of canonical reporting and records.')}</p></article>`).join('');
+writeRoute('/editions/', layout({ route: '/editions/', title: 'Editions', description: `Print-ready editions from ${site.title}.`, canonical: absoluteUrl('/editions/'), pageClass: 'editions-index-page', body: `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Edition desk</p><h1>Canonical reporting, arranged for print.</h1><p class="lede">Editions link to the authoritative articles and records. They do not duplicate or supersede the underlying reporting.</p></div></section><section class="section shell story-grid">${editionCards || '<p>No editions have been published.</p>'}</section>` }));
+for (const edition of publicEditions) {
+  const sections = edition.sections.map((section, sectionIndex) => {
+    const stories = section.story_ids.map((id) => publishedArticleMap.get(id)).filter(Boolean);
+    const sectionRecords = section.record_ids.map((id) => publicRecordMap.get(id)).filter(Boolean);
+    return `<section class="edition-section"><header><p class="edition-folio">Section ${String(sectionIndex + 1).padStart(2, '0')}</p><h2>${escapeHtml(section.title)}</h2></header><ol class="edition-story-list">${stories.map((article, index) => `<li class="edition-story"><p class="edition-number">${String(index + 1).padStart(2, '0')}</p><div><h3><a href="/stories/${escapeHtml(article.slug)}/">${escapeHtml(article.title)}</a></h3><p class="edition-deck">${escapeHtml(article.excerpt)}</p><p class="byline"><a href="/stories/${escapeHtml(article.slug)}/receipts/">Receipts Mode and canonical article</a></p></div></li>`).join('')}${sectionRecords.map((record) => `<li class="edition-story"><p class="edition-number">R</p><div><p class="eyebrow">Public evidence record</p><h3><a href="/records/${escapeHtml(record.id)}/">${escapeHtml(record.title)}</a></h3><p class="edition-deck">${escapeHtml(`${record.source_materials.length} public source materials · ${record.record_type}`)}</p></div></li>`).join('')}</ol></section>`;
+  }).join('');
+  const editionBody = `<article class="edition shell"><header class="edition-masthead"><p class="edition-folio">${escapeHtml(edition.cover_kicker || site.masthead_kicker || site.tagline)}</p><h1>${escapeHtml(edition.title)}</h1><p>Volume ${escapeHtml(edition.volume || '—')} · Issue ${escapeHtml(edition.issue || '—')} · ${escapeHtml(formatDate(edition.date, site.locale, site.timezone))}</p><div class="edition-actions"><button class="button js-only" type="button" data-print-edition>${icon('print')} Print edition</button><a class="button button-secondary" href="/editions/">All editions</a></div></header><section class="edition-editor-note"><h2>From the editor</h2><p>${escapeHtml(edition.editor_note || '')}</p></section><nav class="edition-contents" aria-label="Edition contents"><h2>Contents</h2><ol>${edition.sections.map((section) => `<li>${escapeHtml(section.title)}</li>`).join('')}</ol></nav>${sections}${edition.inserts?.length ? `<aside class="edition-inserts"><h2>Inserts and source notes</h2><ul>${edition.inserts.map((insert) => `<li>${escapeHtml(insert)}</li>`).join('')}</ul></aside>` : ''}<footer class="edition-footer"><p>${escapeHtml(edition.credits || site.editorial_promise || site.description)}</p><p>${escapeHtml(edition.corrections_note || 'Corrections remain on the linked canonical publications.')}</p><p class="edition-folio">${escapeHtml(absoluteUrl(`/editions/${edition.id}/`))}</p></footer></article>`;
+  writeRoute(`/editions/${edition.id}/`, layout({ route: `/editions/${edition.id}/`, title: edition.title, description: edition.editor_note || `Print-ready edition from ${site.title}.`, canonical: absoluteUrl(`/editions/${edition.id}/`), pageClass: 'edition-page edition-canonical-page', body: editionBody }), { lastmod: machineDate(edition.date) });
+}
+
+const newsletterCards = publicNewsletters.map((newsletter) => `<article class="story-card"><p class="eyebrow">Tracking-free email edition</p><h2><a href="/newsletters/${escapeHtml(newsletter.id)}/">${escapeHtml(newsletter.title)}</a></h2><p>${escapeHtml(newsletter.preview_text || newsletter.description || '')}</p></article>`).join('');
+writeRoute('/newsletters/', layout({ route: '/newsletters/', title: 'Newsletter archive', description: `Provider-neutral newsletter editions from ${site.title}.`, canonical: absoluteUrl('/newsletters/'), pageClass: 'newsletter-index-page', body: `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Newsletter desk</p><h1>Prepared for email, never sent by this site.</h1><p class="lede">These browser-readable archives have matching email-safe HTML and plain-text exports. They contain no tracking pixels, remote fonts, scripts, or email provider lock-in.</p></div></section><section class="section shell story-grid">${newsletterCards || '<p>No newsletters have been published.</p>'}</section>` }));
+for (const newsletter of publicNewsletters) {
+  const rendered = renderNewsletter({ newsletter, site, articleMap: publishedArticleMap });
+  fs.mkdirSync(path.join(DIST, 'newsletters', newsletter.id), { recursive: true });
+  fs.writeFileSync(path.join(DIST, 'newsletters', newsletter.id, 'email.html'), rendered.html, 'utf8');
+  fs.writeFileSync(path.join(DIST, 'newsletters', newsletter.id, 'email.txt'), `${rendered.text}\n`, 'utf8');
+  writeRoute(`/newsletters/${newsletter.id}/`, layout({ route: `/newsletters/${newsletter.id}/`, title: newsletter.title, description: rendered.preview, canonical: absoluteUrl(`/newsletters/${newsletter.id}/`), pageClass: 'newsletter-page', body: `<article class="shell prose"><p class="eyebrow">Newsletter archive</p><h1>${escapeHtml(newsletter.title)}</h1><p class="lede">${escapeHtml(rendered.preview)}</p><p><a class="button" href="/newsletters/${escapeHtml(newsletter.id)}/email.html">Download email-safe HTML</a> <a class="button button-secondary" href="/newsletters/${escapeHtml(newsletter.id)}/email.txt">Plain-text edition</a></p><section><h2>Included canonical reporting</h2><ul>${rendered.articles.map((article) => `<li><a href="/stories/${escapeHtml(article.slug)}/">${escapeHtml(article.title)}</a> — ${escapeHtml(article.excerpt)}</li>`).join('')}</ul></section><p>Before sending, replace the provider-neutral unsubscribe placeholder with the recipient email provider’s approved unsubscribe mechanism.</p></article>` }));
+}
+
 const newestPublicationDate = machineDate(published[0]?.updated_at || published[0]?.published_at || '');
 const sitemapEntries = routeManifest.map((entry) => ({ ...entry, lastmod: entry.lastmod || newestPublicationDate }));
 fs.writeFileSync(path.join(DIST, 'sitemap.xml'), buildSitemap(sitemapEntries), 'utf8');
 fs.writeFileSync(path.join(DIST, 'feed.xml'), buildRss({ site, articles: published, authors, categories }), 'utf8');
+fs.writeFileSync(path.join(DIST, 'atom.xml'), buildAtom({ site, articles: published, authors }), 'utf8');
 fs.writeFileSync(path.join(DIST, 'feed.json'), `${jsonForHtml(buildJsonFeed({ site, articles: published, authors }))}\n`, 'utf8');
+const apiRoot = path.join(DIST, 'api', 'v1');
+fs.mkdirSync(apiRoot, { recursive: true });
+const apiDocuments = buildApi({ site, articles: published, authors, categories, hubs: activeHubs, records: publicRecords, editions: publicEditions, routeManifest: sitemapEntries, generatedVersion: packageInfo.version });
+for (const [name, document] of Object.entries(apiDocuments)) fs.writeFileSync(path.join(apiRoot, `${name}.json`), `${JSON.stringify(document, null, 2)}\n`, 'utf8');
 const manifestIcons = templateMode(site)
   ? [{ src: '/assets/tahai-press-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/assets/tahai-press-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }]
   : [{ src: String(site.logo || '').startsWith('/') ? site.logo : '/assets/favicon.svg', sizes: 'any', purpose: 'any maskable' }];

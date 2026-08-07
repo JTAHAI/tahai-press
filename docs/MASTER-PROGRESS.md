@@ -34,3 +34,7 @@ In progress. Every public article has a static Receipts Mode route. Public evide
 ## Release preparation
 
 Deterministic clean-source and Cloudflare-root release packages can be generated into ignored build artifacts without overwriting user-owned historical archives. The project remains on the documented alpha identity until all master-plan phases and external publication gates are complete.
+
+## Phase 6 — editions and syndication
+
+In progress. Explicit edition and newsletter content models now build canonical print editions, provider-neutral newsletter archive/email/plain-text exports, RSS, Atom, JSON Feed, and a versioned same-origin public API. The integrated builder, safe embed cards, broader print/theme/browser matrices, and final feed-family coverage remain open before this phase can be marked complete.

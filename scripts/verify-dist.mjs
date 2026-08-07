@@ -100,7 +100,7 @@ else {
   }
 
   const files = walk(DIST);
-  const htmlFiles = files.filter((file) => file.endsWith('.html'));
+  const htmlFiles = files.filter((file) => file.endsWith('.html') && !/[/\\]newsletters[/\\][^/\\]+[/\\]email\.html$/i.test(file));
   if (!htmlFiles.length) fail('Deployment output contains no HTML files.');
 
   const { site, articles } = loadContent();

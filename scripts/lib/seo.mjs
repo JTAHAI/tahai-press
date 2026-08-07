@@ -157,6 +157,7 @@ export function pageHead({
     ...categories.map((category) => `<meta property="article:section" content="${escapeHtml(category)}">`),
     ...tags.map((tag) => `<meta property="article:tag" content="${escapeHtml(tag)}">`),
     `<link rel="alternate" type="application/rss+xml" title="${escapeHtml(site.seo?.feed_title || `${site.title} RSS`)}" href="${escapeHtml(new URL('/feed.xml', site.site_url).href)}">`,
+    `<link rel="alternate" type="application/atom+xml" title="${escapeHtml(site.seo?.feed_title || `${site.title} Atom`)}" href="${escapeHtml(new URL('/atom.xml', site.site_url).href)}">`,
     `<link rel="alternate" type="application/feed+json" title="${escapeHtml(site.seo?.feed_title || `${site.title} JSON Feed`)}" href="${escapeHtml(new URL('/feed.json', site.site_url).href)}">`,
     '<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">',
     '<link rel="manifest" href="/site.webmanifest">',
