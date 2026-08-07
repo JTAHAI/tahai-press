@@ -118,6 +118,7 @@ test('Launch package applicator backs up source files, disables demo mode, repla
       schema_version: 1, software: 'TAHAI Press', release: '2.0.0', remove_demo: true,
       demo_article_files: ['sample-written-story.json', 'sample-pdf-record.json', 'sample-pdf-story.json', 'sample-external-document.json'],
       site_config: site, first_article: article,
+      first_record: { ...article, slug: 'launch-test-public-record', title: 'Launch Test Public Record', article_type: 'pdf', classification: 'public_record', featured: false },
       author_record: { slug: 'editorial-team', name: 'Launch Test Ledger Editorial Team', role: 'Editorial team', bio: 'Reporting and editing.', active: true }
     };
     const packagePath = path.join(temp, 'launch.json');
@@ -127,6 +128,7 @@ test('Launch package applicator backs up source files, disables demo mode, repla
     assert.equal(readJson(path.join(temp, 'content', 'site.json')).template_mode, false);
     assert.equal(fs.existsSync(path.join(temp, 'content', 'articles', 'sample-written-story.json')), false);
     assert.equal(readJson(path.join(temp, 'content', 'articles', 'welcome-to-launch-test-ledger.json')).status, 'draft');
+    assert.equal(readJson(path.join(temp, 'content', 'articles', 'launch-test-public-record.json')).classification, 'public_record');
     assert.equal(readJson(path.join(temp, 'content', 'authors', 'editorial-team.json')).name, 'Launch Test Ledger Editorial Team');
     assert.equal(fs.readdirSync(path.join(temp, '.artifacts')).some((name) => name.startsWith('launch-backup-')), true);
   } finally {

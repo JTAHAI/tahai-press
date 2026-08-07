@@ -1306,7 +1306,8 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       <section class="launch-step" data-launch-step="11" data-step-title="First public record" aria-labelledby="launch-step-11-title" hidden>
         <p class="eyebrow">Step 11 of 13 · about one minute</p><h2 id="launch-step-11-title" tabindex="-1">Publish evidence with context, not just a file.</h2>
         <p class="launch-step-lede">A public record should retain its original file, an accessible HTML summary, source context, and any necessary rights information. The PDF-led article workflow blocks incomplete published summaries.</p>
-        <label class="setup-toggle" for="launch-record-ready"><input id="launch-record-ready" name="record_ready" type="checkbox"> I will create the first public-record draft with an HTML summary before publishing it.</label>
+        <div class="setup-grid"><label class="field-wide" for="launch-record-title">Record title<input id="launch-record-title" name="record_title" maxlength="180" placeholder="Public record: meeting agenda"></label><label class="field-wide" for="launch-record-summary">Plain-language record summary<textarea id="launch-record-summary" name="record_summary" rows="3" maxlength="600" placeholder="Explain what the record is, who published it, and why it matters."></textarea></label></div>
+        <label class="setup-toggle" for="launch-record-ready"><input id="launch-record-ready" name="record_ready" type="checkbox"> I will add the original file and an HTML summary before publishing this public-record draft.</label>
         <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Protect publisher ownership ${icon('arrow')}</button></div>
       </section>
 

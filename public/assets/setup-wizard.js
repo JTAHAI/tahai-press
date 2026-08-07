@@ -72,6 +72,9 @@
       corrections: [],
       story_blocks: []
     },
+    firstRecord: {
+      title: '', summary: ''
+    },
     editorReady: false,
     deploymentReady: false,
     launchPlan: {
@@ -163,6 +166,8 @@
     setValue('article_category', state.firstArticle.categories?.[0] || 'community-reporting');
     setValue('article_image', state.firstArticle.featured_image || '');
     setValue('article_image_alt', state.firstArticle.featured_image_alt || '');
+    setValue('record_title', state.firstRecord?.title || '');
+    setValue('record_summary', state.firstRecord?.summary || '');
     setValue('mission', state.launchPlan?.mission || '');
     setValue('mission_ready', state.launchPlan?.missionReady);
     setValue('standards_ready', state.launchPlan?.standardsReady);
@@ -308,6 +313,22 @@
     return article;
   }
 
+  function buildFirstRecord() {
+    const title = String(state.firstRecord?.title || '').trim();
+    const summary = String(state.firstRecord?.summary || '').trim();
+    return {
+      title, slug: slugify(title || 'first-public-record'), status: 'draft', article_type: 'pdf', classification: 'public_record',
+      kicker: 'Public record', excerpt: summary, body: summary, published_at: '', updated_at: '', author: 'editorial-team',
+      categories: [String(value('article_category') || 'community-reporting').trim()], tags: ['public-record'], hub: '', featured: false,
+      featured_image: '', featured_image_alt: '', featured_image_caption: '', featured_image_credit: '', featured_image_rights: '',
+      featured_image_aspect: 'original', featured_image_focal_point: 'center', story_blocks: [], series_slug: '', series_title: '',
+      series_description: '', related_articles: [], methodology: '', disclosure: '', rights_and_reuse: '', what_changed: '', update_history: [], corrections: [],
+      pdf_file: '', pdf_url: '', pdf_title: '', document_description: '', document_accessible_summary: '', document_accessibility_note: '',
+      document_date: '', document_pages: 0, document_source: '', external_link_label: '', allow_download: false, canonical_url: '', noindex: true,
+      review_content: false, review_rights: false, review_accessibility: false, editor_notes: 'Created by Launch Desk. Add the original record and accessible HTML summary before publication.', legacy_urls: [], source_links: []
+    };
+  }
+
   function launchIssues(config, article) {
     const issues = [];
     let siteHost = '';
@@ -335,7 +356,7 @@
     if (step === 8) return Boolean(state.launchPlan?.missionReady && state.launchPlan?.mission?.trim());
     if (step === 9) return Boolean(state.launchPlan?.standardsReady && state.launchPlan?.accessibilityReady);
     if (step === 10) return Boolean(state.launchPlan?.importReady);
-    if (step === 11) return Boolean(state.launchPlan?.recordReady);
+    if (step === 11) return Boolean(state.launchPlan?.recordReady && state.firstRecord?.title?.trim() && state.firstRecord?.summary?.trim());
     if (step === 12) return Boolean(state.launchPlan?.ownershipReady);
     if (step === 13) return launchIssues(config, article).every(([kind]) => kind !== 'blocker') && [8, 9, 10, 11, 12].every((index) => completionForStep(index, config, article));
     return false;
@@ -351,6 +372,7 @@
     return {
       config: buildConfig(),
       firstArticle: buildFirstArticle(),
+      firstRecord: structuredClone(state.firstRecord || {}),
       editorReady: Boolean(value('editor_ready')),
       deploymentReady: Boolean(value('deployment_ready')),
       launchPlan: structuredClone(state.launchPlan || {}),
@@ -372,6 +394,7 @@
   function syncState({ record = true } = {}) {
     state.config = buildConfig();
     state.firstArticle = buildFirstArticle();
+    state.firstRecord = { title: String(value('record_title') || '').trim(), summary: String(value('record_summary') || '').trim() };
     state.editorReady = Boolean(value('editor_ready'));
     state.deploymentReady = Boolean(value('deployment_ready'));
     const completed = [];
@@ -395,6 +418,7 @@
   function restoreSnapshot(snap) {
     state.config = structuredClone(snap.config);
     state.firstArticle = structuredClone(snap.firstArticle);
+    state.firstRecord = structuredClone(snap.firstRecord || defaultState().firstRecord);
     state.editorReady = snap.editorReady;
     state.deploymentReady = snap.deploymentReady;
     state.launchPlan = structuredClone(snap.launchPlan || defaultState().launchPlan);
@@ -523,6 +547,7 @@
       demo_article_files: DEMO_ARTICLE_FILES,
       site_config: buildConfig({ launch: true }),
       first_article: buildFirstArticle(),
+      first_record: buildFirstRecord(),
       author_record: {
         slug: 'editorial-team',
         name: `${buildConfig({ launch: true }).title} Editorial Team`,
@@ -576,6 +601,7 @@
       const pack = launchPackage();
       await writeJsonFile(contentDirectory, 'site.json', pack.site_config);
       await writeJsonFile(articlesDirectory, `${pack.first_article.slug}.json`, pack.first_article);
+      await writeJsonFile(articlesDirectory, `${pack.first_record.slug}.json`, pack.first_record);
       await writeJsonFile(authorsDirectory, `${pack.author_record.slug}.json`, pack.author_record);
       announce(`Launch files applied. A backup was saved in .launch-backups/${stamp}. Commit the changes when ready.`);
       state.completed = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
