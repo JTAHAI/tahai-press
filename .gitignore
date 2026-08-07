@@ -18,6 +18,7 @@ imports/transactions/*
 imports/quarantine/*
 !imports/quarantine/.gitkeep
 .launch-backups/
+content.undo-*/
 themes/installed/
 themes/exports/
 themes/active.json
