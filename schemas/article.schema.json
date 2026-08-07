@@ -353,6 +353,18 @@
       "type": "string",
       "maxLength": 1000
     },
+    "search_metadata": {
+      "type": "object",
+      "description": "Explicit publisher-managed discovery labels. Never infer sensitive relationships from article text.",
+      "properties": {
+        "organization": { "type": "string", "maxLength": 180 },
+        "section": { "type": "string", "maxLength": 100 },
+        "agency": { "type": "string", "maxLength": 180 },
+        "jurisdiction": { "type": "string", "maxLength": 180 },
+        "place": { "type": "string", "maxLength": 180 }
+      },
+      "additionalProperties": false
+    },
     "update_history": {
       "type": "array",
       "maxItems": 25,

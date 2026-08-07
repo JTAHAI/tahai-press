@@ -86,6 +86,15 @@ test('generated static search index includes only published articles', () => {
   assert.ok(payload.entries.every((entry) => entry.url.startsWith('/stories/')));
 });
 
+test('search export derives only public facets and accepts explicit publisher-managed metadata', () => {
+  const entries = createSearchIndex({
+    articles: [{ slug: 'metadata-proof', title: 'Metadata proof', excerpt: 'A long enough public summary for the search metadata proof.', body: 'Public evidence only.', status: 'published', published_at: '2026-08-07T12:00:00Z', article_type: 'pdf', classification: 'public-record', search_metadata: { agency: 'Fictional Records Office', jurisdiction: 'Example County', place: 'Example City' }, corrections: [{ title: 'Correction', body: 'A public correction.' }], update_history: [{ title: 'Update', body: 'A public update.' }], categories: [], tags: [] }],
+    authors: [], categories: [], hubs: []
+  });
+  assert.deepEqual(entries[0].facets, { organization: '', section: '', agency: 'Fictional Records Office', jurisdiction: 'Example County', place: 'Example City', year: '2026', month: '08', classification: 'public-record', public_record: true, public_document: true, developing: false, corrected: true, updated: true });
+  assert.match(entries[0].searchable, /fictional records office/);
+});
+
 test('the pinned Pagefind index is built for public discovery and ignores private newsroom routes', () => {
   build();
   assert.equal(fs.existsSync(path.join(DIST, 'pagefind', 'pagefind.js')), true);

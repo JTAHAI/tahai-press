@@ -483,6 +483,16 @@ for (const article of articles) {
   optionalString(article, 'disclosure', article.__file, 2000);
   optionalString(article, 'rights_and_reuse', article.__file, 1000);
   optionalString(article, 'what_changed', article.__file, 1000);
+  if (article.search_metadata !== undefined) {
+    if (!article.search_metadata || typeof article.search_metadata !== 'object' || Array.isArray(article.search_metadata)) issue(errors, article.__file, 'search_metadata must be an object');
+    else {
+      const allowedSearchMetadata = new Set(['organization', 'section', 'agency', 'jurisdiction', 'place']);
+      for (const [key, value] of Object.entries(article.search_metadata)) {
+        if (!allowedSearchMetadata.has(key)) issue(errors, article.__file, `search_metadata.${key} is not supported`);
+        else optionalString({ [key]: value }, key, article.__file, key === 'section' ? 100 : 180);
+      }
+    }
+  }
 
   const seriesFields = [article.series_slug, article.series_title].filter((value) => String(value || '').trim());
   if (seriesFields.length === 1) issue(errors, article.__file, 'series_slug and series_title must be provided together');

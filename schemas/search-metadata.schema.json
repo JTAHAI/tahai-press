@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TAHAI Press explicit search metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "organization": { "type": "string", "maxLength": 180 },
+    "section": { "type": "string", "maxLength": 100 },
+    "agency": { "type": "string", "maxLength": 180 },
+    "jurisdiction": { "type": "string", "maxLength": 180 },
+    "place": { "type": "string", "maxLength": 180 }
+  }
+}

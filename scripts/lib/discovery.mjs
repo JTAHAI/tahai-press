@@ -78,6 +78,8 @@ export function createSearchIndex({ articles = [], authors = [], categories = []
     const author = authorMap.get(article.author);
     const categoryNames = (article.categories || []).map((slug) => categoryMap.get(slug)?.name).filter(Boolean);
     const hub = hubMap.get(article.hub);
+    const dateParts = archiveDateParts(article.published_at);
+    const metadata = article.search_metadata && typeof article.search_metadata === 'object' ? article.search_metadata : {};
     const body = plainText(`${article.body || ''} ${storyBlocksPlainText(article)}`);
     const searchable = normalizeSearchText([
       article.title,
@@ -88,6 +90,11 @@ export function createSearchIndex({ articles = [], authors = [], categories = []
       ...categoryNames,
       ...(article.tags || []),
       hub?.name,
+      metadata.organization,
+      metadata.section,
+      metadata.agency,
+      metadata.jurisdiction,
+      metadata.place,
       article.pdf_title,
       article.document_description,
       article.document_source,
@@ -113,6 +120,10 @@ export function createSearchIndex({ articles = [], authors = [], categories = []
       categories: (article.categories || []).map((slug) => ({ slug, name: categoryMap.get(slug)?.name || slug })),
       tags: (article.tags || []).map((name) => ({ name, slug: topicSlug(name) })).filter((item) => item.slug),
       hub: hub ? { name: hub.name, slug: hub.slug } : null,
+      facets: {
+        organization: String(metadata.organization || '').trim(), section: String(metadata.section || '').trim(), agency: String(metadata.agency || '').trim(), jurisdiction: String(metadata.jurisdiction || '').trim(), place: String(metadata.place || '').trim(),
+        year: dateParts?.year || '', month: dateParts?.month || '', classification: article.classification || 'news', public_record: article.classification === 'public-record', public_document: ['pdf', 'mixed'].includes(article.article_type), developing: article.classification === 'developing', corrected: Boolean((article.corrections || []).length || article.status === 'corrected'), updated: Boolean(article.updated_at || (article.update_history || []).length)
+      },
       searchable
     };
   });
