@@ -50,3 +50,11 @@ In progress. An isolated optional collaboration service now has portable checksu
 ## Phase 9 — Optional Newsroom Worker
 
 In progress. The optional native Worker has its own package lockfile, Wrangler configuration, D1 migration, exact-origin CORS, public health endpoint, contact intake, bearer-gated attachment validation, deployment/rollback/teardown documentation, and passing tests. It is not connected to reader delivery and has not been deployed; owner account credentials and the real D1 identifier remain external gates.
+
+## Phase 10 — Recovery, updates, and transfer
+
+In progress. A private deterministic safety-copy command now records checksums and verifies each staged byte before restoring publisher content; a local recovery drill and post-restore build verification passed. Update conflict handling, a portable transfer package, and dedicated fixture coverage remain open.
+
+## Phase 12 — GA evidence
+
+In progress. The generated 75-route site passes validation, build, accessibility, deployment, performance, reader, media, smoke, release-proof, release-package, repository-boundary, security, and Chromium/Firefox/WebKit matrix gates. The full serial suite exceeds the current execution window and therefore remains an honest incomplete gate; expanded viewport/theme/print scenarios and the required evidence matrices remain open.
