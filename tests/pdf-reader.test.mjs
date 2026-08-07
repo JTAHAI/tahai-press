@@ -49,6 +49,8 @@ test('PDF reader script provides loading, view switching, and fullscreen state',
   assert.match(script, /window\.print\(\)/);
   const builder = read('scripts/build.mjs');
   assert.match(builder, /split\('#'\)\[0\]/);
+  assert.equal(fs.existsSync(path.join(DIST, 'assets', 'pdfjs', 'pdf.min.mjs')), true);
+  assert.equal(fs.existsSync(path.join(DIST, 'assets', 'pdfjs', 'pdf.worker.min.mjs')), true);
 });
 
 test('PDF reader CSS includes compact mobile actions, fullscreen layout, and print fallback', () => {

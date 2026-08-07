@@ -43,6 +43,13 @@ const DEMO_SITE = 'https://tahai-press.tahai.net';
 fs.rmSync(DIST, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 fs.mkdirSync(DIST, { recursive: true });
 fs.cpSync(path.join(ROOT, 'public'), DIST, { recursive: true, force: true });
+// PDF.js is copied as same-origin, generated output. It is dynamically imported only
+// by the document reader; ordinary reader pages never request either module.
+const pdfjsSource = path.join(ROOT, 'node_modules', 'pdfjs-dist', 'build');
+const pdfjsOutput = path.join(DIST, 'assets', 'pdfjs');
+if (!fs.existsSync(path.join(pdfjsSource, 'pdf.min.mjs')) || !fs.existsSync(path.join(pdfjsSource, 'pdf.worker.min.mjs'))) throw new Error('Pinned pdfjs-dist build assets are missing. Run npm ci.');
+fs.mkdirSync(pdfjsOutput, { recursive: true });
+for (const file of ['pdf.min.mjs', 'pdf.worker.min.mjs']) fs.copyFileSync(path.join(pdfjsSource, file), path.join(pdfjsOutput, file));
 fs.mkdirSync(path.join(DIST, 'admin'), { recursive: true });
 fs.writeFileSync(path.join(DIST, 'admin', 'config.yml'), gitCmsConfig, 'utf8');
 if (!templateMode(site)) {

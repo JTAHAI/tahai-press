@@ -44,7 +44,7 @@ test('performance budgets protect the homepage, styles, scripts, search, file co
   const content = loadContent();
   const report = performanceHealth({ dist: DIST, budgets: content.site.operations.performance_budgets });
   assert.equal(report.passed, true);
-  assert.equal(report.checks.length, 7);
+  assert.equal(report.checks.length, 8);
   assert.ok(report.largest_files.length > 0);
   assert.ok(report.metrics.homepage_html_bytes > 0);
 });

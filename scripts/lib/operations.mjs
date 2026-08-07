@@ -201,6 +201,7 @@ export function performanceHealth({ dist, budgets = {} }) {
     stylesheet_bytes: 250 * 1024,
     javascript_total_bytes: 500 * 1024,
     pagefind_bytes: 512 * 1024,
+    pdfjs_bytes: 2 * 1024 * 1024,
     search_index_bytes: 2 * 1024 * 1024,
     generated_file_count: 20000,
     individual_file_bytes: 25 * 1024 * 1024
@@ -210,9 +211,11 @@ export function performanceHealth({ dist, budgets = {} }) {
   const homepage = path.join(dist, 'index.html');
   const stylesheet = path.join(dist, 'assets', 'styles.css');
   const searchIndex = path.join(dist, 'search-index.json');
-  const scripts = allFiles.filter((file) => path.extname(file).toLowerCase() === '.js');
-  const pagefindScripts = scripts.filter((file) => path.relative(dist, file).replaceAll('\\', '/').startsWith('pagefind/'));
-  const coreScripts = scripts.filter((file) => !path.relative(dist, file).replaceAll('\\', '/').startsWith('pagefind/'));
+  const scripts = allFiles.filter((file) => ['.js', '.mjs'].includes(path.extname(file).toLowerCase()));
+  const routeScoped = (file, folder) => path.relative(dist, file).replaceAll('\\', '/').startsWith(folder);
+  const pagefindScripts = scripts.filter((file) => routeScoped(file, 'pagefind/'));
+  const pdfjsScripts = scripts.filter((file) => routeScoped(file, 'assets/pdfjs/'));
+  const coreScripts = scripts.filter((file) => !routeScoped(file, 'pagefind/') && !routeScoped(file, 'assets/pdfjs/'));
   const metrics = {
     homepage_html_bytes: fileSize(homepage),
     stylesheet_bytes: fileSize(stylesheet),
@@ -220,6 +223,7 @@ export function performanceHealth({ dist, budgets = {} }) {
     // so homepage/script budgets still measure code readers receive everywhere.
     javascript_total_bytes: coreScripts.reduce((sum, file) => sum + fileSize(file), 0),
     pagefind_bytes: pagefindScripts.reduce((sum, file) => sum + fileSize(file), 0),
+    pdfjs_bytes: pdfjsScripts.reduce((sum, file) => sum + fileSize(file), 0),
     search_index_bytes: fileSize(searchIndex),
     generated_file_count: allFiles.length,
     generated_total_bytes: allFiles.reduce((sum, file) => sum + fileSize(file), 0),

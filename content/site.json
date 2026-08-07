@@ -180,6 +180,7 @@
       "stylesheet_bytes": 256000,
       "javascript_total_bytes": 512000,
       "pagefind_bytes": 524288,
+      "pdfjs_bytes": 2097152,
       "search_index_bytes": 2097152,
       "generated_file_count": 20000,
       "individual_file_bytes": 26214400
