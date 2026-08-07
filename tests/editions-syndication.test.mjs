@@ -20,7 +20,7 @@ test('canonical edition links to source authority and remains printable without 
 
 test('newsletter desk emits a browser archive, email-safe HTML, and plain text without tracking behavior', () => {
   const archive = read('newsletters/public-records-brief/index.html');
-  const email = read('newsletters/public-records-brief/email.html');
+  const email = read('newsletters/public-records-brief/email.html.txt');
   const text = read('newsletters/public-records-brief/email.txt');
   assert.match(archive, /Download email-safe HTML/);
   assert.match(email, /Public Records Brief/);

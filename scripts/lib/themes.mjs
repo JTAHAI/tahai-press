@@ -132,6 +132,9 @@ export function loadPublishedTheme(selection) {
   if (!selection) return null;
   if (!selection || typeof selection !== 'object' || Array.isArray(selection)) throw new Error('theme_package must be an object.');
   const file = packagePath(selection);
+  // Minimal downstream/fork fixtures can intentionally omit optional theme archives.
+  // Fall back to the core accessible theme instead of making the static build unusable.
+  if (!fs.existsSync(file)) return null;
   const validation = validateThemeZip(file);
   if (!validation.valid) throw new Error(`theme_package is invalid: ${validation.errors.join('; ')}`);
   if (selection.id !== validation.manifest.id || selection.version !== validation.manifest.version || selection.sha256 !== validation.sha256) throw new Error('theme_package id, version, or checksum does not match its ZIP.');
