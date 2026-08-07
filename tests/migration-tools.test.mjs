@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { ROOT } from '../scripts/lib/content.mjs';
 import {
   discoverRecords, htmlToMarkdown, importContent, parseCsv, parseFrontmatter,
-  parseWordPressWxr, slugify
+  parseWordPressWxr, rollbackImportTransaction, slugify
 } from '../scripts/lib/importers.mjs';
 
 const fixtures = path.join(ROOT, 'tests/fixtures/imports');
@@ -29,6 +29,8 @@ function importFixture(input, type, extra = {}) {
     outputDirectory: temp.articles,
     mediaDirectory: temp.media,
     reportFile: temp.report,
+    transactionDirectory: path.join(temp.root, 'transactions'),
+    quarantineDirectory: path.join(temp.root, 'quarantine'),
     conflictMode: 'skip',
     defaults: { status: 'draft', author: 'editorial-team', category: 'community-reporting', hub: '' },
     ...extra
@@ -147,6 +149,35 @@ test('conflict policies skip, suffix, or overwrite without silent replacement', 
   assert.equal(JSON.parse(fs.readFileSync(path.join(temp.articles, 'json-import-example.json'), 'utf8')).title, 'JSON Import Example');
 });
 
+test('completed imports have a byte-checked rollback transaction for created and overwritten files', () => {
+  const temp = workspace();
+  const target = path.join(temp.articles, 'json-import-example.json');
+  const original = Buffer.from('{\n  "marker": "restore these exact bytes"\n}\n', 'utf8');
+  fs.writeFileSync(target, original);
+  const report = importContent({
+    input: path.join(fixtures, 'articles.json'), type: 'json', outputDirectory: temp.articles,
+    mediaDirectory: temp.media, conflictMode: 'overwrite',
+    transactionDirectory: path.join(temp.root, 'transactions'), quarantineDirectory: path.join(temp.root, 'quarantine'),
+    defaults: { status: 'draft', author: 'editorial-team', category: 'community-reporting', hub: '' }
+  });
+  assert.equal(report.transaction.state, 'completed');
+  assert.equal(report.transaction.overwritten, 1);
+  assert.notDeepEqual(fs.readFileSync(target), original);
+  const rolledBack = rollbackImportTransaction(report.transaction.file);
+  assert.deepEqual(rolledBack, { created_removed: 0, overwritten_restored: 1, transaction_file: report.transaction.file });
+  assert.deepEqual(fs.readFileSync(target), original);
+  assert.equal(JSON.parse(fs.readFileSync(report.transaction.file, 'utf8')).state, 'rolled_back');
+});
+
+test('rollback refuses to overwrite a target edited after import without an explicit force flag', () => {
+  const { temp, report } = importFixture(path.join(fixtures, 'articles.json'), 'json');
+  const target = path.join(temp.articles, 'json-import-example.json');
+  fs.writeFileSync(target, '{"changed":"after import"}\n');
+  assert.throws(() => rollbackImportTransaction(report.transaction.file), /changed import target/);
+  rollbackImportTransaction(report.transaction.file, { force: true });
+  assert.equal(fs.existsSync(target), false);
+});
+
 test('auto directory intake discovers all supported source formats recursively', () => {
   const records = discoverRecords(fixtures, 'auto');
   assert.equal(records.length, 5);
@@ -178,11 +209,14 @@ test('PDF intake rejects extension-only impostors before copying them', () => {
   fs.writeFileSync(path.join(fakeDirectory, 'not-a-document.pdf'), 'not actually a PDF');
   const report = importContent({
     input: fakeDirectory, type: 'pdf', outputDirectory: temp.articles, mediaDirectory: temp.media,
+    transactionDirectory: path.join(temp.root, 'transactions'), quarantineDirectory: path.join(temp.root, 'quarantine'),
     defaults: { status: 'draft', author: 'editorial-team', category: 'community-reporting', hub: '' }
   });
   assert.equal(report.summary.failed, 1);
   assert.equal(report.summary.imported, 0);
   assert.match(report.items[0].errors[0], /does not have a PDF signature/);
+  assert.match(report.items[0].quarantine, /quarantine\//);
+  assert.equal(fs.existsSync(path.join(temp.root, 'quarantine')), true);
   assert.equal(fs.existsSync(temp.media), false);
 });
 

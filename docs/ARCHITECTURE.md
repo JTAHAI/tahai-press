@@ -125,7 +125,7 @@ WordPress WXR / Markdown / JSON / CSV / PDF folder
               existing validation and build
 ```
 
-The importer uses only Node.js built-ins. It does not fetch remote URLs, scrape live sites, authenticate to WordPress, download media, directly modify deployment output, or publish to Cloudflare. Imported source files and generated reports live in Git-ignored directories by default. Existing slugs are never replaced unless an operator explicitly selects overwrite behavior.
+The importer uses only Node.js built-ins. It does not fetch remote URLs, scrape live sites, authenticate to WordPress, download media, directly modify deployment output, or publish to Cloudflare. Imported source files, reports, rollback transactions, and rejected-record quarantine files live in Git-ignored directories by default. Existing slugs are never replaced unless an operator explicitly selects overwrite behavior. Each non-dry-run write is first recorded in a private transaction manifest with a byte-for-byte backup where needed; rollback verifies that a target has not changed since import unless an operator explicitly forces recovery.
 
 The original URL is stored in the import report and normalized article `legacy_urls`. Redirect generation remains a separate build stage so migration intake cannot silently change live routing behavior.
 

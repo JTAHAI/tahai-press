@@ -700,7 +700,7 @@ The local importer supports:
 Start with a dry run:
 
 ```bash
-npm run import -- --source imports/inbox --dry-run
+npm run import -- --input imports/inbox --dry-run
 ```
 
 Normal imports are conservative:
@@ -713,6 +713,7 @@ Normal imports are conservative:
 - stable content hashes are recorded;
 - original WordPress paths are retained as legacy URL candidates;
 - remote sites and remote media are not scraped automatically.
+- completed imports retain a private, byte-checked rollback transaction; failed records are quarantined for review.
 
 See [docs/MIGRATION-IMPORTS.md](docs/MIGRATION-IMPORTS.md).
 

@@ -13,6 +13,10 @@ imports/inbox/*
 !imports/inbox/.gitkeep
 imports/reports/*
 !imports/reports/.gitkeep
+imports/transactions/*
+!imports/transactions/.gitkeep
+imports/quarantine/*
+!imports/quarantine/.gitkeep
 .launch-backups/
 themes/installed/
 themes/exports/
