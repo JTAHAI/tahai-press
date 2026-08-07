@@ -15,4 +15,10 @@ Phase 0 completed at commit `ad435c25ae837fce3de601a8dd956eed84ec246e`. The acce
 
 ## Phase 1 — core publisher experience
 
-In progress. Launch Desk now contains thirteen locally persisted, publisher-facing steps and blocks package generation or local application until its mission, trust, import, public-record, ownership, and final-readiness gates are complete. The completed steps remain only one portion of the Phase 1 acceptance criteria; the phase is not marked passed until its full evidence suite is produced.
+Completed at `fb8cebb`. The publisher experience now includes a thirteen-step, locally persisted Launch Desk; safe launch-package application with backups; a configurable homepage module builder; declarative professional story blocks; Quick Story and full editorial workflows; Media Desk; accessibility authoring checks; reader preferences and simplified views; public-record presentation; static search, archives, redirects, feeds, offline reading, and local operational tools. A fresh 320×568 browser check caught and then verified the repair of the Launch Desk navigation: all thirteen destinations remain readable, without page-width overflow or console errors.
+
+The phase gate passed with content/CMS/redirect validation, 179 source tests, strict media audit, production-style static build, 52-page accessibility audit, reader audit, performance budget audit, deployment verification, HTTP smoke proof, and release proof. No optional account or hosted service is required for reader delivery.
+
+## Phase 2 — installable theme ecosystem
+
+In progress. The existing eight built-in visual presets are not yet treated as an installable-theme implementation; the next work creates portable, checksum-verified packages, validation, lifecycle commands, and the locally bound Theme Manager/Workshop required for an honest theme release.
