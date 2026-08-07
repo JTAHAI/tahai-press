@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"TAHAI Press dataset","type":"object","required":["id","title","summary","source","source_url","date_coverage","methodology","limitations","units","definitions","download_path","columns","rows","status"]}

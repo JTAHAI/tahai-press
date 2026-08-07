@@ -38,3 +38,7 @@ Deterministic clean-source and Cloudflare-root release packages can be generated
 ## Phase 6 — editions and syndication
 
 In progress. Explicit edition and newsletter content models now build canonical print editions, provider-neutral newsletter archive/email/plain-text exports, RSS, Atom, JSON Feed, and a versioned same-origin public API. The integrated builder, safe embed cards, broader print/theme/browser matrices, and final feed-family coverage remain open before this phase can be marked complete.
+
+## Phase 7 — Data, Maps, and Developing Coverage
+
+In progress. Schema-checked static datasets now include a downloadable source, accessible table, methodology, definitions, units, limitations, and print/no-JavaScript output. Explicit map records provide a location-list fallback without inferred geography. Developing records preserve pinned, timestamped, source-linked history. Local import/preview tooling, optional chart/map enhancements, and the full large-data/browser matrix remain open.

@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"TAHAI Press map record","type":"object","required":["id","title","summary","source","source_url","methodology","limitations","attribution","locations","status"]}

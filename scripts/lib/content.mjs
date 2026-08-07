@@ -36,7 +36,10 @@ export function loadContent() {
     crosswords: readCollection('crosswords'),
     records: readCollection('records'),
     editions: readCollection('editions'),
-    newsletters: readCollection('newsletters')
+    newsletters: readCollection('newsletters'),
+    datasets: readCollection('datasets'),
+    maps: readCollection('maps'),
+    developing: readCollection('developing')
   };
 }
 

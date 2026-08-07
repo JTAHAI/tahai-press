@@ -1,0 +1,15 @@
+{
+  "id": "civic-meeting-sites",
+  "title": "Public meeting locations",
+  "summary": "A static directory of the public locations named in the civic meeting record.",
+  "source": "Sample Civic Clerk meeting notices",
+  "source_url": "https://example.org/public-records/meeting-notices",
+  "methodology": "Locations are transcribed from published meeting notices. No location is inferred from article text.",
+  "limitations": "This list is a static snapshot; confirm current access arrangements with the host organization.",
+  "attribution": "Sample Civic Clerk public notices",
+  "locations": [
+    {"name": "Civic Hall", "address": "100 Main Street", "description": "Regular council meetings and public records desk."},
+    {"name": "North Library", "address": "25 River Road", "description": "Community listening sessions."}
+  ],
+  "status": "published"
+}

@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"TAHAI Press developing coverage","type":"object","required":["id","title","summary","status","author","related_story_id","related_record_ids","what_changed","updates","finalized"]}

@@ -231,7 +231,7 @@ function validateStoryBlocks(article) {
   }
 }
 
-const { site, articles, authors, categories, hubs, crosswords, records, editions, newsletters } = loadContent();
+const { site, articles, authors, categories, hubs, crosswords, records, editions, newsletters, datasets, maps, developing } = loadContent();
 const siteFile = path.join(ROOT, 'content', 'site.json');
 const rawSite = JSON.parse(fs.readFileSync(siteFile, 'utf8'));
 validateSluggedCollection(authors, 'author', { requireActive: true });
@@ -299,6 +299,35 @@ for (const newsletter of newsletters) {
   if (!['draft', 'published', 'archived'].includes(newsletter.status)) issue(errors, newsletter.__file, 'status must be draft, published, or archived');
   if (!Array.isArray(newsletter.story_ids) || newsletter.story_ids.length < 1) issue(errors, newsletter.__file, 'story_ids must contain at least one article');
   else for (const storyId of newsletter.story_ids) if (!articleSlugs.has(storyId)) issue(errors, newsletter.__file, `references unknown article ${storyId}`);
+}
+for (const dataset of datasets) {
+  if (!SLUG.test(dataset.id || '') || path.basename(dataset.__file, '.json') !== dataset.id) issue(errors, dataset.__file, 'id and filename must use the same safe slug');
+  requiredString(dataset, 'title', dataset.__file, 3);
+  for (const field of ['summary', 'source', 'source_url', 'date_coverage', 'methodology', 'limitations', 'units', 'definitions', 'download_path']) requiredString(dataset, field, dataset.__file, 2);
+  if (dataset.status !== 'published' && dataset.status !== 'draft') issue(errors, dataset.__file, 'status must be draft or published');
+  if (!String(dataset.download_path || '').startsWith('/downloads/')) issue(errors, dataset.__file, 'download_path must be a public /downloads/ path');
+  if (!Array.isArray(dataset.columns) || dataset.columns.length < 1 || !Array.isArray(dataset.rows)) issue(errors, dataset.__file, 'columns and rows are required arrays');
+  else for (const row of dataset.rows) if (!Array.isArray(row) || row.length !== dataset.columns.length) issue(errors, dataset.__file, 'every dataset row must match the column count');
+}
+for (const map of maps) {
+  if (!SLUG.test(map.id || '') || path.basename(map.__file, '.json') !== map.id) issue(errors, map.__file, 'id and filename must use the same safe slug');
+  for (const field of ['title', 'summary', 'source', 'source_url', 'methodology', 'limitations', 'attribution']) requiredString(map, field, map.__file, 2);
+  if (map.status !== 'published' && map.status !== 'draft') issue(errors, map.__file, 'status must be draft or published');
+  if (!Array.isArray(map.locations) || !map.locations.length) issue(errors, map.__file, 'locations must contain at least one explicit location');
+  else for (const location of map.locations) for (const field of ['name', 'address', 'description']) requiredString(location || {}, field, map.__file, 2);
+}
+for (const coverage of developing) {
+  if (!SLUG.test(coverage.id || '') || path.basename(coverage.__file, '.json') !== coverage.id) issue(errors, coverage.__file, 'id and filename must use the same safe slug');
+  for (const field of ['title', 'summary', 'status', 'author', 'what_changed']) requiredString(coverage, field, coverage.__file, 2);
+  if (!['developing', 'finalized'].includes(coverage.status)) issue(errors, coverage.__file, 'status must be developing or finalized');
+  if (!articleSlugs.has(coverage.related_story_id)) issue(errors, coverage.__file, `references unknown related story ${coverage.related_story_id}`);
+  if (!Array.isArray(coverage.related_record_ids) || !Array.isArray(coverage.updates) || !coverage.updates.length) issue(errors, coverage.__file, 'related_record_ids and non-empty updates are required');
+  for (const id of coverage.related_record_ids || []) if (!recordIds.has(id)) issue(errors, coverage.__file, `references unknown record ${id}`);
+  for (const update of coverage.updates || []) {
+    if (Number.isNaN(new Date(update.timestamp).getTime())) issue(errors, coverage.__file, 'update timestamps must be ISO dates');
+    requiredString(update, 'summary', coverage.__file, 2);
+    if (!Array.isArray(update.sources) || !update.sources.every((source) => String(source).startsWith('/'))) issue(errors, coverage.__file, 'update sources must be explicit same-origin paths');
+  }
 }
 const seenArticleSlugs = new Set();
 const seenCanonicalUrls = new Map();
