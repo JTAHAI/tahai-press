@@ -30,3 +30,7 @@ In progress. Pagefind `1.5.2` is pinned and generated from public static pages o
 ## Phase 4 — Evidence, records, and packets
 
 In progress. Every public article has a static Receipts Mode route. Public evidence records are validated from `content/records/`, rendered at `/records/`, tied to related Receipts Mode pages, and can produce deterministic metadata-only packet ZIPs. The implementation deliberately excludes private material ingestion, custody assertions, and automated truth scoring; a full Evidence Workbench remains open.
+
+## Release preparation
+
+Deterministic clean-source and Cloudflare-root release packages can be generated into ignored build artifacts without overwriting user-owned historical archives. The project remains on the documented alpha identity until all master-plan phases and external publication gates are complete.

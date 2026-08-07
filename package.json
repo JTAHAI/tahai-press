@@ -18,6 +18,7 @@
     "verify:dist": "node scripts/verify-dist.mjs",
     "smoke": "node scripts/smoke-built-site.mjs",
     "release:proof": "node scripts/create-release-proof.mjs",
+    "package:release": "npm run build && node scripts/package-release.mjs",
     "verify:browsers": "npm run build && node scripts/browser-matrix.mjs",
     "check": "npm run clean && npm run validate && npm test && npm run audit:media && npm run build && npm run audit:a11y && npm run audit:reader && npm run audit:performance && npm run newsroom:health && npm run verify:dist && npm run repo:check",
     "ci": "npm run check && npm run smoke && npm run release:proof",
