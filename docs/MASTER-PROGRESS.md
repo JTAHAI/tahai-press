@@ -21,4 +21,12 @@ The phase gate passed with content/CMS/redirect validation, 179 source tests, st
 
 ## Phase 2 — installable theme ecosystem
 
-In progress. The existing eight built-in visual presets are not yet treated as an installable-theme implementation; the next work creates portable, checksum-verified packages, validation, lifecycle commands, and the locally bound Theme Manager/Workshop required for an honest theme release.
+In progress. Eight checksum-verified official theme packages, package validation, install/export/integrity commands, and a token-protected `127.0.0.1` Theme Workshop are implemented. Source-controlled application of an activated package into the generated reader experience remains an open release gate.
+
+## Phase 3 — Search and Knowledge Desk
+
+In progress. Pagefind `1.5.2` is pinned and generated from public static pages only; explicit publisher-managed discovery metadata is validated and exported as public facets. The reader-facing search experience still uses the existing static index, so Pagefind is not yet the sole interactive search path.
+
+## Phase 4 — Evidence, records, and packets
+
+In progress. Every public article has a static Receipts Mode route. Public evidence records are validated from `content/records/`, rendered at `/records/`, tied to related Receipts Mode pages, and can produce deterministic metadata-only packet ZIPs. The implementation deliberately excludes private material ingestion, custody assertions, and automated truth scoring; a full Evidence Workbench remains open.

@@ -5,10 +5,10 @@ This repository follows the v3 Independent Press Edition master prompt. Completi
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 0 | Preserve, discover, establish source truth | Passed |
-| 1 | Core publisher experience | Not started |
-| 2 | Installable themes and Theme Manager | Not started |
-| 3 | Search and Knowledge Desk | Not started |
-| 4 | Evidence, records, and packets | Not started |
+| 1 | Core publisher experience | Passed |
+| 2 | Installable themes and Theme Manager | In progress |
+| 3 | Search and Knowledge Desk | In progress |
+| 4 | Evidence, records, and packets | In progress |
 | 5 | Migration Studio | Not started |
 | 6 | Editions, newsletters, feeds, API, embeds | Not started |
 | 7 | Data, maps, and developing coverage | Not started |
