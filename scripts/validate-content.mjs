@@ -38,7 +38,7 @@ const RESERVED_INTERNAL_PATHS = [
 ];
 const KNOWN_INTERNAL_PATHS = new Set([
   '/', '/stories/', '/search/', '/topics/', '/authors/', '/categories/', '/sections/', '/series/', '/records/',
-  '/archive/', '/hubs/', '/about/', '/accessibility/', '/submit/', '/contact/', '/edition/', '/editions/', '/newsletters/',
+  '/archive/', '/hubs/', '/about/', '/accessibility/', '/submit/', '/contact/', '/edition/', '/editions/', '/newsletters/', '/edition-builder/',
   '/saved/', '/puzzles/', '/studio/', '/publisher/', '/media-desk/', '/setup/', '/admin/', '/offline/'
 ]);
 const KNOWN_INTERNAL_PREFIXES = [

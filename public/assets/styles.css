@@ -3415,6 +3415,24 @@ body.writer-focus-mode .writer-desk-overview,
 body.writer-focus-mode .site-footer { display: none; }
 body.writer-focus-mode .editorial-studio { padding-top: 1rem; }
 
+.edition-builder { display:grid; gap:1.5rem; }
+.edition-builder-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1.5rem; }
+.edition-builder-grid > section { border:1px solid var(--line); background:var(--surface); padding:1.25rem; }
+.edition-builder-source-item { display:grid; grid-template-columns:auto minmax(0, 1fr); gap:.75rem; align-items:start; padding:.75rem 0; border-top:1px solid var(--line); cursor:pointer; }
+.edition-builder-source-item small { display:block; margin-top:.25rem; color:var(--muted); }
+.edition-builder [data-edition-selection] { display:grid; gap:.5rem; margin:0; padding:0; list-style:none; }
+.edition-builder [data-edition-selection] li { display:grid; grid-template-columns:2rem minmax(0,1fr) auto; gap:.6rem; align-items:center; padding:.7rem; border:1px solid var(--line); background:var(--paper); }
+.edition-builder [data-edition-selection] li:focus { outline:3px solid var(--focus); outline-offset:2px; }
+.embed-card { margin-block:3rem; max-width:44rem; padding:1.5rem; border:1px solid var(--line); background:var(--surface); }
+.embed-card h1 { font-size:clamp(1.65rem, 4vw, 2.35rem); }
+.embed-example-list { display:grid; gap:1rem; padding:0; list-style:none; }
+.embed-example-list li { display:grid; gap:.55rem; padding:1rem; border:1px solid var(--line); background:var(--surface); }
+.embed-example-list code { display:block; overflow-wrap:anywhere; white-space:normal; }
+
+@media (max-width: 58rem) {
+  .edition-builder-grid { grid-template-columns:1fr; }
+}
+
 @media (max-width: 70rem) {
   .writer-desk-overview { grid-template-columns: 1fr; }
   .writer-desk-overview-copy h2 { max-width: 20ch; }
@@ -3444,4 +3462,9 @@ body.writer-focus-mode .editorial-studio { padding-top: 1rem; }
   .writer-desk-overview,
   .editorial-studio,
   .writer-command-palette { display: none !important; }
+  .edition-builder-page .publication-bar,
+  .edition-builder-page .site-header,
+  .edition-builder-page .site-footer,
+  .edition-builder-page .page-hero { display:none !important; }
+  .edition-builder-page .edition-builder-grid { grid-template-columns:1fr; }
 }

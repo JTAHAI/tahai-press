@@ -1754,6 +1754,36 @@ for (const newsletter of publicNewsletters) {
   writeRoute(`/newsletters/${newsletter.id}/`, layout({ route: `/newsletters/${newsletter.id}/`, title: newsletter.title, description: rendered.preview, canonical: absoluteUrl(`/newsletters/${newsletter.id}/`), pageClass: 'newsletter-page', body: `<article class="shell prose"><p class="eyebrow">Newsletter archive</p><h1>${escapeHtml(newsletter.title)}</h1><p class="lede">${escapeHtml(rendered.preview)}</p><p><a class="button" href="/newsletters/${escapeHtml(newsletter.id)}/email.html">Download email-safe HTML</a> <a class="button button-secondary" href="/newsletters/${escapeHtml(newsletter.id)}/email.txt">Plain-text edition</a></p><section><h2>Included canonical reporting</h2><ul>${rendered.articles.map((article) => `<li><a href="/stories/${escapeHtml(article.slug)}/">${escapeHtml(article.title)}</a> — ${escapeHtml(article.excerpt)}</li>`).join('')}</ul></section><p>Before sending, replace the provider-neutral unsubscribe placeholder with the recipient email provider’s approved unsubscribe mechanism.</p></article>` }));
 }
 
+const editionBuilderData = {
+  templates: ['daily', 'community-weekly', 'investigative-special', 'records-packet', 'arts', 'developing-bulletin'],
+  stories: published.map((article) => ({ id: article.slug, title: article.title, type: 'story', excerpt: article.excerpt })),
+  records: publicRecords.map((record) => ({ id: record.id, title: record.title, type: 'record', excerpt: `${record.source_materials.length} public source materials` }))
+};
+const editionBuilderBody = `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Local Edition Builder</p><h1>Arrange canonical reporting into a print-ready edition.</h1><p class="lede">Selections and ordering stay in this browser until you download an ordinary edition JSON file for review and commit. The builder does not publish, send email, or change source files.</p></div></section><section class="section shell"><noscript><p>This local builder needs JavaScript to arrange and export an edition. Existing editions remain printable without JavaScript at <a href="/editions/">/editions/</a>.</p></noscript><form class="edition-builder" data-edition-builder><div class="studio-grid"><label for="edition-builder-title">Edition title</label><input id="edition-builder-title" name="title" required maxlength="160" value="New edition"><label for="edition-builder-template">Template</label><select id="edition-builder-template" name="template">${editionBuilderData.templates.map((template) => `<option value="${template}">${escapeHtml(template.replaceAll('-', ' '))}</option>`).join('')}</select><label for="edition-builder-date">Issue date</label><input id="edition-builder-date" name="date" type="date" required value="${new Date().toISOString().slice(0, 10)}"></div><p class="fine-print">Add published stories or public evidence records. Use the arrow keys after focusing a selected item to reorder it.</p><div class="edition-builder-grid"><section aria-labelledby="edition-builder-source"><h2 id="edition-builder-source">Canonical source material</h2><div data-edition-source></div></section><section aria-labelledby="edition-builder-selection"><h2 id="edition-builder-selection">Edition order</h2><ol data-edition-selection aria-live="polite"></ol><p data-edition-builder-status role="status" aria-live="polite">Choose reporting to begin.</p></section></div><div class="button-row"><button class="button" type="button" data-edition-export>Download edition JSON</button><button class="button button-secondary" type="button" data-edition-print>Print preview</button></div></form><script type="application/json" id="edition-builder-data">${jsonForHtml(editionBuilderData)}</script></section>`;
+writeRoute('/edition-builder/', layout({ route: '/edition-builder/', title: 'Edition Builder', description: 'Local canonical-edition arrangement and export.', canonical: absoluteUrl('/edition-builder/'), noindex: true, pageClass: 'edition-builder-page', scripts: ['/assets/edition-builder.js'], body: editionBuilderBody }), { sitemap: false });
+
+function embedCard({ eyebrow, title, description, href }) {
+  return `<article class="shell embed-card"><p class="eyebrow">${escapeHtml(eyebrow)}</p><h1><a href="${escapeHtml(href)}">${escapeHtml(title)}</a></h1><p>${escapeHtml(description)}</p><p><a href="${escapeHtml(href)}">Read the canonical publication</a></p></article>`;
+}
+const embedExamples = [];
+for (const article of published) {
+  const route = `/embeds/articles/${article.slug}/`;
+  embedExamples.push({ label: article.title, route });
+  writeRoute(route, layout({ route, title: article.title, description: article.excerpt, canonical: absoluteUrl(route), noindex: true, pageClass: 'embed-page', body: embedCard({ eyebrow: article.classification || 'Reporting', title: article.title, description: article.excerpt, href: `/stories/${article.slug}/` }) }), { sitemap: false });
+}
+for (const record of publicRecords) {
+  const route = `/embeds/records/${record.id}/`;
+  embedExamples.push({ label: record.title, route });
+  writeRoute(route, layout({ route, title: record.title, description: `Public evidence record from ${site.title}.`, canonical: absoluteUrl(route), noindex: true, pageClass: 'embed-page', body: embedCard({ eyebrow: 'Public evidence record', title: record.title, description: `${record.source_materials.length} publisher-cleared public source materials.`, href: `/records/${record.id}/` }) }), { sitemap: false });
+}
+for (const edition of publicEditions) {
+  const route = `/embeds/editions/${edition.id}/`;
+  embedExamples.push({ label: edition.title, route });
+  writeRoute(route, layout({ route, title: edition.title, description: edition.editor_note || '', canonical: absoluteUrl(route), noindex: true, pageClass: 'embed-page', body: embedCard({ eyebrow: 'Print edition', title: edition.title, description: edition.editor_note || 'A canonical print-ready edition.', href: `/editions/${edition.id}/` }) }), { sitemap: false });
+}
+const embedIndexBody = `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Safe embeds</p><h1>Same-origin reading cards with no third-party script.</h1><p class="lede">Copy an iframe snippet for a public article, record, or edition. Embed routes expose only a title, public summary, and canonical link; they never expose publisher tools or private data.</p></div></section><section class="section shell"><ul class="embed-example-list">${embedExamples.map((example) => `<li><strong>${escapeHtml(example.label)}</strong><code>&lt;iframe src=&quot;${escapeHtml(absoluteUrl(example.route))}&quot; title=&quot;${escapeHtml(example.label)}&quot; loading=&quot;lazy&quot;&gt;&lt;/iframe&gt;</code></li>`).join('')}</ul></section>`;
+writeRoute('/embeds/', layout({ route: '/embeds/', title: 'Safe embeds', description: 'Same-origin static publication embeds.', canonical: absoluteUrl('/embeds/'), noindex: true, pageClass: 'embeds-index-page', body: embedIndexBody }), { sitemap: false });
+
 const newestPublicationDate = machineDate(published[0]?.updated_at || published[0]?.published_at || '');
 const sitemapEntries = routeManifest.map((entry) => ({ ...entry, lastmod: entry.lastmod || newestPublicationDate }));
 fs.writeFileSync(path.join(DIST, 'sitemap.xml'), buildSitemap(sitemapEntries), 'utf8');

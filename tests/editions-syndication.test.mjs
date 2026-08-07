@@ -47,3 +47,14 @@ test('Atom, RSS, JSON Feed, and static API expose only published public content'
   assert.ok(manifest.collections.some((collection) => collection.name === 'editions'));
   assert.ok(manifest.collections.some((collection) => collection.name === 'evidence'));
 });
+
+test('same-origin embeds are static cards without private data or third-party scripts', () => {
+  const index = read('embeds/index.html');
+  const article = read('embeds/articles/sample-written-story/index.html');
+  const record = read('embeds/records/sample-meeting-record/index.html');
+  assert.match(index, /&lt;iframe src=/);
+  assert.match(article, /Read the canonical publication/);
+  assert.match(record, /Public evidence record/);
+  assert.doesNotMatch(article, /editor_notes|private_editor_notes|iframe src="https?:\/\//i);
+  assert.doesNotMatch(record, /editor_notes|private_editor_notes|iframe src="https?:\/\//i);
+});
