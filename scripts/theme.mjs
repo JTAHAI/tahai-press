@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT } from './lib/content.mjs';
-import { OFFICIAL_THEME_IDS, activateTheme, buildThemeZip, exportInstalledTheme, installThemeZip, listInstalledThemes, themePaths, validateThemeZip } from './lib/themes.mjs';
+import { OFFICIAL_THEME_IDS, activateTheme, applyThemeToSource, buildThemeZip, exportInstalledTheme, installThemeZip, listInstalledThemes, themePaths, validateThemeZip } from './lib/themes.mjs';
 
 const definitions = {
   'classic-broadsheet': ['Classic Broadsheet', 'Traditional newspaper hierarchy with warm paper, formal rules, and a lead-first front page.', ['#fffdf7', '#f3efe5', '#14202a', '#52616a', '#123a5a', '#345f7f', '#9b5d11', 'Georgia, serif', 'Georgia, serif', '68ch', '.55rem', '0', '1px', 'square'], 'lead-first'],
@@ -23,7 +23,7 @@ function catalog() {
   const output = { schema_version: 1, generated_by: 'scripts/theme.mjs', themes };
   const destination = path.join(ROOT, 'themes', 'catalog', 'official.json'); fs.mkdirSync(path.dirname(destination), { recursive: true }); fs.writeFileSync(destination, `${JSON.stringify(output, null, 2)}\n`); return output;
 }
-function usage() { console.log('Usage: node scripts/theme.mjs <build-official|validate|install|list|activate|export|rollback|integrity-audit|catalog:build> [arguments]'); }
+function usage() { console.log('Usage: node scripts/theme.mjs <build-official|validate|install|list|activate|apply|export|rollback|integrity-audit|catalog:build> [arguments]'); }
 const [command, ...args] = process.argv.slice(2);
 try {
   if (command === 'build-official') { ensureOfficial(); console.log(`Built ${OFFICIAL_THEME_IDS.length} deterministic official theme packages.`); }
@@ -32,6 +32,7 @@ try {
   else if (command === 'install') { const result = installThemeZip(path.resolve(ROOT, args[0] || '')); console.log(`Installed ${result.manifest.id} at ${result.installed}`); }
   else if (command === 'list') { console.log(JSON.stringify(listInstalledThemes().map(({ id, file, validation }) => ({ id, file, valid: validation.valid })), null, 2)); }
   else if (command === 'activate') { console.log(JSON.stringify(activateTheme(args[0]), null, 2)); }
+  else if (command === 'apply') { console.log(JSON.stringify(applyThemeToSource(args[0]), null, 2)); }
   else if (command === 'export') { const result = exportInstalledTheme(args[0], path.resolve(ROOT, args[1] || `themes/exports/${args[0]}.zip`)); console.log(`Exported and revalidated ${result.manifest.id} (${result.sha256})`); }
   else if (command === 'rollback') { const active = fs.existsSync(themePaths.ACTIVE_FILE) ? JSON.parse(fs.readFileSync(themePaths.ACTIVE_FILE, 'utf8')) : null; if (!active) throw new Error('No active theme state exists to roll back.'); fs.unlinkSync(themePaths.ACTIVE_FILE); console.log(`Rolled back ${active.id}; publication source was unchanged.`); }
   else if (command === 'integrity-audit') { const results = listInstalledThemes().map(({ id, file }) => ({ id, file, ...validateThemeZip(path.join(ROOT, file)) })); if (results.some((result) => !result.valid)) throw new Error('One or more installed themes failed integrity validation.'); console.log(JSON.stringify(results.map(({ id, file, sha256 }) => ({ id, file, sha256 })), null, 2)); }

@@ -11,6 +11,7 @@ export const OFFICIAL_THEME_IDS = ['classic-broadsheet', 'community-weekly', 'ci
 const THEME_ROOT = path.join(ROOT, 'themes');
 const OFFICIAL_ROOT = path.join(THEME_ROOT, 'official');
 const INSTALLED_ROOT = path.join(THEME_ROOT, 'installed');
+const PUBLISHED_ROOT = path.join(THEME_ROOT, 'published');
 const ACTIVE_FILE = path.join(THEME_ROOT, 'active.json');
 const PREVIEW_WEBP = Buffer.from('UklGRh4AAABXRUJQVlA4TBEAAAAvB8ABAAdQnUpUq/+BiOh/AAA=', 'base64');
 
@@ -119,6 +120,45 @@ export function activateTheme(id) {
   return { active: id, previous: previous?.id || null };
 }
 
+function packagePath(selection) {
+  const relative = String(selection?.file || '').replaceAll('\\', '/');
+  const candidate = path.resolve(ROOT, relative);
+  const allowed = [OFFICIAL_ROOT, PUBLISHED_ROOT].some((root) => candidate.startsWith(`${root}${path.sep}`));
+  if (!allowed || !candidate.endsWith('.zip')) throw new Error('theme_package.file must reference a tracked official or published theme ZIP.');
+  return candidate;
+}
+
+export function loadPublishedTheme(selection) {
+  if (!selection) return null;
+  if (!selection || typeof selection !== 'object' || Array.isArray(selection)) throw new Error('theme_package must be an object.');
+  const file = packagePath(selection);
+  const validation = validateThemeZip(file);
+  if (!validation.valid) throw new Error(`theme_package is invalid: ${validation.errors.join('; ')}`);
+  if (selection.id !== validation.manifest.id || selection.version !== validation.manifest.version || selection.sha256 !== validation.sha256) throw new Error('theme_package id, version, or checksum does not match its ZIP.');
+  const entries = readSafeZip(file);
+  const styles = ['styles/tokens.css', 'styles/components.css', 'styles/layouts.css', 'styles/reader-surfaces.css', 'styles/print.css']
+    .map((name) => entries.get(name).toString('utf8'));
+  return { id: validation.manifest.id, version: validation.manifest.version, sha256: validation.sha256, file: path.relative(ROOT, file).replaceAll('\\', '/'), css: styles.join('\n') };
+}
+
+export function applyThemeToSource(id) {
+  const candidate = listInstalledThemes().find((entry) => entry.id === id && entry.validation.valid);
+  if (!candidate) throw new Error(`Validated installed theme not found: ${id}`);
+  const official = path.join(OFFICIAL_ROOT, `${id}.zip`);
+  const officialValidation = fs.existsSync(official) ? validateThemeZip(official) : null;
+  let source = officialValidation?.valid && officialValidation.sha256 === candidate.validation.sha256
+    ? official
+    : path.join(PUBLISHED_ROOT, `${candidate.validation.manifest.id}-${candidate.validation.manifest.version}.zip`);
+  if (source !== official) { fs.mkdirSync(path.dirname(source), { recursive: true }); fs.copyFileSync(path.join(ROOT, candidate.file), source); }
+  const selection = { id: candidate.validation.manifest.id, version: candidate.validation.manifest.version, file: path.relative(ROOT, source).replaceAll('\\', '/'), sha256: candidate.validation.sha256 };
+  loadPublishedTheme(selection);
+  const siteFile = path.join(ROOT, 'content', 'site.json');
+  const site = JSON.parse(fs.readFileSync(siteFile, 'utf8'));
+  site.theme_package = selection;
+  fs.writeFileSync(siteFile, json(site));
+  return selection;
+}
+
 export function exportInstalledTheme(id, destination) {
   const candidate = listInstalledThemes().find((entry) => entry.id === id && entry.validation.valid);
   if (!candidate) throw new Error(`Validated installed theme not found: ${id}`);
@@ -129,4 +169,4 @@ export function exportInstalledTheme(id, destination) {
   return result;
 }
 
-export const themePaths = { THEME_ROOT, OFFICIAL_ROOT, INSTALLED_ROOT, ACTIVE_FILE };
+export const themePaths = { THEME_ROOT, OFFICIAL_ROOT, INSTALLED_ROOT, PUBLISHED_ROOT, ACTIVE_FILE };

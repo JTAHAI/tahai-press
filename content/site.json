@@ -194,5 +194,11 @@
     "current_edition_enabled": true,
     "current_edition_count": 8,
     "offline_article_count": 12
+  },
+  "theme_package": {
+    "id": "classic-broadsheet",
+    "version": "1.0.0",
+    "file": "themes/official/classic-broadsheet.zip",
+    "sha256": "2a4285724e46fd194522703384d3a63939c59f857a1a46bc3197d515ef73583e"
   }
 }

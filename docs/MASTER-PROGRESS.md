@@ -21,7 +21,7 @@ The phase gate passed with content/CMS/redirect validation, 179 source tests, st
 
 ## Phase 2 — installable theme ecosystem
 
-In progress. Eight checksum-verified official theme packages, package validation, install/export/integrity commands, and a token-protected `127.0.0.1` Theme Workshop are implemented. Source-controlled application of an activated package into the generated reader experience remains an open release gate.
+In progress. Eight checksum-verified official theme packages, package validation, install/export/integrity commands, and a token-protected `127.0.0.1` Theme Workshop are implemented. An explicit source-controlled apply command pins a package checksum and materializes same-origin static CSS in the build; full Workshop flow and multi-browser verification remain open release gates.
 
 ## Phase 3 — Search and Knowledge Desk
 

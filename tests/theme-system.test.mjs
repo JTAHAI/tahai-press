@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { ROOT } from '../scripts/lib/content.mjs';
-import { OFFICIAL_THEME_IDS, createThemePackage, validateThemeEntries, validateThemeZip } from '../scripts/lib/themes.mjs';
+import { OFFICIAL_THEME_IDS, createThemePackage, loadPublishedTheme, validateThemeEntries, validateThemeZip } from '../scripts/lib/themes.mjs';
 import { readSafeZip, writeDeterministicZip } from '../scripts/lib/safe-zip.mjs';
 
 test('eight official themes are real deterministic packages with distinct structural contracts', () => {
@@ -51,4 +51,14 @@ test('Theme Workshop remains a token-protected localhost tool and is absent from
   assert.match(workshop, /exportInstalledTheme/);
   const publicScripts = fs.readdirSync(path.join(ROOT, 'public', 'assets')).join('\n');
   assert.doesNotMatch(publicScripts, /theme-manager|theme-workshop/);
+});
+
+test('a source-pinned official package can be materialized as static publication CSS', () => {
+  const file = path.join(ROOT, 'themes', 'official', 'classic-broadsheet.zip');
+  const validation = validateThemeZip(file);
+  const applied = loadPublishedTheme({ id: validation.manifest.id, version: validation.manifest.version, file: 'themes/official/classic-broadsheet.zip', sha256: validation.sha256 });
+  assert.equal(applied.id, 'classic-broadsheet');
+  assert.match(applied.css, /--theme-background:/);
+  assert.match(applied.css, /theme-classic-broadsheet/);
+  assert.throws(() => loadPublishedTheme({ id: validation.manifest.id, version: validation.manifest.version, file: 'themes/official/classic-broadsheet.zip', sha256: '0'.repeat(64) }), /checksum/);
 });

@@ -42,6 +42,7 @@
     "theme:install": "node scripts/theme.mjs install",
     "theme:list": "node scripts/theme.mjs list",
     "theme:activate": "node scripts/theme.mjs activate",
+    "theme:apply": "node scripts/theme.mjs apply",
     "theme:export": "node scripts/theme.mjs export",
     "theme:rollback": "node scripts/theme.mjs rollback",
     "theme:integrity-audit": "node scripts/theme.mjs integrity-audit",

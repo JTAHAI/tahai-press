@@ -9,6 +9,7 @@ import { STORY_BLOCK_TYPES, IMAGE_LAYOUTS, IMAGE_ASPECTS, IMAGE_FOCAL_POINTS, CA
 import { ARTICLE_CLASSIFICATION_KEYS } from './lib/professional-desk.mjs';
 import { validateCrossword } from './lib/crosswords.mjs';
 import { validateEvidenceRecord } from './lib/evidence.mjs';
+import { loadPublishedTheme } from './lib/themes.mjs';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
@@ -326,6 +327,9 @@ if (site.discovery !== undefined) {
 
 if (rawSite.theme_preset !== undefined && !THEME_PRESET_IDS.includes(rawSite.theme_preset)) {
   issue(errors, siteFile, `theme_preset must be one of: ${THEME_PRESET_IDS.join(', ')}`);
+}
+if (rawSite.theme_package !== undefined) {
+  try { loadPublishedTheme(rawSite.theme_package); } catch (error) { issue(errors, siteFile, `theme_package: ${error.message}`); }
 }
 if (rawSite.layout !== undefined) {
   if (!rawSite.layout || typeof rawSite.layout !== 'object' || Array.isArray(rawSite.layout)) issue(errors, siteFile, 'layout must be an object');

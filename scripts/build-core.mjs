@@ -12,6 +12,7 @@ import { TAHAI_PRESS_PROVENANCE, humansText, sourceProvenanceComment } from './l
 import { accessibilityStatement } from './lib/accessibility.mjs';
 import { ensureResponsiveMediaVariants, mediaAssetManifest } from './lib/media-pipeline.mjs';
 import { themePresetList } from './lib/site-config.mjs';
+import { loadPublishedTheme } from './lib/themes.mjs';
 import { launchReadiness } from './lib/launch-readiness.mjs';
 import { renderEditorialImage, renderStoryBlocks, storyBlocksPlainText } from './lib/editorial.mjs';
 import { ARTICLE_CLASSIFICATION_KEYS, articleCitation, classificationInfo, publicationHistory, seriesForArticles } from './lib/professional-desk.mjs';
@@ -35,6 +36,7 @@ const activeCrosswords = crosswords.filter((item) => item.active !== false).sort
 const routeManifest = [];
 const accessibility = accessibilityStatement(site);
 const readerReach = readerReachConfig(site);
+const appliedTheme = loadPublishedTheme(site.theme_package);
 const mediaReport = await mediaHealth({ site, articles, authors });
 const PROJECT_REPOSITORY = 'https://github.com/JTAHAI/tahai-press';
 const DEVELOPER_SITE = 'https://tahai.net';
@@ -43,6 +45,11 @@ const DEMO_SITE = 'https://tahai-press.tahai.net';
 fs.rmSync(DIST, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 fs.mkdirSync(DIST, { recursive: true });
 fs.cpSync(path.join(ROOT, 'public'), DIST, { recursive: true, force: true });
+if (appliedTheme) {
+  const themeOutput = path.join(DIST, 'assets', 'themes');
+  fs.mkdirSync(themeOutput, { recursive: true });
+  fs.writeFileSync(path.join(themeOutput, `${appliedTheme.id}.css`), appliedTheme.css, 'utf8');
+}
 // PDF.js is copied as same-origin, generated output. It is dynamically imported only
 // by the document reader; ordinary reader pages never request either module.
 const pdfjsSource = path.join(ROOT, 'node_modules', 'pdfjs-dist', 'build');
@@ -253,6 +260,21 @@ function safeThemeColor(value, fallback) {
 
 function themeVariables() {
   const theme = site.theme || {};
+  const packageMapping = appliedTheme ? `
+    --brand:var(--theme-link, ${safeThemeColor(theme.brand, '#17324d')});
+    --brand-deep:var(--theme-text, ${safeThemeColor(theme.brand_deep, '#0d2236')});
+    --brand-soft:var(--theme-surface, ${safeThemeColor(theme.brand_soft, '#dce7ef')});
+    --accent:var(--theme-accent, ${safeThemeColor(theme.accent, '#9a4c20')});
+    --accent-dark:var(--theme-accent, ${safeThemeColor(theme.accent_dark, '#6d3213')});
+    --highlight:var(--theme-focus, ${safeThemeColor(theme.highlight, '#c49a42')});
+    --surface:var(--theme-surface, ${safeThemeColor(theme.surface, '#f4f0e8')});
+    --surface-deep:var(--theme-surface, ${safeThemeColor(theme.surface_deep, '#e9e0d2')});
+    --paper:var(--theme-background, ${safeThemeColor(theme.paper, '#fffefb')});
+    --ink:var(--theme-text, #17201f);
+    --ink-soft:var(--theme-muted-text, #394441);
+    --serif:var(--theme-headline-font, Georgia, serif);
+    --sans:var(--theme-body-font, ui-sans-serif, system-ui, sans-serif);
+    --reading-measure:var(--theme-reading-measure, 68ch);` : '';
   return `<style>:root{
     --brand:${safeThemeColor(theme.brand, '#17324d')};
     --brand-deep:${safeThemeColor(theme.brand_deep, '#0d2236')};
@@ -262,9 +284,11 @@ function themeVariables() {
     --highlight:${safeThemeColor(theme.highlight, '#c49a42')};
     --surface:${safeThemeColor(theme.surface, '#f4f0e8')};
     --surface-deep:${safeThemeColor(theme.surface_deep, '#e9e0d2')};
-    --paper:${safeThemeColor(theme.paper, '#fffefb')};
+    --paper:${safeThemeColor(theme.paper, '#fffefb')};${packageMapping}
   }</style>`;
 }
+
+function themeStylesheet() { return appliedTheme ? `<link rel="stylesheet" href="/assets/themes/${escapeHtml(appliedTheme.id)}.css">` : ''; }
 
 function renderReadingTools() {
   if (!accessibility.readerToolsEnabled) return '';
@@ -322,6 +346,7 @@ ${sourceProvenanceComment()}
   <link rel="canonical" href="${escapeHtml(canonical)}">
   ${head.html}
   <link rel="stylesheet" href="/assets/styles.css">
+  ${themeStylesheet()}
   <link rel="stylesheet" href="/assets/navigation.css?v=${assetVersion}">
   ${article && ['pdf', 'mixed'].includes(article.article_type) ? '<script src="/assets/pdf-reader.js" defer></script>' : ''}
   <script src="/assets/search.js" defer></script>
@@ -335,7 +360,7 @@ ${sourceProvenanceComment()}
   ${scripts.map((src) => `<script src="${escapeHtml(src)}" defer></script>`).join('\n  ')}
   ${themeVariables()}
 </head>
-<body class="${escapeHtml(`${pageClass} density-${site.layout?.density || 'balanced'} reading-${site.layout?.reading_width || 'standard'} masthead-${site.layout?.masthead_alignment || 'center'} headlines-${site.layout?.headline_style || 'serif'} panels-${site.layout?.panel_style || 'square'} surface-${site.layout?.reader_surface || 'paper'}${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}`)}"${noindex ? ' data-pagefind-ignore' : ''}>
+<body class="${escapeHtml(`${pageClass} ${appliedTheme ? `theme-${appliedTheme.id}` : ''} density-${site.layout?.density || 'balanced'} reading-${site.layout?.reading_width || 'standard'} masthead-${site.layout?.masthead_alignment || 'center'} headlines-${site.layout?.headline_style || 'serif'} panels-${site.layout?.panel_style || 'square'} surface-${site.layout?.reader_surface || 'paper'}${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}`)}"${noindex ? ' data-pagefind-ignore' : ''}>
   <a class="skip-link" href="#main">Skip to content</a>
   ${templateNotice}
   ${templateMode(site) ? `<div class="publication-bar">
@@ -480,10 +505,11 @@ ${sourceProvenanceComment()}
   <link rel="canonical" href="${escapeHtml(canonical)}">
   ${head.html}
   <link rel="stylesheet" href="/assets/styles.css">
+  ${themeStylesheet()}
   ${accessibility.readerToolsEnabled ? '<script src="/assets/reading-tools.js" defer></script>' : ''}
   ${themeVariables()}
 </head>
-<body class="reader-view${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}">
+<body class="reader-view${appliedTheme ? ` theme-${appliedTheme.id}` : ''}${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}">
   <a class="skip-link" href="#main">Skip to article</a>
   <header class="reader-view-header">
     <div class="reader-view-header-inner">
