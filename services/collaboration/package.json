@@ -1,0 +1,9 @@
+{
+  "name": "@tahai-press/collaboration",
+  "private": true,
+  "version": "3.0.0-alpha.1",
+  "type": "module",
+  "license": "Apache-2.0",
+  "dependencies": { "yjs": "13.6.32" },
+  "scripts": { "test": "node --test tests/*.test.mjs" }
+}
