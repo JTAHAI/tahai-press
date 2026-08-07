@@ -33,7 +33,8 @@ export function loadContent() {
     authors: readCollection('authors'),
     categories: readCollection('categories'),
     hubs: readCollection('hubs'),
-    crosswords: readCollection('crosswords')
+    crosswords: readCollection('crosswords'),
+    records: readCollection('records')
   };
 }
 

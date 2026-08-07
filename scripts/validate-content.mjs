@@ -8,6 +8,7 @@ import { THEME_PRESET_IDS, LAYOUT_OPTIONS } from './lib/site-config.mjs';
 import { STORY_BLOCK_TYPES, IMAGE_LAYOUTS, IMAGE_ASPECTS, IMAGE_FOCAL_POINTS, CALLOUT_TONES, articleMedia } from './lib/editorial.mjs';
 import { ARTICLE_CLASSIFICATION_KEYS } from './lib/professional-desk.mjs';
 import { validateCrossword } from './lib/crosswords.mjs';
+import { validateEvidenceRecord } from './lib/evidence.mjs';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
@@ -35,7 +36,7 @@ const RESERVED_INTERNAL_PATHS = [
   /^\/admin\/config\.yml$/i
 ];
 const KNOWN_INTERNAL_PATHS = new Set([
-  '/', '/stories/', '/search/', '/topics/', '/authors/', '/categories/', '/sections/', '/series/',
+  '/', '/stories/', '/search/', '/topics/', '/authors/', '/categories/', '/sections/', '/series/', '/records/',
   '/archive/', '/hubs/', '/about/', '/accessibility/', '/submit/', '/contact/', '/edition/',
   '/saved/', '/puzzles/', '/studio/', '/publisher/', '/media-desk/', '/setup/', '/admin/', '/offline/'
 ]);
@@ -50,7 +51,8 @@ const KNOWN_INTERNAL_PREFIXES = [
   /^\/archive\/\d{4}\/?$/i,
   /^\/archive\/\d{4}\/\d{2}\/?$/i,
   /^\/archive\/\d{4}\/\d{2}\/page\/\d+\/?$/i,
-  /^\/stories\/[a-z0-9]+(?:-[a-z0-9]+)*\/page\/\d+\/?$/i
+  /^\/stories\/[a-z0-9]+(?:-[a-z0-9]+)*\/page\/\d+\/?$/i,
+  /^\/records\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/i
 ];
 const errors = [];
 const warnings = [];
@@ -226,7 +228,7 @@ function validateStoryBlocks(article) {
   }
 }
 
-const { site, articles, authors, categories, hubs, crosswords } = loadContent();
+const { site, articles, authors, categories, hubs, crosswords, records } = loadContent();
 const siteFile = path.join(ROOT, 'content', 'site.json');
 const rawSite = JSON.parse(fs.readFileSync(siteFile, 'utf8'));
 validateSluggedCollection(authors, 'author', { requireActive: true });
@@ -258,6 +260,13 @@ const authorSlugs = new Set(authors.map((item) => item.slug));
 const categorySlugs = new Set(categories.map((item) => item.slug));
 const hubSlugs = new Set(hubs.map((item) => item.slug));
 const articleSlugs = new Set(articles.map((item) => item.slug));
+const evidenceIds = new Set();
+for (const record of records) {
+  if (evidenceIds.has(record.id)) issue(errors, record.__file, `duplicate evidence record id: ${record.id}`);
+  evidenceIds.add(record.id);
+  if (path.basename(record.__file, '.json') !== record.id) issue(errors, record.__file, `filename must match id (${record.id}.json)`);
+  for (const message of validateEvidenceRecord(record, { articleSlugs })) issue(errors, record.__file, message);
+}
 const seenArticleSlugs = new Set();
 const seenCanonicalUrls = new Map();
 let siteUrl = null;

@@ -45,7 +45,9 @@
     "theme:export": "node scripts/theme.mjs export",
     "theme:rollback": "node scripts/theme.mjs rollback",
     "theme:integrity-audit": "node scripts/theme.mjs integrity-audit",
-    "theme:workshop": "node scripts/theme-manager.mjs"
+    "theme:workshop": "node scripts/theme-manager.mjs",
+    "evidence:validate": "node scripts/evidence-packet.mjs validate",
+    "evidence:packet": "node scripts/evidence-packet.mjs"
   },
   "author": {
     "name": "Justin Tahai and TAHAI Web Services",

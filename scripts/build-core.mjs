@@ -21,7 +21,7 @@ import { cmsBranch, cmsRepository, SVELTIA_CMS_LICENSE, SVELTIA_CMS_SCRIPT, SVEL
 import { stableStringify, WORKFLOW_STATES, workflowTransitions } from './lib/publishing-console.mjs';
 import { mediaHealth } from './lib/operations.mjs';
 
-const { site, articles, authors, categories, hubs, crosswords } = loadContent();
+const { site, articles, authors, categories, hubs, crosswords, records } = loadContent();
 const packageInfo = readJson(path.join(ROOT, 'package.json'));
 const assetVersion = packageInfo.version;
 const deployment = deploymentContext();
@@ -1682,6 +1682,17 @@ for (const article of published) {
     </article>`;
     writeRoute(`/stories/${article.slug}/reader/`, readerLayout({ route: `/stories/${article.slug}/reader/`, article, author, body: readerBody }), { sitemap: false });
   }
+}
+
+const publicRecords = records.filter((record) => record.status === 'published').sort((left, right) => String(right.published_at || '').localeCompare(String(left.published_at || '')) || left.id.localeCompare(right.id));
+const recordCards = publicRecords.map((record) => `<article class="story-card"><p class="eyebrow">Public evidence record · ${escapeHtml(record.record_type)}</p><h2><a href="/records/${escapeHtml(record.id)}/">${escapeHtml(record.title)}</a></h2><p>${escapeHtml(`${record.source_materials.length} public source${record.source_materials.length === 1 ? '' : 's'}${record.sensitivity === 'redacted' ? ' · redaction notice included' : ''}`)}</p></article>`).join('');
+writeRoute('/records/', layout({ route: '/records/', title: 'Public Evidence Records', description: `Browse publisher-cleared evidence ledgers from ${site.title}.`, canonical: absoluteUrl('/records/'), pageClass: 'records-index-page', body: `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Evidence desk</p><h1>Public evidence records</h1><p class="lede">Each ledger identifies publisher-cleared public source material and any declared redaction. These records do not score truth or replicate source files.</p></div></section><section class="section shell story-grid">${recordCards || '<p>No public evidence records have been published.</p>'}</section>` }));
+for (const record of publicRecords) {
+  const linkedArticle = articles.find((article) => article.slug === record.linked_article && published.includes(article));
+  const sources = record.source_materials.map((source) => `<li><a href="${escapeHtml(safeUrl(source.url))}"${String(source.url).startsWith('/') ? '' : ' target="_blank" rel="noopener noreferrer"'}>${escapeHtml(source.title)}${String(source.url).startsWith('/') ? '' : newTabNote()}</a>${source.publisher ? ` <span>· ${escapeHtml(source.publisher)}</span>` : ''}${source.retrieved_at ? ` <span>· retrieved ${escapeHtml(formatDate(source.retrieved_at, site.locale, site.timezone))}</span>` : ''}${source.sha256 ? ` <code>SHA-256 ${escapeHtml(source.sha256)}</code>` : ''}${source.description ? `<p>${escapeHtml(source.description)}</p>` : ''}</li>`).join('');
+  const redactions = record.redactions.length ? `<section class="receipts-section"><h2>Declared redactions</h2><ul>${record.redactions.map((item) => `<li><strong>${escapeHtml(item.scope)}</strong>: ${escapeHtml(item.reason)}</li>`).join('')}</ul></section>` : '';
+  const recordBody = `<article class="receipts-mode shell"><nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><a href="/records/">Public evidence records</a><span aria-hidden="true">/</span><span aria-current="page">${escapeHtml(record.title)}</span></nav><header class="page-hero"><p class="eyebrow">Public evidence record · ${escapeHtml(record.record_type)}</p><h1>${escapeHtml(record.title)}</h1><p class="lede">This is a publisher-cleared public metadata ledger. It does not assign a truth score, create a custody claim, or duplicate source files.</p></header>${linkedArticle ? `<section class="receipts-section"><h2>Related publication</h2><p><a href="/stories/${escapeHtml(linkedArticle.slug)}/">${escapeHtml(linkedArticle.title)}</a> · <a href="/stories/${escapeHtml(linkedArticle.slug)}/receipts/">Receipts Mode</a></p></section>` : ''}<section class="receipts-section"><h2>Public source materials</h2><ul class="source-list">${sources}</ul></section>${redactions}<section class="receipts-section"><h2>Release boundary</h2><p>Public release and rights were confirmed by the publisher before this ledger was published. Source URLs remain authoritative; this record intentionally contains no copied private material.</p></section></article>`;
+  writeRoute(`/records/${record.id}/`, layout({ route: `/records/${record.id}/`, title: record.title, description: `Public evidence record: ${record.title}.`, canonical: absoluteUrl(`/records/${record.id}/`), pageClass: 'record-page', body: recordBody }), { lastmod: machineDate(record.published_at || '') });
 }
 
 const newestPublicationDate = machineDate(published[0]?.updated_at || published[0]?.published_at || '');
