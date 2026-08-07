@@ -1,0 +1,1 @@
+{"name":"@tahai-press/newsroom-worker","private":true,"version":"3.0.0-alpha.1","type":"module","license":"Apache-2.0","scripts":{"test":"node --test tests/*.test.mjs"}}

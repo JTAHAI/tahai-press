@@ -46,3 +46,7 @@ In progress. Schema-checked static datasets now include a downloadable source, a
 ## Phase 8 — Local-first collaboration
 
 In progress. An isolated optional collaboration service now has portable checksum-verified review records and handoffs plus a genuine pinned Yjs package and round-trip test. It remains absent from the public reader build. Local promotion tooling, file-based review UI, retention/session controls, and a real optional editor-only provider integration remain open.
+
+## Phase 9 — Optional Newsroom Worker
+
+In progress. The optional native Worker has its own package lockfile, Wrangler configuration, D1 migration, exact-origin CORS, public health endpoint, contact intake, bearer-gated attachment validation, deployment/rollback/teardown documentation, and passing tests. It is not connected to reader delivery and has not been deployed; owner account credentials and the real D1 identifier remain external gates.
