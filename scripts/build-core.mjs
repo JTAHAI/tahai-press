@@ -23,6 +23,7 @@ import { mediaHealth } from './lib/operations.mjs';
 
 const { site, articles, authors, categories, hubs, crosswords } = loadContent();
 const packageInfo = readJson(path.join(ROOT, 'package.json'));
+const assetVersion = packageInfo.version;
 const deployment = deploymentContext();
 const gitCmsRepository = cmsRepository(process.env, packageInfo);
 const gitCmsBranch = cmsBranch(process.env);
@@ -147,6 +148,9 @@ const navItems = (Array.isArray(site.navigation?.items) ? site.navigation.items 
   return true;
 });
 
+const PUBLISHER_ROUTES = new Set(['/studio/', '/media-desk/', '/publisher/', '/setup/']);
+const READER_ROUTES = new Set(['/edition/', '/saved/', '/puzzles/']);
+
 function isExternalNavigation(href = '') {
   return /^https?:\/\//i.test(String(href));
 }
@@ -157,13 +161,69 @@ function isCurrent(route, href) {
   return route === href || route.startsWith(href);
 }
 
+function navEntry(route, item, className = '') {
+  const safeHref = safeUrl(item?.href || '');
+  if (!safeHref || !item?.label) return null;
+  const external = isExternalNavigation(safeHref);
+  return {
+    href: safeHref,
+    label: item.label,
+    current: isCurrent(route, safeHref),
+    external,
+    markup: `<a class="${className}" href="${escapeHtml(safeHref)}"${isCurrent(route, safeHref) ? ' aria-current="page"' : ''}${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(item.label)}${external ? newTabNote() : ''}</a>`
+  };
+}
+
 function navLinks(route, className = '') {
-  return navItems.map(({ href, label }) => {
-    const safeHref = safeUrl(href || '');
-    if (!safeHref || !label) return '';
-    const external = isExternalNavigation(safeHref);
-    return `<a class="${className}" href="${escapeHtml(safeHref)}"${isCurrent(route, safeHref) ? ' aria-current="page"' : ''}${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(label)}${external ? newTabNote() : ''}</a>`;
-  }).filter(Boolean).join('\n');
+  return navItems.map((item) => navEntry(route, item, className)?.markup).filter(Boolean).join('\n');
+}
+
+function partitionNavigation(route) {
+  const entries = navItems.map((item) => navEntry(route, item)).filter(Boolean);
+  const primary = [];
+  const publisher = [];
+  const reader = [];
+  const overflow = [];
+  for (const item of entries) {
+    if (PUBLISHER_ROUTES.has(item.href)) publisher.push(item);
+    else if (READER_ROUTES.has(item.href)) reader.push(item);
+    else if (primary.length < 7) primary.push(item);
+    else overflow.push(item);
+  }
+  return { primary, publisher, reader, overflow };
+}
+
+function renderNavigationMenu(label, items, menuClass) {
+  if (!items.length) return '';
+  const isCurrent = items.some((item) => item.current);
+  const links = items.map((item) => `<a class="desktop-nav-menu-link" href="${escapeHtml(item.href)}"${item.current ? ' aria-current="page"' : ''}${item.external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(item.label)}${item.external ? newTabNote() : ''}</a>`).join('\n');
+  return `<details class="desktop-nav-menu ${menuClass}" data-navigation-menu${isCurrent ? ' data-current-menu="true"' : ''}>
+    <summary${isCurrent ? ' aria-current="page"' : ''}>${label}<span aria-hidden="true">▾</span></summary>
+    <div class="desktop-nav-menu-panel">${links}</div>
+  </details>`;
+}
+
+function renderDesktopNavigation(route) {
+  const { primary, publisher, reader, overflow } = partitionNavigation(route);
+  const primaryLinks = primary.map((item) => item.markup).join('\n');
+  return `<div class="desktop-navigation" data-desktop-navigation>
+    <nav class="desktop-nav" aria-label="Primary navigation">${primaryLinks}</nav>
+    <nav class="desktop-nav-utilities" aria-label="Additional navigation">
+      ${renderNavigationMenu('Publisher tools', publisher, 'desktop-nav-publisher')}
+      ${renderNavigationMenu('Reader desk', reader, 'desktop-nav-reader')}
+      ${renderNavigationMenu('More', overflow, 'desktop-nav-more')}
+    </nav>
+  </div>`;
+}
+
+function renderMobileNavigation(route) {
+  return `<details class="mobile-nav">
+    <summary>${icon('menu')}<span>Menu</span></summary>
+    <nav aria-label="Mobile navigation">
+      ${navLinks(route, 'mobile-nav-link')}
+      <a class="mobile-nav-contact" href="${escapeHtml(site.contact_url || '/contact/')}">Contact the publication</a>
+    </nav>
+  </details>`;
 }
 
 function brandMark() {
@@ -254,10 +314,12 @@ ${sourceProvenanceComment()}
   <link rel="canonical" href="${escapeHtml(canonical)}">
   ${head.html}
   <link rel="stylesheet" href="/assets/styles.css">
+  <link rel="stylesheet" href="/assets/navigation.css?v=${assetVersion}">
   <script src="/assets/pdf-reader.js" defer></script>
   <script src="/assets/search.js" defer></script>
   <script src="/assets/crossword.js" defer></script>
   <script src="/assets/media-gallery.js" defer></script>
+  <script src="/assets/navigation.js?v=${assetVersion}" defer></script>
   <script src="/assets/professional-desk.js" defer></script>
   ${accessibility.readerToolsEnabled ? '<script src="/assets/reading-tools.js" defer></script>' : ''}
   ${readerReach.enabled ? `<script src="/assets/reader-reach.js" defer data-reader-reach data-offline-enabled="${readerReach.offlineEnabled ? 'true' : 'false'}"></script>` : ''}
@@ -290,14 +352,8 @@ ${sourceProvenanceComment()}
     </div>
     <div class="navigation-wrap">
       <div class="shell navigation-inner">
-        <nav class="desktop-nav" aria-label="Primary navigation">${navLinks(route)}</nav>
-        <details class="mobile-nav">
-          <summary>${icon('menu')}<span>Menu</span></summary>
-          <nav aria-label="Mobile navigation">
-            ${navLinks(route, 'mobile-nav-link')}
-            <a class="mobile-nav-contact" href="${escapeHtml(site.contact_url || '/contact/')}">Contact the publication</a>
-          </nav>
-        </details>
+        ${renderDesktopNavigation(route)}
+        ${renderMobileNavigation(route)}
         <p class="navigation-promise">${escapeHtml(site.navigation?.note || site.navigation_note || 'Static-first. Editor-friendly. Open source.')}</p>
       </div>
     </div>
@@ -1222,18 +1278,28 @@ writePaginatedArchive({
 const topics = uniqueTopics(published);
 const searchIndex = createSearchIndex({ articles: published, authors, categories, hubs });
 fs.writeFileSync(path.join(DIST, 'search-index.json'), `${JSON.stringify({ schema_version: 1, generated_from: 'published-content', count: searchIndex.length, entries: searchIndex }, null, 2)}\n`, 'utf8');
+const searchSynonymsPath = path.join(ROOT, 'content', 'search-synonyms.json');
+const searchSynonyms = fs.existsSync(searchSynonymsPath) ? readJson(searchSynonymsPath) : { schema_version: 1, groups: [] };
+fs.writeFileSync(path.join(DIST, 'search-synonyms.json'), `${JSON.stringify(searchSynonyms, null, 2)}\n`, 'utf8');
 
-const searchBody = `<section class="page-hero page-hero-search"><div class="shell page-hero-grid"><div><p class="eyebrow">Search</p><h1>Find a story, topic, contributor, or source document.</h1><p class="lede">Search runs entirely in the browser against a small static index. No query is sent to a database or third-party search service.</p></div><span class="hero-illustration" aria-hidden="true">${icon('search')}</span></div></section>
+const knowledgeGroups = Array.isArray(searchSynonyms.groups) ? searchSynonyms.groups : [];
+const knowledgeBody = `<section class="page-hero page-hero-search"><div class="shell page-hero-grid"><div><p class="eyebrow">Knowledge Desk</p><h1>Search language, labels, and coverage structure.</h1><p class="lede">This desk explains the publication’s search groups and offers fast links back to search. It stays static and browser-only.</p></div><span class="hero-illustration" aria-hidden="true">${icon('source')}</span></div></section>
+<section class="section shell discovery-grid">${knowledgeGroups.length ? knowledgeGroups.map((group) => `<article class="discovery-card"><span class="eyebrow">Search synonym group</span><h2>${escapeHtml(group.label)}</h2><p>${escapeHtml((group.terms || []).join(', '))}</p><strong>${(group.terms || []).length} terms</strong></article>`).join('\n') : '<p>No search synonym groups are configured.</p>'}</section>
+<section class="section shell"><div class="section-heading"><div><p class="eyebrow">Next step</p><h2>Use the search desk</h2></div><a class="section-link" href="/search/">Open search ${icon('arrow')}</a></div><p class="lede">The knowledge desk is a companion index for people who want to understand how the browser search groups the archive.</p></section>`;
+writeRoute('/knowledge/', layout({ route: '/knowledge/', title: 'Knowledge Desk', description: `Search language and coverage structure for ${site.title}.`, canonical: absoluteUrl('/knowledge/'), pageClass: 'search-page', body: knowledgeBody }));
+
+const searchBody = `<section class="page-hero page-hero-search"><div class="shell page-hero-grid"><div><p class="eyebrow">Search</p><h1>Find a story, topic, contributor, or source document.</h1><p class="lede">Search runs entirely in the browser against a small static index. No query is sent to a database or third-party search service. See the <a href="/knowledge/">Knowledge Desk</a> for search language and coverage structure.</p></div><span class="hero-illustration" aria-hidden="true">${icon('search')}</span></div></section>
 <section class="section shell search-layout" data-publication-search data-index-url="/search-index.json" data-result-limit="${Number(site.discovery?.search_result_limit || 50)}">
   <form class="search-form" role="search" data-search-form>
     <div class="search-field"><label for="publication-search">Search the publication</label><div class="search-input-wrap">${icon('search')}<input id="publication-search" name="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-describedby="publication-search-help" placeholder="Try a name, place, phrase, or document topic" data-search-input><span class="visually-hidden" id="publication-search-help">Results update as you type. Use the Search button to move focus to the result summary.</span></div></div>
     <div class="search-filter"><label for="publication-search-type">Format</label><select id="publication-search-type" name="type" data-search-type><option value="">All formats</option><option value="standard">Written stories</option><option value="pdf">PDF records</option><option value="mixed">Stories + PDFs</option><option value="external">External documents</option></select></div>
     <div class="search-filter"><label for="publication-search-category">Category</label><select id="publication-search-category" name="category" data-search-category><option value="">All categories</option>${categories.map((item) => `<option value="${escapeHtml(item.slug)}">${escapeHtml(item.name)}</option>`).join('\n')}</select></div>
-    <button class="button" type="submit">Search ${icon('arrow')}</button>
+    <div class="search-actions"><button class="button" type="submit">Search ${icon('arrow')}</button><button class="button button-secondary" type="button" data-search-reset>Reset</button></div>
   </form>
+  <p class="search-summary" data-search-summary aria-live="polite" aria-atomic="true">Search suggestions will appear here.</p>
   <p class="search-status" id="publication-search-status" data-search-status role="status" aria-live="polite" aria-atomic="true" tabindex="-1">Enter a search term or choose a format.</p>
   <div class="search-results" data-search-results aria-labelledby="publication-search-status" aria-busy="true"></div>
-  <noscript><div class="search-noscript"><h2>JavaScript is required for instant search.</h2><p>You can still browse by <a href="/categories/">category</a>, <a href="/topics/">topic</a>, <a href="/authors/">contributor</a>, <a href="/archive/">date</a>, or the <a href="/stories/">complete story archive</a>.</p></div></noscript>
+  <noscript><div class="search-noscript"><h2>JavaScript is required for instant search.</h2><p>You can still browse by <a href="/categories/">category</a>, <a href="/topics/">topic</a>, <a href="/authors/">contributor</a>, <a href="/archive/">date</a>, the <a href="/knowledge/">Knowledge Desk</a>, or the <a href="/stories/">complete story archive</a>.</p></div></noscript>
 </section>`;
 writeRoute('/search/', layout({ route: '/search/', title: 'Search', description: `Search published stories and documents from ${site.title}.`, canonical: absoluteUrl('/search/'), pageClass: 'search-page', body: searchBody }));
 

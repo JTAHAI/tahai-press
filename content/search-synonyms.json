@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "groups": [
+    {
+      "label": "Public records",
+      "terms": ["public records", "records", "filings", "documents", "source documents"]
+    },
+    {
+      "label": "Coverage hubs",
+      "terms": ["coverage hubs", "hubs", "beats", "projects", "case files"]
+    },
+    {
+      "label": "Investigations",
+      "terms": ["investigation", "investigations", "series", "longform", "case file"]
+    },
+    {
+      "label": "People",
+      "terms": ["contributors", "authors", "people", "staff", "team"]
+    }
+  ]
+}

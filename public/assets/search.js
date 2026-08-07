@@ -8,9 +8,13 @@
   const category = root.querySelector('[data-search-category]');
   const status = root.querySelector('[data-search-status]');
   const results = root.querySelector('[data-search-results]');
+  const summary = root.querySelector('[data-search-summary]');
+  const reset = root.querySelector('[data-search-reset]');
   const indexUrl = root.dataset.indexUrl || '/search-index.json';
+  const synonymsUrl = root.dataset.synonymsUrl || '/search-synonyms.json';
   const resultLimit = Math.max(1, Math.min(100, Number(root.dataset.resultLimit) || 50));
   let entries = [];
+  let synonyms = [];
   let ready = false;
 
   function normalize(value) {
@@ -37,6 +41,10 @@
 
   function setStatus(message) {
     status.textContent = message;
+  }
+
+  function setSummary(message) {
+    if (summary) summary.textContent = message;
   }
 
   function clearResults() {
@@ -103,17 +111,31 @@
     return value;
   }
 
+  function expandTerms(terms) {
+    const expanded = new Set(terms);
+    const haystack = terms.join(' ');
+    for (const group of synonyms) {
+      const groupTerms = Array.isArray(group?.terms) ? group.terms.map(normalize).filter(Boolean) : [];
+      if (!groupTerms.length) continue;
+      if (groupTerms.some((term) => haystack.includes(term))) {
+        for (const term of groupTerms) expanded.add(term);
+      }
+    }
+    return [...expanded];
+  }
+
   function runSearch({ updateUrl = true, focusStatus = false } = {}) {
     if (!ready) return;
     const query = input.value.trim();
     const terms = normalize(query).split(' ').filter(Boolean);
+    const expandedTerms = expandTerms(terms);
     const selectedType = type.value;
     const selectedCategory = category?.value || '';
 
     let matches = entries
       .filter((entry) => !selectedType || entry.article_type === selectedType)
       .filter((entry) => !selectedCategory || (entry.categories || []).some((item) => item.slug === selectedCategory))
-      .map((entry) => ({ entry, score: score(entry, terms) }))
+      .map((entry) => ({ entry, score: score(entry, expandedTerms) }))
       .filter((item) => item.score >= 0)
       .sort((a, b) => b.score - a.score || new Date(b.entry.published_at) - new Date(a.entry.published_at));
 
@@ -124,8 +146,10 @@
 
     if (!query && !selectedType && !selectedCategory) {
       setStatus(`Showing ${matches.length} newest ${matches.length === 1 ? 'entry' : 'entries'}.`);
+      setSummary('Search is ready. Try a topic, person, document term, or coverage structure label.');
     } else if (!total) {
       setStatus('No published entries matched those search choices.');
+      setSummary('Try fewer words, another format, a broader category, or the Knowledge Desk labels.');
       const empty = document.createElement('div');
       empty.className = 'search-empty';
       addText(empty, 'h2', '', 'No results found');
@@ -134,6 +158,9 @@
     } else {
       const limited = total > matches.length ? ` Showing the first ${matches.length}.` : '';
       setStatus(`${total} ${total === 1 ? 'result' : 'results'} found.${limited}`);
+      setSummary(expandedTerms.length !== terms.length
+        ? `Search expanded with Knowledge Desk language: ${expandedTerms.length - terms.length} related term${expandedTerms.length - terms.length === 1 ? '' : 's'}.`
+        : 'Search results are ranked by title and body relevance.');
     }
 
     if (updateUrl) {
@@ -150,11 +177,18 @@
     results.setAttribute('aria-busy', 'true');
     setStatus('Loading the publication index…');
     try {
-      const response = await fetch(indexUrl, { headers: { Accept: 'application/json' } });
-      if (!response.ok) throw new Error(`Search index returned ${response.status}`);
-      const payload = await response.json();
+      const [indexResponse, synonymsResponse] = await Promise.all([
+        fetch(indexUrl, { headers: { Accept: 'application/json' } }),
+        fetch(synonymsUrl, { headers: { Accept: 'application/json' } }).catch(() => null)
+      ]);
+      if (!indexResponse.ok) throw new Error(`Search index returned ${indexResponse.status}`);
+      const payload = await indexResponse.json();
       if (!Array.isArray(payload.entries)) throw new Error('Search index is missing entries');
       entries = payload.entries;
+      if (synonymsResponse?.ok) {
+        const synonymPayload = await synonymsResponse.json();
+        synonyms = Array.isArray(synonymPayload.groups) ? synonymPayload.groups : [];
+      }
       ready = true;
 
       const parameters = new URLSearchParams(window.location.search);
@@ -162,6 +196,7 @@
       type.value = parameters.get('type') || '';
       if (category) category.value = parameters.get('category') || '';
       results.setAttribute('aria-busy', 'false');
+      setSummary('Search has loaded.');
       runSearch({ updateUrl: false });
     } catch (error) {
       results.setAttribute('aria-busy', 'false');
@@ -172,6 +207,7 @@
       addText(message, 'h2', '', 'The static search index could not be loaded.');
       addText(message, 'p', '', 'The publication remains available through Stories, Categories, Topics, Contributors, and Date Archive.');
       results.append(message);
+      setSummary('Search could not load the static index.');
       console.error(error);
     }
   }
@@ -182,6 +218,12 @@
   });
   type.addEventListener('change', () => runSearch());
   category?.addEventListener('change', () => runSearch());
+  reset?.addEventListener('click', () => {
+    input.value = '';
+    type.value = '';
+    if (category) category.value = '';
+    runSearch({ focusStatus: true });
+  });
   input.addEventListener('input', () => {
     window.clearTimeout(input._publicationSearchTimer);
     input._publicationSearchTimer = window.setTimeout(() => runSearch(), 180);

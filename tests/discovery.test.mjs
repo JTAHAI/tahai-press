@@ -43,7 +43,7 @@ test('search index contains public discovery metadata without private editor fie
 test('build creates search, category, topic, contributor, hub, and date archive routes', () => {
   build();
   const expected = [
-    'search/index.html', 'search-index.json', 'assets/search.js',
+    'search/index.html', 'knowledge/index.html', 'search-index.json', 'search-synonyms.json', 'assets/search.js',
     'categories/index.html', 'categories/public-records/index.html',
     'topics/index.html', 'topics/pdf/index.html',
     'authors/index.html', 'authors/editorial-team/index.html',
@@ -60,8 +60,21 @@ test('search page supports query parameters, filters, live status, and no-script
   assert.match(html, /data-search-input/);
   assert.match(html, /data-search-type/);
   assert.match(html, /data-search-category/);
+  assert.match(html, /data-search-summary/);
+  assert.match(html, /data-search-reset/);
   assert.match(html, /aria-live="polite"/);
   assert.match(html, /<noscript>/);
+});
+
+test('knowledge desk is generated from content-managed search synonym groups', () => {
+  build();
+  const html = fs.readFileSync(path.join(DIST, 'knowledge/index.html'), 'utf8');
+  assert.match(html, /Knowledge Desk/);
+  assert.match(html, /Search synonym group/);
+  const payload = JSON.parse(fs.readFileSync(path.join(DIST, 'search-synonyms.json'), 'utf8'));
+  assert.equal(payload.schema_version, 1);
+  assert.ok(Array.isArray(payload.groups));
+  assert.ok(payload.groups.length > 0);
 });
 
 test('generated static search index includes only published articles', () => {

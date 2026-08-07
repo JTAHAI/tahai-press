@@ -867,6 +867,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
   background: var(--surface);
   box-shadow: var(--shadow-sm);
 }
+.search-actions { display: flex; gap: 0.7rem; align-self: stretch; }
 .search-field label, .search-filter label {
   display: block;
   margin-bottom: 0.38rem;
@@ -889,6 +890,7 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 }
 .search-input-wrap input { padding: 0.72rem 0.85rem 0.72rem 2.65rem; }
 .search-filter select { padding: 0.72rem 2.1rem 0.72rem 0.75rem; }
+.search-summary { margin: 1rem 0 0; color: var(--ink-soft); font-family: var(--sans); font-size: 0.88rem; }
 .search-status { margin: 1.25rem 0; color: var(--muted); font-family: var(--sans); font-size: 0.82rem; font-weight: 750; }
 .search-results { display: grid; gap: 1rem; }
 .search-result {

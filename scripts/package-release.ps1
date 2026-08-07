@@ -17,9 +17,11 @@ try {
     '^\.(git|artifacts|bootstrap)$',
     '^dist$',
     '^node_modules$',
+    '^\.tmp-',
     '^SHA256SUMS\.txt$',
     '^tahai-press_v.+_(clean-source|cloudflare-deploy)\.zip$',
     '^tahai-press_v.+_(clean-source|cloudflare-deploy)\.sha256$',
+    '^TAHAI_PRESS_v.+_(clean-source|cloudflare-direct-upload)\.zip$',
     '^apply-tahai-press-.+\.ps1$'
   )
 
