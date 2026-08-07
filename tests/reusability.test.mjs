@@ -5,7 +5,7 @@ import path from 'node:path';
 import { ROOT } from '../scripts/lib/content.mjs';
 
 const TEXT_EXTENSIONS = new Set(['.json', '.md', '.mjs', '.yml', '.yaml', '.css', '.html', '.txt']);
-const EXCLUDED_DIRECTORIES = new Set(['dist', '.git', 'node_modules']);
+const EXCLUDED_DIRECTORIES = new Set(['dist', '.git', 'node_modules', 'pagefind']);
 
 function collectTextFiles(directory, files = []) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {

@@ -35,7 +35,17 @@
     "audit:performance": "node scripts/audit-performance.mjs --report .artifacts/performance-audit.json",
     "newsroom:health": "node scripts/create-newsroom-dashboard.mjs",
     "newsroom:promote": "node scripts/promote-newsroom-draft.mjs",
-    "launch:apply": "node scripts/apply-launch-package.mjs"
+    "launch:apply": "node scripts/apply-launch-package.mjs",
+    "theme:build-official": "node scripts/theme.mjs build-official",
+    "theme:catalog:build": "node scripts/theme.mjs catalog:build",
+    "theme:validate": "node scripts/theme.mjs validate",
+    "theme:install": "node scripts/theme.mjs install",
+    "theme:list": "node scripts/theme.mjs list",
+    "theme:activate": "node scripts/theme.mjs activate",
+    "theme:export": "node scripts/theme.mjs export",
+    "theme:rollback": "node scripts/theme.mjs rollback",
+    "theme:integrity-audit": "node scripts/theme.mjs integrity-audit",
+    "theme:workshop": "node scripts/theme-manager.mjs"
   },
   "author": {
     "name": "Justin Tahai and TAHAI Web Services",
@@ -64,5 +74,8 @@
   ],
   "dependencies": {
     "sharp": "0.35.3"
+  },
+  "devDependencies": {
+    "pagefind": "1.5.2"
   }
 }

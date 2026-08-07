@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TAHAI Press theme catalog",
+  "type": "object",
+  "required": ["schema_version", "themes"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "themes": { "type": "array", "items": { "type": "object", "required": ["id", "name", "version", "package", "sha256", "trust"], "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "version": { "type": "string" }, "package": { "type": "string" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "trust": { "enum": ["official", "community"] } } } }
+  }
+}

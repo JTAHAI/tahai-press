@@ -14,3 +14,8 @@ imports/inbox/*
 imports/reports/*
 !imports/reports/.gitkeep
 .launch-backups/
+themes/installed/
+themes/exports/
+themes/active.json
+themes/.manager-token
+pagefind/

@@ -86,6 +86,15 @@ test('generated static search index includes only published articles', () => {
   assert.ok(payload.entries.every((entry) => entry.url.startsWith('/stories/')));
 });
 
+test('the pinned Pagefind index is built for public discovery and ignores private newsroom routes', () => {
+  build();
+  assert.equal(fs.existsSync(path.join(DIST, 'pagefind', 'pagefind.js')), true);
+  const setup = fs.readFileSync(path.join(DIST, 'setup', 'index.html'), 'utf8');
+  const studio = fs.readFileSync(path.join(DIST, 'studio', 'index.html'), 'utf8');
+  assert.match(setup, /<body[^>]+data-pagefind-ignore/);
+  assert.match(studio, /<body[^>]+data-pagefind-ignore/);
+});
+
 test('archive pagination generates canonical page-two routes when configured below the article count', () => {
   const siteFile = path.join(ROOT, 'content/site.json');
   const original = fs.readFileSync(siteFile, 'utf8');

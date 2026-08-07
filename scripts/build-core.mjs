@@ -327,7 +327,7 @@ ${sourceProvenanceComment()}
   ${scripts.map((src) => `<script src="${escapeHtml(src)}" defer></script>`).join('\n  ')}
   ${themeVariables()}
 </head>
-<body class="${escapeHtml(`${pageClass} density-${site.layout?.density || 'balanced'} reading-${site.layout?.reading_width || 'standard'} masthead-${site.layout?.masthead_alignment || 'center'} headlines-${site.layout?.headline_style || 'serif'} panels-${site.layout?.panel_style || 'square'} surface-${site.layout?.reader_surface || 'paper'}${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}`)}">
+<body class="${escapeHtml(`${pageClass} density-${site.layout?.density || 'balanced'} reading-${site.layout?.reading_width || 'standard'} masthead-${site.layout?.masthead_alignment || 'center'} headlines-${site.layout?.headline_style || 'serif'} panels-${site.layout?.panel_style || 'square'} surface-${site.layout?.reader_surface || 'paper'}${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}`)}${noindex ? ' data-pagefind-ignore' : ''}>
   <a class="skip-link" href="#main">Skip to content</a>
   ${templateNotice}
   ${templateMode(site) ? `<div class="publication-bar">
