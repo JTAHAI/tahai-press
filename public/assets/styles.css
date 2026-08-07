@@ -2463,6 +2463,13 @@ html[data-connection='offline'] .reader-reach-connection { color:var(--accent-da
   .launch-preview-heading { border-right: 0; border-bottom: 1px solid color-mix(in srgb, var(--paper) 35%, transparent); }
 }
 @media (max-width: 520px) {
+  /* A 13-step horizontal rail gives each label only a few characters at phone widths.
+     Switch to a compact vertical checklist so every destination remains legible. */
+  .launch-step-nav { overflow-x: visible; }
+  .launch-step-nav ol { display: grid; min-width: 0; }
+  .launch-step-nav li { border-left: 0; }
+  .launch-step-nav li + li { border-top: 1px solid var(--line) !important; }
+  .launch-step-nav button { min-height: 0; padding: .7rem .8rem; }
   .launch-step { min-height: 0; padding: 1rem; }
   .launch-step-actions { flex-direction: column-reverse; }
   .launch-step-actions .button,
