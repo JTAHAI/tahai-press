@@ -15,7 +15,10 @@
   const resultLimit = Math.max(1, Math.min(100, Number(root.dataset.resultLimit) || 50));
   let entries = [];
   let synonyms = [];
+  let pagefind = null;
   let ready = false;
+  let searchVersion = 0;
+  root.dataset.searchEngine = 'static-loading';
 
   function normalize(value) {
     return String(value || '')
@@ -124,18 +127,35 @@
     return [...expanded];
   }
 
-  function runSearch({ updateUrl = true, focusStatus = false } = {}) {
+  async function pagefindRanking(query) {
+    if (!pagefind || !normalize(query)) return null;
+    try {
+      const response = await pagefind.search(query);
+      const records = await Promise.all(response.results.map((result) => result.data()));
+      root.dataset.searchEngine = 'pagefind';
+      return new Map(records.map((record, index) => [new URL(record.url, window.location.origin).pathname.replace(/\/$/, '') || '/', index]));
+    } catch (error) {
+      root.dataset.searchEngine = 'static-fallback';
+      console.warn('Pagefind was unavailable; using the static search fallback.', error);
+      return null;
+    }
+  }
+
+  async function runSearch({ updateUrl = true, focusStatus = false } = {}) {
     if (!ready) return;
+    const version = ++searchVersion;
     const query = input.value.trim();
     const terms = normalize(query).split(' ').filter(Boolean);
     const expandedTerms = expandTerms(terms);
     const selectedType = type.value;
     const selectedCategory = category?.value || '';
 
+    const ranking = await pagefindRanking(query);
+    if (version !== searchVersion) return;
     let matches = entries
       .filter((entry) => !selectedType || entry.article_type === selectedType)
       .filter((entry) => !selectedCategory || (entry.categories || []).some((item) => item.slug === selectedCategory))
-      .map((entry) => ({ entry, score: score(entry, expandedTerms) }))
+      .map((entry) => ({ entry, score: ranking ? ranking.has(String(entry.url || '').replace(/\/$/, '') || '/') ? 10000 - ranking.get(String(entry.url || '').replace(/\/$/, '') || '/') : -1 : score(entry, expandedTerms) }))
       .filter((item) => item.score >= 0)
       .sort((a, b) => b.score - a.score || new Date(b.entry.published_at) - new Date(a.entry.published_at));
 
@@ -158,7 +178,7 @@
     } else {
       const limited = total > matches.length ? ` Showing the first ${matches.length}.` : '';
       setStatus(`${total} ${total === 1 ? 'result' : 'results'} found.${limited}`);
-      setSummary(expandedTerms.length !== terms.length
+      setSummary(ranking ? 'Search results are ranked by the local Pagefind index.' : expandedTerms.length !== terms.length
         ? `Search expanded with Knowledge Desk language: ${expandedTerms.length - terms.length} related term${expandedTerms.length - terms.length === 1 ? '' : 's'}.`
         : 'Search results are ranked by title and body relevance.');
     }
@@ -191,13 +211,15 @@
       }
       ready = true;
 
+      try { pagefind = await import('/pagefind/pagefind.js'); root.dataset.searchEngine = 'pagefind-ready'; } catch (error) { root.dataset.searchEngine = 'static-fallback'; console.info('Pagefind enhancement is unavailable; static search remains active.', error); }
+
       const parameters = new URLSearchParams(window.location.search);
       input.value = parameters.get('q') || '';
       type.value = parameters.get('type') || '';
       if (category) category.value = parameters.get('category') || '';
       results.setAttribute('aria-busy', 'false');
       setSummary('Search has loaded.');
-      runSearch({ updateUrl: false });
+      await runSearch({ updateUrl: false });
     } catch (error) {
       results.setAttribute('aria-busy', 'false');
       clearResults();
@@ -214,19 +236,19 @@
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    runSearch({ focusStatus: true });
+    void runSearch({ focusStatus: true });
   });
-  type.addEventListener('change', () => runSearch());
-  category?.addEventListener('change', () => runSearch());
+  type.addEventListener('change', () => void runSearch());
+  category?.addEventListener('change', () => void runSearch());
   reset?.addEventListener('click', () => {
     input.value = '';
     type.value = '';
     if (category) category.value = '';
-    runSearch({ focusStatus: true });
+    void runSearch({ focusStatus: true });
   });
   input.addEventListener('input', () => {
     window.clearTimeout(input._publicationSearchTimer);
-    input._publicationSearchTimer = window.setTimeout(() => runSearch(), 180);
+    input._publicationSearchTimer = window.setTimeout(() => void runSearch(), 180);
   });
 
   load();

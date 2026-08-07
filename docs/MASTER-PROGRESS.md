@@ -25,7 +25,7 @@ In progress. Eight checksum-verified official theme packages, package validation
 
 ## Phase 3 — Search and Knowledge Desk
 
-In progress. Pagefind `1.5.2` is pinned and generated from public static pages only; explicit publisher-managed discovery metadata is validated and exported as public facets. The reader-facing search experience still uses the existing static index, so Pagefind is not yet the sole interactive search path.
+In progress. Pagefind `1.5.2` is pinned and generated from public static pages only; explicit publisher-managed discovery metadata is validated and exported as public facets. Reader search uses the local Pagefind index for query ranking and retains the existing static index as an offline/failure fallback and facet source. Browser matrix verification remains open.
 
 ## Phase 4 — Evidence, records, and packets
 

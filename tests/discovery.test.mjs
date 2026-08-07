@@ -130,4 +130,6 @@ test('search client uses DOM construction rather than interpolating index HTML',
   assert.match(source, /textContent/);
   assert.doesNotMatch(source, /innerHTML\s*=/);
   assert.match(source, /history\.replaceState/);
+  assert.match(source, /import\('\/pagefind\/pagefind\.js'\)/);
+  assert.match(source, /Pagefind was unavailable; using the static search fallback/);
 });
