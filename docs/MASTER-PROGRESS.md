@@ -10,6 +10,7 @@
 - Release-equivalent build passed: content validation, CMS validation, redirect validation, 177 tests, media audit, generated-site accessibility/reader/performance audits, output verification, HTTP smoke test, and release proof.
 - Active source identity is `3.0.0-alpha.1`; package and lockfile agree.
 - All source workflows are manually dispatched only, and a repository test rejects automatic triggers and bootstrap references.
+- On 2026-08-10, the remaining remote `Scheduled publishing` workflow was disabled through GitHub; no queued or in-progress runs existed after the v3 verification push.
 
 Phase 0 completed at commit `ad435c25ae837fce3de601a8dd956eed84ec246e`. The accepted candidate is limited to the behavior covered by the executed baseline. Release archives and historical version labels remain non-authoritative until the later release gates are complete.
 
