@@ -11,6 +11,8 @@ test('browser matrix covers Chromium, Firefox, and WebKit against an owned local
   assert.match(source, /\['webkit', webkit\]/);
   assert.match(source, /127\.0\.0\.1/);
   assert.match(source, /console_errors/);
-  assert.match(source, /local Pagefind index/);
+  assert.match(source, /dataset\.searchEngine === 'pagefind'/);
+  assert.match(source, /search did not return a local Pagefind result state/);
+  assert.match(source, /waitUntil: 'domcontentloaded'/);
   assert.match(source, /data-pdf-canvas/);
 });

@@ -34,22 +34,29 @@ async function verifyEngine(name, browserType, baseUrl) {
   page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(normalizeConsole(message)); });
   page.on('pageerror', (error) => consoleErrors.push(error.message));
   try {
-    await page.goto(baseUrl, { waitUntil: 'networkidle' });
+    await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.getByRole('heading', { level: 1 }).waitFor();
     const homeOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 
-    await page.goto(`${baseUrl}search/`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl}search/`, { waitUntil: 'domcontentloaded' });
     await page.getByLabel('Search the publication').fill('meeting');
     await page.getByRole('button', { name: 'Search' }).click();
-    await page.getByText('Sample Meeting Record').waitFor();
-    await page.waitForFunction(() => document.querySelector('[data-search-summary]')?.textContent?.includes('local Pagefind index'));
+    await page.getByRole('heading', { level: 2, name: 'Sample Meeting Record' }).waitFor();
+    await page.waitForFunction(() => document.querySelector('[data-publication-search]')?.dataset.searchEngine === 'pagefind');
+    const searchState = await page.evaluate(() => ({
+      engine: document.querySelector('[data-publication-search]')?.dataset.searchEngine,
+      resultCount: document.querySelectorAll('[data-search-results] .search-result').length
+    }));
+    if (searchState.engine !== 'pagefind' || searchState.resultCount < 1) {
+      throw new Error(`${name} search did not return a local Pagefind result state.`);
+    }
     const searchOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 
-    await page.goto(`${baseUrl}stories/sample-pdf-record/`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl}stories/sample-pdf-record/`, { waitUntil: 'domcontentloaded' });
     await page.locator('[data-pdf-canvas]').waitFor();
     await page.getByRole('link', { name: /Download PDF/ }).waitFor();
 
-    await page.goto(`${baseUrl}records/sample-meeting-record/`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseUrl}records/sample-meeting-record/`, { waitUntil: 'domcontentloaded' });
     await page.getByRole('heading', { level: 1, name: 'Sample meeting record evidence ledger' }).waitFor();
     await page.screenshot({ path: path.join(artifactDirectory, `${name}-records.png`), fullPage: false });
     if (homeOverflow || searchOverflow) throw new Error(`${name} rendered horizontal overflow on a core page.`);
