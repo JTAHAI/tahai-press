@@ -54,7 +54,7 @@ In progress. The optional native Worker has its own package lockfile, Wrangler c
 
 ## Phase 10 — Recovery, updates, and transfer
 
-In progress. A private deterministic safety-copy command now records checksums and verifies each staged byte before restoring publisher content; a local recovery drill and post-restore build verification passed. Update conflict handling, a portable transfer package, and dedicated fixture coverage remain open.
+In progress. A private deterministic safety-copy command now records checksums and verifies each staged byte before restoring publisher content; a local recovery drill and post-restore build verification passed. It now refuses symbolic links, unsafe manifest paths, archive/manifest inventory mismatches, and local absolute archive references; its focused recovery/transfer tests and the complete root suite pass. Update conflict handling, a portable transfer package, and dedicated fixture coverage remain open.
 
 ## Phase 12 — GA evidence
 
