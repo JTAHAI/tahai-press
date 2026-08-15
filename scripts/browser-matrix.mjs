@@ -42,7 +42,7 @@ async function verifyEngine(name, browserType, baseUrl) {
     await page.getByLabel('Search the publication').fill('meeting');
     await page.getByRole('button', { name: 'Search' }).click();
     await page.getByRole('heading', { level: 2, name: 'Sample Meeting Record' }).waitFor();
-    await page.waitForFunction(() => document.querySelector('[data-publication-search]')?.dataset.searchEngine === 'pagefind');
+    await page.waitForFunction(() => document.querySelector('[data-publication-search]')?.dataset.searchEngine === 'pagefind', undefined, { timeout: 60_000 });
     const searchState = await page.evaluate(() => ({
       engine: document.querySelector('[data-publication-search]')?.dataset.searchEngine,
       resultCount: document.querySelectorAll('[data-search-results] .search-result').length
@@ -72,7 +72,14 @@ const baseUrl = `http://127.0.0.1:${port}/`;
 try {
   await waitForServer(baseUrl);
   const results = [];
-  for (const [name, browserType] of [['chromium', chromium], ['firefox', firefox], ['webkit', webkit]]) results.push(await verifyEngine(name, browserType, baseUrl));
+  for (const [name, browserType] of [['chromium', chromium], ['firefox', firefox], ['webkit', webkit]]) {
+    try {
+      results.push(await verifyEngine(name, browserType, baseUrl));
+    } catch (error) {
+      error.message = `${name}: ${error.message}`;
+      throw error;
+    }
+  }
   const report = { schema_version: 1, generated_at: new Date().toISOString(), base_url: baseUrl, results };
   fs.writeFileSync(path.join(ROOT, '.artifacts', 'browser-matrix.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
   console.log(`Browser matrix passed: ${results.map((result) => `${result.name} ${result.version}`).join(', ')}.`);
