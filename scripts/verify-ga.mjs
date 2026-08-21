@@ -14,6 +14,7 @@ const checks = [
   ...(!skipInstall ? [{ id: 'playwright-browser-install', cwd: ROOT, command: npx, args: ['playwright', 'install', 'chromium', 'firefox', 'webkit'] }] : []),
   { id: 'content-and-cms-validation', cwd: ROOT, command: npm, args: ['run', 'validate'] },
   { id: 'root-test-suite', cwd: ROOT, command: npm, args: ['test'] },
+  { id: 'enterprise-release-controls', cwd: ROOT, command: npm, args: ['run', 'verify:enterprise'] },
   { id: 'media-audit', cwd: ROOT, command: npm, args: ['run', 'audit:media'] },
   { id: 'static-build', cwd: ROOT, command: npm, args: ['run', 'build'] },
   { id: 'accessibility-audit', cwd: ROOT, command: npm, args: ['run', 'audit:a11y'] },

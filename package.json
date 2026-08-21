@@ -21,6 +21,7 @@
     "package:release": "npm run build && node scripts/package-release.mjs",
     "package:transfer": "node scripts/package-transfer.mjs",
     "verify:transfer": "node scripts/verify-transfer.mjs",
+    "verify:enterprise": "node scripts/verify-enterprise.mjs",
     "recovery": "node scripts/recovery.mjs",
     "verify:browsers": "npm run build && node scripts/browser-matrix.mjs",
     "verify:ga": "node scripts/verify-ga.mjs",
