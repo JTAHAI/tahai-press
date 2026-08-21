@@ -860,6 +860,7 @@ The records under `content/articles/` demonstrate every supported article format
 | `npm run audit:performance` | Enforce static output performance budgets |
 | `npm run newsroom:health` | Generate the private newsroom-health dashboard under `.artifacts/` |
 | `npm run verify:dist` | Verify routes, metadata, files, indexing rules, and leakage boundaries |
+| `npm run verify:live -- --origin https://news.example.org --expected-commit <commit>` | Independently confirm the deployed build identity, integrity manifest, core assets, cache controls, and edge security headers |
 | `npm run smoke` | Serve and test the generated site over HTTP |
 | `npm run preview` | Start the local preview server on port 8788 |
 | `npm run release:proof` | Create SHA-256 deployment proof under `.artifacts/` |

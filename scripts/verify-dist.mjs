@@ -8,12 +8,15 @@ import { createRedirectPlan, pagesRedirectText, readRedirectConfig } from './lib
 import { TAHAI_PRESS_PROVENANCE, humansText, sourceProvenanceComment } from './lib/provenance.mjs';
 import { accessibilityStatement } from './lib/accessibility.mjs';
 import { readerReachConfig } from './lib/reader-reach.mjs';
+import { cloudflareHeadersText, edgeSecurityHeaders } from './lib/edge-security.mjs';
+import { INTEGRITY_MANIFEST_PATH, sha256Text } from './lib/release-integrity.mjs';
 
 const errors = [];
 const required = [
   'index.html',
   '404.html',
   'robots.txt',
+  '_headers',
   '_redirects',
   'assets/styles.css',
   'assets/pdf-reader.js',
@@ -29,6 +32,7 @@ const required = [
   'admin/config.yml',
   '.well-known/publication-build.json',
   '.well-known/publication-health.json',
+  '.well-known/publication-integrity.json',
   '.well-known/media-asset-manifest.json',
   '.well-known/publication-redirects.json',
   '.well-known/tahai-press.json',
@@ -134,6 +138,11 @@ else {
 
   const context = deploymentContext();
   const indexingBlocked = context.isPreview || site.template_mode !== false;
+  const headersPath = path.join(DIST, '_headers');
+  if (fs.existsSync(headersPath)) {
+    const expectedHeaders = cloudflareHeadersText({ indexingBlocked });
+    if (fs.readFileSync(headersPath, 'utf8') !== expectedHeaders) fail('Cloudflare _headers does not match the deterministic edge security policy.');
+  }
   for (const file of files) {
     if (fs.statSync(file).size > 25 * 1024 * 1024) fail(`Deployment file exceeds TAHAI Press's 25 MiB Cloudflare Pages asset limit: ${path.relative(DIST, file)}`);
     if (!/\.(?:html|css|js|json|txt|xml|md)$/i.test(file) && path.basename(file) !== '_redirects') continue;
@@ -237,7 +246,7 @@ else {
   if (fs.existsSync(path.join(DIST, '.well-known/publication-build.json'))) {
     try {
       const metadata = JSON.parse(fs.readFileSync(path.join(DIST, '.well-known/publication-build.json'), 'utf8'));
-      for (const key of ['schema_version', 'environment', 'provider', 'branch', 'production_branch', 'commit', 'article_count', 'crossword_count', 'publisher_studio_enabled', 'git_cms_repository', 'git_cms_branch', 'git_cms_version', 'search_index_count', 'topic_count', 'redirect_count', 'redirect_sha256', 'supported_node_major']) {
+      for (const key of ['schema_version', 'environment', 'provider', 'branch', 'production_branch', 'commit', 'article_count', 'crossword_count', 'publisher_studio_enabled', 'git_cms_repository', 'git_cms_branch', 'git_cms_version', 'search_index_count', 'topic_count', 'redirect_count', 'redirect_sha256', 'integrity_manifest', 'integrity_manifest_sha256', 'edge_header_policy_sha256', 'supported_node_major']) {
         if (!(key in metadata)) fail(`Build metadata is missing ${key}.`);
       }
       if (metadata.environment !== context.environment) fail('Build metadata environment does not match the active deployment context.');
@@ -252,6 +261,26 @@ else {
         if (metadata.search_index_count !== searchIndex.count) fail('Build metadata search_index_count does not match search-index.json.');
       }
       if (metadata.redirect_sha256 !== redirectPlan.sha256) fail('Build metadata redirect_sha256 does not match the validated redirect plan.');
+      if (metadata.integrity_manifest !== INTEGRITY_MANIFEST_PATH) fail('Build metadata must identify the public integrity manifest.');
+      const integrityPath = path.join(DIST, INTEGRITY_MANIFEST_PATH.replace(/^\//, ''));
+      if (!fs.existsSync(integrityPath)) fail('Public integrity manifest is missing.');
+      else {
+        const integrityText = fs.readFileSync(integrityPath, 'utf8');
+        try {
+          const integrity = JSON.parse(integrityText);
+          if (sha256Text(integrityText) !== metadata.integrity_manifest_sha256) fail('Build metadata integrity manifest digest does not match the generated manifest.');
+          if (integrity.commit !== metadata.commit || integrity.environment !== metadata.environment) fail('Integrity manifest does not match build identity.');
+          if (integrity.header_policy_sha256 !== metadata.edge_header_policy_sha256) fail('Integrity manifest does not match build header policy.');
+          const expectedHeaderNames = edgeSecurityHeaders({ indexingBlocked }).map((header) => header.name).sort();
+          if (!Array.isArray(integrity.files) || integrity.files.length < 8) fail('Integrity manifest must attest a meaningful public release surface.');
+          for (const entry of integrity.files || []) {
+            if (!entry?.path?.startsWith('/') || !Number.isInteger(entry.bytes) || entry.bytes < 0 || !/^[a-f0-9]{64}$/.test(entry.sha256 || '')) { fail('Integrity manifest contains an invalid file record.'); break; }
+            const target = path.join(DIST, entry.path === '/' ? 'index.html' : entry.path.replace(/^\//, ''));
+            if (!fs.existsSync(target) || sha256(target) !== entry.sha256 || fs.statSync(target).size !== entry.bytes) { fail(`Integrity manifest does not match ${entry.path}.`); break; }
+          }
+          if (!expectedHeaderNames.length) fail('Edge security policy must include response headers.');
+        } catch (error) { fail(`Integrity manifest is invalid JSON: ${error.message}`); }
+      }
       if ('node' in metadata) fail('Build metadata must not record the runtime Node version.');
     } catch (error) {
       fail(`Build metadata is invalid JSON: ${error.message}`);

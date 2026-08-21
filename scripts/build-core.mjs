@@ -22,6 +22,7 @@ import { cmsBranch, cmsRepository, SVELTIA_CMS_LICENSE, SVELTIA_CMS_SCRIPT, SVEL
 import { stableStringify, WORKFLOW_STATES, workflowTransitions } from './lib/publishing-console.mjs';
 import { mediaHealth } from './lib/operations.mjs';
 import { buildApi, buildAtom, renderNewsletter } from './lib/syndication.mjs';
+import { cloudflareHeadersText } from './lib/edge-security.mjs';
 
 const { site, articles, authors, categories, hubs, crosswords, records, editions, newsletters, datasets, maps, developing } = loadContent();
 const packageInfo = readJson(path.join(ROOT, 'package.json'));
@@ -1931,6 +1932,14 @@ fs.writeFileSync(path.join(wellKnown, 'publication-readiness.json'), `${JSON.str
 }, null, 2)}
 `);
 
+const indexingBlocked = deployment.isPreview || templateMode(site);
+const robotsText = indexingBlocked
+  ? `User-agent: *\nDisallow: /\n# Template or preview deployment: indexing intentionally blocked.\n`
+  : `User-agent: *\nAllow: /\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`;
+fs.writeFileSync(path.join(DIST, 'robots.txt'), robotsText, 'utf8');
+
+const headersText = cloudflareHeadersText({ indexingBlocked });
+fs.writeFileSync(path.join(DIST, '_headers'), headersText, 'utf8');
 fs.writeFileSync(path.join(wellKnown, 'publication-health.json'), `${JSON.stringify({
   ok: true,
   output: 'static',
@@ -1952,15 +1961,9 @@ fs.writeFileSync(path.join(wellKnown, 'publication-health.json'), `${JSON.string
   template_mode: templateMode(site),
   accessibility_statement: accessibility.enabled,
   accessibility_route: accessibility.enabled ? '/accessibility/' : '',
-  indexing_blocked: deployment.isPreview || templateMode(site),
+  indexing_blocked: indexingBlocked,
   sitemap_url_count: sitemapEntries.filter((entry) => entry.include !== false).length,
   feed_item_count: Math.min(published.length, Number(site.seo?.feed_limit || 50))
 }, null, 2)}\n`);
-
-const indexingBlocked = deployment.isPreview || templateMode(site);
-const robotsText = indexingBlocked
-  ? `User-agent: *\nDisallow: /\n# Template or preview deployment: indexing intentionally blocked.\n`
-  : `User-agent: *\nAllow: /\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`;
-fs.writeFileSync(path.join(DIST, 'robots.txt'), robotsText, 'utf8');
 
 console.log(`TAHAI Press built ${published.length} published article(s), ${routeManifest.length} routes, and ${activeCrosswords.length} CMS-managed crossword(s) into ${path.relative(ROOT, DIST)}/ (${deployment.environment}:${deployment.branch}).`);

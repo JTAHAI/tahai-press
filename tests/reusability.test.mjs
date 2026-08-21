@@ -5,7 +5,9 @@ import path from 'node:path';
 import { ROOT } from '../scripts/lib/content.mjs';
 
 const TEXT_EXTENSIONS = new Set(['.json', '.md', '.mjs', '.yml', '.yaml', '.css', '.html', '.txt']);
-const EXCLUDED_DIRECTORIES = new Set(['dist', '.git', 'node_modules', 'pagefind']);
+// Build output, release evidence, VCS state, dependency trees, generated search indexes,
+// and Wrangler's local deployment cache are not portable source material.
+const EXCLUDED_DIRECTORIES = new Set(['dist', '.artifacts', '.git', '.wrangler', 'node_modules', 'pagefind']);
 
 function collectTextFiles(directory, files = []) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {

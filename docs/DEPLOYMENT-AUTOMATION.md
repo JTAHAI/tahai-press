@@ -38,6 +38,23 @@ Cloudflare production build + GitHub production-readiness artifact
 
 The checked-in `deployment/cloudflare-pages.json` is a human- and test-readable setup contract. Cloudflare does not automatically consume that file.
 
+## Cloudflare Workers static-asset delivery
+
+Pages remains the recommended Git-connected deployment path. A publication may also be delivered by an existing Cloudflare Worker configured with a static asset directory. The generated `_headers` and `_redirects` files are understood by Workers static assets, so the same build retains its edge policy and redirect contract.
+
+Before building an intentional Worker release, set the generic deployment identity so public metadata does not incorrectly claim a Pages deployment:
+
+```powershell
+$env:PUBLICATION_DEPLOYMENT_PROVIDER = 'cloudflare-workers'
+$env:PUBLICATION_DEPLOYMENT_BRANCH = 'main'
+$env:PUBLICATION_DEPLOYMENT_COMMIT = (git rev-parse HEAD)
+$env:PUBLICATION_DEPLOYMENT_URL = 'https://news.example.org'
+$env:PUBLICATION_PRODUCTION_BRANCH = 'main'
+npm run build:cloudflare
+```
+
+Then deploy `dist/` with the existing Worker’s static-asset configuration. Do not attach a second Pages project to a domain already managed by that Worker; Cloudflare treats the worker-managed DNS record as read-only. Run `npm run verify:live` after deployment.
+
 ## Preview behavior
 
 When Cloudflare provides `CF_PAGES=1` and the current branch differs from `PUBLICATION_PRODUCTION_BRANCH`, the build automatically:
@@ -79,6 +96,7 @@ The generated site exposes two intentionally public operational files:
 - `/.well-known/publication-health.json` — small health and article-count record;
 - `/.well-known/publication-build.json` — build environment, branch, short commit, output type, redirect digest, and Node version;
 - `/.well-known/publication-redirects.json` — generated rule count and SHA-256 digest.
+- `/.well-known/publication-integrity.json` — SHA-256 and byte-count attestations for the deployed reader shell and core assets.
 
 Neither file includes secrets, GitHub tokens, Cloudflare account identifiers, private editor notes, or full environment dumps.
 

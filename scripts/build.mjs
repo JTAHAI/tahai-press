@@ -4,4 +4,5 @@ import { withBuildLock } from './lib/build-lock.mjs';
 await withBuildLock(async () => {
   await import('./build-core.mjs');
   await import('./build-search-index.mjs');
+  await import('./finalize-release-integrity.mjs');
 });

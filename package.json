@@ -16,6 +16,7 @@
     "validate": "npm run validate:content && npm run validate:cms && npm run validate:redirects",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs",
     "verify:dist": "node scripts/verify-dist.mjs",
+    "verify:live": "node scripts/verify-live-release.mjs",
     "smoke": "node scripts/smoke-built-site.mjs",
     "release:proof": "node scripts/create-release-proof.mjs",
     "package:release": "npm run build && node scripts/package-release.mjs",
