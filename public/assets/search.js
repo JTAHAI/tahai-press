@@ -211,7 +211,15 @@
       }
       ready = true;
 
-      try { pagefind = await import('/pagefind/pagefind.js'); root.dataset.searchEngine = 'pagefind-ready'; } catch (error) { root.dataset.searchEngine = 'static-fallback'; console.info('Pagefind enhancement is unavailable; static search remains active.', error); }
+      try {
+        const pagefindModule = await import('/pagefind/pagefind.js');
+        // Keep search deterministic across Chromium, Firefox, and WebKit. The
+        // publication index is deliberately small, and the main-thread mode
+        // avoids a separate Worker lifecycle without giving up Pagefind ranking.
+        pagefind = pagefindModule.createInstance({ basePath: '/pagefind/', noWorker: true });
+        await pagefind.init();
+        root.dataset.searchEngine = 'pagefind-ready';
+      } catch (error) { root.dataset.searchEngine = 'static-fallback'; console.info('Pagefind enhancement is unavailable; static search remains active.', error); }
 
       const parameters = new URLSearchParams(window.location.search);
       input.value = parameters.get('q') || '';
