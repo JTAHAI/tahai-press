@@ -29,6 +29,7 @@ const checks = [
   { id: 'evidence-validation', cwd: ROOT, command: npm, args: ['run', 'evidence:validate'] },
   { id: 'migration-proof', cwd: ROOT, command: npm, args: ['run', 'verify:migration'] },
   { id: 'transfer-package', cwd: ROOT, command: npm, args: ['run', 'package:transfer'] },
+  { id: 'transfer-verification', cwd: ROOT, command: npm, args: ['run', 'verify:transfer'] },
   { id: 'release-packages', cwd: ROOT, command: npm, args: ['run', 'package:release'] },
   ...(!skipInstall ? [{ id: 'worker-clean-install', cwd: path.join(ROOT, 'services', 'newsroom-worker'), command: npm, args: ['ci', '--ignore-scripts'] }] : []),
   { id: 'worker-tests', cwd: path.join(ROOT, 'services', 'newsroom-worker'), command: npm, args: ['test'] },

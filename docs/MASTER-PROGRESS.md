@@ -54,7 +54,7 @@ In progress. The optional native Worker has its own package lockfile, Wrangler c
 
 ## Phase 10 — Recovery, updates, and transfer
 
-In progress. The Recovery CLI now provides create, verify, plan, explicitly confirmed restore, undo, and history. It stages and verifies every archived byte before an atomic top-level replacement; an undo transaction preserves pre-restore and reverted state. It refuses symbolic links, unsafe manifest paths, duplicate paths, archive/manifest inventory mismatches, tampering, and missing transaction backups. Isolated fixtures prove plan-before-write, confirmation enforcement, restore, and undo. Safe updates and a local Recovery Center remain open.
+In progress. The Recovery CLI now provides create, verify, plan, explicitly confirmed restore, undo, and history. It stages and verifies every archived byte before an atomic top-level replacement; an undo transaction preserves pre-restore and reverted state. It refuses symbolic links, unsafe manifest paths, duplicate paths, archive/manifest inventory mismatches, tampering, and missing transaction backups. Isolated fixtures prove plan-before-write, confirmation enforcement, restore, and undo. Publisher handoff archives now receive their own manifest-and-hash verification proof and reject credentials, Git state, build output, local artifacts, dependencies, and absolute paths. Safe updates and a local Recovery Center remain open.
 
 ## Phase 5 — Migration Studio
 
@@ -62,4 +62,4 @@ In progress. The importer supports WordPress WXR, Markdown, JSON, CSV, and PDF f
 
 ## Phase 12 — GA evidence
 
-In progress. `npm run verify:ga` now produces the authoritative `.artifacts/ga-gate-report.json` from a clean installation. It installs the pinned Playwright engines, then verifies the root suite, build, accessibility, deployment, performance, reader, media, smoke, release proof, security, production dependency audit, themes, evidence, transfer/release packages, Worker, collaboration, and Chromium/Firefox/WebKit matrix. The 2026-08-15 run passed all 24 gates. Expanded viewport/theme/print/offline/recovery scenarios and the remaining evidence matrices remain open release gates.
+In progress. `npm run verify:ga` now produces the authoritative `.artifacts/ga-gate-report.json` from a clean installation. It installs the pinned Playwright engines, then verifies the root suite, build, accessibility, deployment, performance, reader, media, smoke, release proof, security, production dependency audit, themes, evidence, migration rollback, transfer verification/release packages, Worker, collaboration, and Chromium/Firefox/WebKit matrix. The 2026-08-15 run passed all 24 then-defined gates; the expanded gate is not represented as a fresh GA pass until its browser matrix completes cleanly. Expanded viewport/theme/print/offline/recovery scenarios and the remaining evidence matrices remain open release gates.
