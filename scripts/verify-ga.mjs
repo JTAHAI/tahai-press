@@ -27,6 +27,7 @@ const checks = [
   { id: 'official-themes', cwd: ROOT, command: npm, args: ['run', 'theme:catalog:build'] },
   { id: 'theme-integrity', cwd: ROOT, command: npm, args: ['run', 'theme:integrity-audit'] },
   { id: 'evidence-validation', cwd: ROOT, command: npm, args: ['run', 'evidence:validate'] },
+  { id: 'migration-proof', cwd: ROOT, command: npm, args: ['run', 'verify:migration'] },
   { id: 'transfer-package', cwd: ROOT, command: npm, args: ['run', 'package:transfer'] },
   { id: 'release-packages', cwd: ROOT, command: npm, args: ['run', 'package:release'] },
   ...(!skipInstall ? [{ id: 'worker-clean-install', cwd: path.join(ROOT, 'services', 'newsroom-worker'), command: npm, args: ['ci', '--ignore-scripts'] }] : []),
