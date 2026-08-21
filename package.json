@@ -20,6 +20,7 @@
     "release:proof": "node scripts/create-release-proof.mjs",
     "package:release": "npm run build && node scripts/package-release.mjs",
     "package:transfer": "node scripts/package-transfer.mjs",
+    "recovery": "node scripts/recovery.mjs",
     "verify:browsers": "npm run build && node scripts/browser-matrix.mjs",
     "verify:ga": "node scripts/verify-ga.mjs",
     "check": "npm run clean && npm run validate && npm test && npm run audit:media && npm run build && npm run audit:a11y && npm run audit:reader && npm run audit:performance && npm run newsroom:health && npm run verify:dist && npm run repo:check",
