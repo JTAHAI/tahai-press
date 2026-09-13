@@ -385,17 +385,158 @@ function chooseSlug(base, used, mode) {
   return { slug: `${base}-${index}`, conflict: true };
 }
 
-function copyPdf(source, destinationDirectory, baseSlug, dryRun) {
+function sha256(bytes) {
+  return crypto.createHash('sha256').update(bytes).digest('hex');
+}
+
+function insideDirectory(file, directory) {
+  const relative = path.relative(directory, file);
+  return relative && !relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative);
+}
+
+function createImportTransaction(options, outputDirectory, mediaDirectory) {
+  if (options.dryRun) return null;
+  const root = path.resolve(options.transactionDirectory || path.join(ROOT, 'imports/transactions'));
+  fs.mkdirSync(root, { recursive: true });
+  const directory = fs.mkdtempSync(path.join(root, 'import-'));
+  const transaction = {
+    version: 1,
+    state: 'applying',
+    created_at: new Date().toISOString(),
+    allowed_roots: [outputDirectory, mediaDirectory],
+    created: [],
+    overwritten: [],
+    directory,
+    file: path.join(directory, 'transaction.json')
+  };
+  persistTransaction(transaction);
+  return transaction;
+}
+
+function publicTransaction(transaction) {
+  if (!transaction) return null;
+  return {
+    state: transaction.state,
+    file: transaction.file,
+    created: transaction.created.length,
+    overwritten: transaction.overwritten.length
+  };
+}
+
+function persistTransaction(transaction) {
+  const serializable = {
+    version: transaction.version,
+    state: transaction.state,
+    created_at: transaction.created_at,
+    completed_at: transaction.completed_at || '',
+    allowed_roots: transaction.allowed_roots,
+    created: transaction.created,
+    overwritten: transaction.overwritten
+  };
+  fs.writeFileSync(transaction.file, `${JSON.stringify(serializable, null, 2)}\n`, 'utf8');
+}
+
+function recordMutation(transaction, target) {
+  if (!transaction) return;
+  if (!transaction.allowed_roots.some((root) => insideDirectory(target, root))) {
+    throw new Error(`Refusing to mutate a target outside the approved import roots: ${target}`);
+  }
+  if (transaction.created.some((entry) => entry.target === target) || transaction.overwritten.some((entry) => entry.target === target)) return;
+  if (fs.existsSync(target)) {
+    const original = fs.readFileSync(target);
+    const backup = path.join(transaction.directory, 'backups', `${sha256(Buffer.from(target))}.bin`);
+    fs.mkdirSync(path.dirname(backup), { recursive: true });
+    fs.writeFileSync(backup, original);
+    transaction.overwritten.push({ target, backup, original_sha256: sha256(original), applied_sha256: '' });
+  } else {
+    transaction.created.push({ target, applied_sha256: '' });
+  }
+  persistTransaction(transaction);
+}
+
+function markMutationApplied(transaction, target, bytes) {
+  if (!transaction) return;
+  const entry = transaction.created.find((item) => item.target === target) || transaction.overwritten.find((item) => item.target === target);
+  if (!entry) throw new Error(`Transaction did not record target: ${target}`);
+  entry.applied_sha256 = sha256(bytes);
+  persistTransaction(transaction);
+}
+
+function copyPdf(source, destinationDirectory, baseSlug, dryRun, transaction) {
   const bytes = fs.readFileSync(source);
   if (bytes.subarray(0, 5).toString('ascii') !== '%PDF-') throw new Error(`Rejected ${source}: file does not have a PDF signature`);
-  const fingerprint = crypto.createHash('sha256').update(bytes).digest('hex').slice(0, 10);
+  const digest = sha256(bytes);
+  const fingerprint = digest.slice(0, 10);
   const safeName = `${baseSlug}-${fingerprint}.pdf`;
   const destination = path.join(destinationDirectory, safeName);
   if (!dryRun) {
     fs.mkdirSync(destinationDirectory, { recursive: true });
-    if (!fs.existsSync(destination)) fs.writeFileSync(destination, bytes);
+    if (!fs.existsSync(destination)) {
+      recordMutation(transaction, destination);
+      fs.writeFileSync(destination, bytes);
+      markMutationApplied(transaction, destination, bytes);
+    }
   }
-  return { destination, publicPath: `/uploads/documents/${safeName}`, bytes: bytes.length, sha256: crypto.createHash('sha256').update(bytes).digest('hex') };
+  return { destination, publicPath: `/uploads/documents/${safeName}`, bytes: bytes.length, sha256: digest };
+}
+
+function writeQuarantine(directory, entry, item, error) {
+  if (!directory) return '';
+  fs.mkdirSync(directory, { recursive: true });
+  const fingerprint = sha256(Buffer.from(`${entry.source}\n${entry.kind}\n${item.source}\n${error.message}`)).slice(0, 16);
+  const file = path.join(directory, `quarantine-${fingerprint}.json`);
+  const payload = {
+    quarantine_version: 1,
+    created_at: new Date().toISOString(),
+    source: entry.source,
+    kind: entry.kind,
+    error: error.message,
+    record: entry.record
+  };
+  fs.writeFileSync(file, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+  return file;
+}
+
+export function rollbackImportTransaction(transactionFile, { force = false } = {}) {
+  const file = path.resolve(transactionFile);
+  const transaction = JSON.parse(fs.readFileSync(file, 'utf8'));
+  if (transaction.version !== 1 || !Array.isArray(transaction.allowed_roots) || !Array.isArray(transaction.created) || !Array.isArray(transaction.overwritten)) {
+    throw new Error('Unsupported or malformed import transaction');
+  }
+  const roots = transaction.allowed_roots.map((root) => path.resolve(root));
+  const assertTarget = (target) => {
+    const resolved = path.resolve(target);
+    if (!roots.some((root) => insideDirectory(resolved, root))) throw new Error(`Transaction target is outside its approved import roots: ${target}`);
+    return resolved;
+  };
+  for (const entry of [...transaction.created, ...transaction.overwritten]) {
+    const target = assertTarget(entry.target);
+    if (!fs.existsSync(target)) {
+      if (!force && entry.applied_sha256) throw new Error(`Cannot roll back missing import target without --force: ${target}`);
+      continue;
+    }
+    const current = sha256(fs.readFileSync(target));
+    if (!force && entry.applied_sha256 && current !== entry.applied_sha256) {
+      throw new Error(`Cannot roll back changed import target without --force: ${target}`);
+    }
+  }
+  for (const entry of [...transaction.created].reverse()) {
+    const target = assertTarget(entry.target);
+    if (fs.existsSync(target)) fs.unlinkSync(target);
+  }
+  for (const entry of [...transaction.overwritten].reverse()) {
+    const target = assertTarget(entry.target);
+    const backup = path.resolve(entry.backup);
+    if (!insideDirectory(backup, path.dirname(file))) throw new Error(`Transaction backup is outside its transaction directory: ${backup}`);
+    const original = fs.readFileSync(backup);
+    if (sha256(original) !== entry.original_sha256) throw new Error(`Transaction backup checksum failed: ${backup}`);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, original);
+  }
+  transaction.state = 'rolled_back';
+  transaction.rolled_back_at = new Date().toISOString();
+  fs.writeFileSync(file, `${JSON.stringify(transaction, null, 2)}\n`, 'utf8');
+  return { created_removed: transaction.created.length, overwritten_restored: transaction.overwritten.length, transaction_file: file };
 }
 
 export function importContent(options) {
@@ -405,9 +546,11 @@ export function importContent(options) {
   const input = path.resolve(options.input);
   const outputDirectory = path.resolve(options.outputDirectory || path.join(ROOT, 'content/articles'));
   const mediaDirectory = path.resolve(options.mediaDirectory || path.join(ROOT, 'public/uploads/documents'));
+  const quarantineDirectory = options.dryRun ? '' : path.resolve(options.quarantineDirectory || path.join(ROOT, 'imports/quarantine'));
   const conflictMode = options.conflictMode || 'skip';
   if (!CONFLICT_MODES.has(conflictMode)) throw new Error(`Unsupported conflict mode: ${conflictMode}`);
   const discovered = discoverRecords(input, options.type || 'auto');
+  const transaction = createImportTransaction(options, outputDirectory, mediaDirectory);
   const used = existingSlugs(outputDirectory);
   const items = [];
   let imported = 0;
@@ -452,7 +595,7 @@ export function importContent(options) {
       }
       article.slug = selected.slug;
       if (entry.kind === 'pdf') {
-        const copied = copyPdf(record.pdf_source_path, mediaDirectory, selected.slug, Boolean(options.dryRun));
+        const copied = copyPdf(record.pdf_source_path, mediaDirectory, selected.slug, Boolean(options.dryRun), transaction);
         article.pdf_file = copied.publicPath;
         item.asset = path.relative(ROOT, copied.destination).replaceAll('\\', '/');
         item.asset_bytes = copied.bytes;
@@ -465,7 +608,10 @@ export function importContent(options) {
       item.article = path.relative(ROOT, destination).replaceAll('\\', '/');
       if (!options.dryRun) {
         fs.mkdirSync(outputDirectory, { recursive: true });
-        fs.writeFileSync(destination, `${JSON.stringify(article, null, 2)}\n`, 'utf8');
+        const serialized = Buffer.from(`${JSON.stringify(article, null, 2)}\n`, 'utf8');
+        recordMutation(transaction, destination);
+        fs.writeFileSync(destination, serialized);
+        markMutationApplied(transaction, destination, serialized);
       }
       used.add(selected.slug);
       item.status = options.dryRun ? 'planned' : (selected.conflict && conflictMode === 'overwrite' ? 'overwritten' : 'imported');
@@ -474,11 +620,20 @@ export function importContent(options) {
     } catch (error) {
       item.status = 'failed';
       item.errors.push(error.message);
+      if (!options.dryRun) {
+        const quarantine = writeQuarantine(quarantineDirectory, entry, item, error);
+        item.quarantine = path.relative(ROOT, quarantine).replaceAll('\\', '/');
+      }
       failed += 1;
     }
     items.push(item);
   }
 
+  if (transaction) {
+    transaction.state = failed ? 'completed_with_failures' : 'completed';
+    transaction.completed_at = new Date().toISOString();
+    persistTransaction(transaction);
+  }
   const report = {
     report_version: 1,
     import_type: options.type || 'auto',
@@ -486,6 +641,7 @@ export function importContent(options) {
     dry_run: Boolean(options.dryRun),
     conflict_mode: conflictMode,
     defaults: options.defaults || {},
+    transaction: publicTransaction(transaction),
     summary: { discovered: discovered.length, planned, imported, skipped, failed, assets_planned: assetsPlanned, assets_copied: assetsCopied },
     url_map: items.filter((item) => item.legacy_url && item.route && item.status !== 'failed').map((item) => ({ from: item.legacy_url, to: item.route, status: item.status })),
     items

@@ -1,0 +1,16 @@
+{
+  "id": "meeting-attendance",
+  "title": "Public meeting attendance, January–March 2026",
+  "summary": "Attendance at three public meetings, retained as a small reproducible dataset for reporting and community review.",
+  "source": "Sample Civic Clerk public meeting sign-in ledgers",
+  "source_url": "https://example.org/public-records/meeting-ledgers",
+  "date_coverage": "January–March 2026",
+  "methodology": "Counts were transcribed from the public sign-in ledger after each meeting. Blank entries were not counted as attendees.",
+  "limitations": "This demonstration dataset is small and does not measure unique people, remote attendance, or public interest outside recorded sign-ins.",
+  "units": "people signed in",
+  "definitions": "Attendance means a completed entry on the public sign-in ledger.",
+  "download_path": "/downloads/meeting-attendance.csv",
+  "columns": ["Meeting date", "Attendance"],
+  "rows": [["2026-01-12", "42"], ["2026-02-09", "57"], ["2026-03-09", "51"]],
+  "status": "published"
+}

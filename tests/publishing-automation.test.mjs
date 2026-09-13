@@ -53,11 +53,11 @@ test('GitHub workflows use least privilege, cancellation, Node 22, and immutable
 test('local build emits public, non-secret health and provenance metadata', () => {
   runNode('scripts/build.mjs', {
     CF_PAGES: '', CF_PAGES_BRANCH: '', CF_PAGES_COMMIT_SHA: '', CF_PAGES_URL: '',
-    PUBLICATION_FORCE_PREVIEW: ''
+    PUBLICATION_FORCE_PREVIEW: '', PUBLICATION_DEPLOYMENT_PROVIDER: '', PUBLICATION_DEPLOYMENT_BRANCH: '', PUBLICATION_DEPLOYMENT_COMMIT: '', PUBLICATION_DEPLOYMENT_URL: ''
   });
   runNode('scripts/verify-dist.mjs', {
     CF_PAGES: '', CF_PAGES_BRANCH: '', CF_PAGES_COMMIT_SHA: '', CF_PAGES_URL: '',
-    PUBLICATION_FORCE_PREVIEW: ''
+    PUBLICATION_FORCE_PREVIEW: '', PUBLICATION_DEPLOYMENT_PROVIDER: '', PUBLICATION_DEPLOYMENT_BRANCH: '', PUBLICATION_DEPLOYMENT_COMMIT: '', PUBLICATION_DEPLOYMENT_URL: ''
   });
   const metadata = JSON.parse(fs.readFileSync(path.join(DIST, '.well-known/publication-build.json'), 'utf8'));
   const health = JSON.parse(fs.readFileSync(path.join(DIST, '.well-known/publication-health.json'), 'utf8'));
@@ -66,6 +66,9 @@ test('local build emits public, non-secret health and provenance metadata', () =
   assert.equal(metadata.article_count, 4);
   assert.equal(metadata.redirect_count, 3);
   assert.match(metadata.redirect_sha256, /^[a-f0-9]{64}$/);
+  assert.equal(metadata.integrity_manifest, '/.well-known/publication-integrity.json');
+  assert.match(metadata.integrity_manifest_sha256, /^[a-f0-9]{64}$/);
+  assert.match(metadata.edge_header_policy_sha256, /^[a-f0-9]{64}$/);
   assert.equal(metadata.build_command, 'npm run build:cloudflare');
   assert.equal(health.ok, true);
   assert.equal(health.output, 'static');
@@ -78,7 +81,8 @@ test('Cloudflare preview builds automatically block indexing on every HTML route
     CF_PAGES_BRANCH: 'preview/pdf-reader-polish',
     CF_PAGES_COMMIT_SHA: '0123456789abcdef0123456789abcdef01234567',
     CF_PAGES_URL: 'https://example.pages.dev',
-    PUBLICATION_PRODUCTION_BRANCH: 'main'
+    PUBLICATION_PRODUCTION_BRANCH: 'main',
+    PUBLICATION_DEPLOYMENT_PROVIDER: '', PUBLICATION_DEPLOYMENT_BRANCH: '', PUBLICATION_DEPLOYMENT_COMMIT: '', PUBLICATION_DEPLOYMENT_URL: ''
   };
   runNode('scripts/build.mjs', env);
   runNode('scripts/verify-dist.mjs', env);
@@ -92,6 +96,7 @@ test('Cloudflare preview builds automatically block indexing on every HTML route
   assert.equal(metadata.environment, 'preview');
   assert.equal(metadata.branch, 'preview/pdf-reader-polish');
   assert.equal(metadata.commit, '0123456789ab');
+  assert.match(fs.readFileSync(path.join(DIST, '_headers'), 'utf8'), /X-Robots-Tag: noindex, nofollow, noarchive/);
 });
 
 test('Cloudflare production build restores normal crawl policy', () => {
@@ -100,7 +105,8 @@ test('Cloudflare production build restores normal crawl policy', () => {
     CF_PAGES_BRANCH: 'main',
     CF_PAGES_COMMIT_SHA: 'fedcba9876543210fedcba9876543210fedcba98',
     CF_PAGES_URL: 'https://example.pages.dev',
-    PUBLICATION_PRODUCTION_BRANCH: 'main'
+    PUBLICATION_PRODUCTION_BRANCH: 'main',
+    PUBLICATION_DEPLOYMENT_PROVIDER: '', PUBLICATION_DEPLOYMENT_BRANCH: '', PUBLICATION_DEPLOYMENT_COMMIT: '', PUBLICATION_DEPLOYMENT_URL: ''
   };
   const sitePath = path.join(ROOT, 'content/site.json');
   const originalSite = fs.readFileSync(sitePath, 'utf8');
@@ -119,6 +125,27 @@ test('Cloudflare production build restores normal crawl policy', () => {
   const metadata = JSON.parse(fs.readFileSync(path.join(DIST, '.well-known/publication-build.json'), 'utf8'));
   assert.equal(metadata.environment, 'production');
   assert.equal(metadata.branch, 'main');
+  assert.equal(metadata.provider, 'cloudflare-pages');
+  assert.doesNotMatch(fs.readFileSync(path.join(DIST, '_headers'), 'utf8'), /X-Robots-Tag/);
+});
+
+test('Cloudflare Worker static-assets builds retain an accurate production identity', () => {
+  const env = {
+    CF_PAGES: '',
+    PUBLICATION_DEPLOYMENT_PROVIDER: 'cloudflare-workers',
+    PUBLICATION_DEPLOYMENT_BRANCH: 'main',
+    PUBLICATION_DEPLOYMENT_COMMIT: '1234567890abcdef1234567890abcdef12345678',
+    PUBLICATION_DEPLOYMENT_URL: 'https://news.example.org',
+    PUBLICATION_PRODUCTION_BRANCH: 'main'
+  };
+  runNode('scripts/build.mjs', env);
+  runNode('scripts/verify-dist.mjs', env);
+  const metadata = JSON.parse(fs.readFileSync(path.join(DIST, '.well-known/publication-build.json'), 'utf8'));
+  assert.equal(metadata.provider, 'cloudflare-workers');
+  assert.equal(metadata.environment, 'production');
+  assert.equal(metadata.branch, 'main');
+  assert.equal(metadata.commit, '1234567890ab');
+  assert.equal(metadata.deployment_url, 'https://news.example.org');
 });
 
 
@@ -128,7 +155,8 @@ test('repeated builds are byte-for-byte reproducible for the same deployment con
     CF_PAGES_BRANCH: 'main',
     CF_PAGES_COMMIT_SHA: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     CF_PAGES_URL: 'https://example.pages.dev',
-    PUBLICATION_PRODUCTION_BRANCH: 'main'
+    PUBLICATION_PRODUCTION_BRANCH: 'main',
+    PUBLICATION_DEPLOYMENT_PROVIDER: '', PUBLICATION_DEPLOYMENT_BRANCH: '', PUBLICATION_DEPLOYMENT_COMMIT: '', PUBLICATION_DEPLOYMENT_URL: ''
   };
   runNode('scripts/build.mjs', env);
   const first = new Map(walk(DIST).map((file) => [path.relative(DIST, file).replaceAll('\\', '/'), hash(file)]));

@@ -13,6 +13,8 @@ The default import contract is deliberately conservative:
 - WordPress attachments and inline images are not downloaded;
 - private source files belong in ignored `imports/inbox/`;
 - reports belong in ignored `imports/reports/`;
+- each non-dry-run import records every created or overwritten byte in an ignored `imports/transactions/` manifest before the write;
+- malformed or unsupported records are retained as private review artifacts in ignored `imports/quarantine/`, never silently discarded;
 - every import produces an itemized result and a legacy URL map when source URLs exist;
 - source URLs are also stored in the normalized article `legacy_urls` list for explicit review.
 
@@ -33,6 +35,19 @@ npm run validate
 npm test
 npm run build
 ```
+
+## Recovery, quarantine, and media boundaries
+
+An import transaction is private operational evidence, not publishable content. Its manifest records the exact created targets and encrypted-free local backups of overwritten targets. Rollback refuses to modify a target whose bytes changed after import unless the operator explicitly supplies `--force-rollback`.
+
+```bash
+# The completed import report includes transaction.file.
+npm run import -- --rollback imports/transactions/import-abc123/transaction.json
+```
+
+Use `--transaction-dir` and `--quarantine-dir` to keep these private artifacts in an approved local operations location. Review every quarantine record before correcting and re-importing it. A dry run creates neither transaction backups nor quarantine files.
+
+Remote media is intentionally outside this importer’s authority. It never downloads, scrapes, or republishes assets from source URLs. Transfer rights-cleared assets separately, verify their checksums and accessibility, then attach them through the ordinary editorial workflow.
 
 ## Supported inputs
 
@@ -115,6 +130,8 @@ The JSON report includes:
 - source type and source path for every record;
 - selected slug and generated route;
 - warnings and errors;
+- transaction location and created/overwritten target counts for a non-dry-run import;
+- private quarantine location for each failed item, when one was created;
 - copied PDF size and SHA-256 digest;
 - original URL to new route mappings and the article aliases used by the redirect-preservation build.
 

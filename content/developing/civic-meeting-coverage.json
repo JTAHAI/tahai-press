@@ -1,0 +1,15 @@
+{
+  "id": "civic-meeting-coverage",
+  "title": "Developing: civic meeting record and public response",
+  "summary": "A static update timeline that links the reporting context and public record as details are reviewed.",
+  "status": "developing",
+  "author": "editorial-team",
+  "related_story_id": "sample-pdf-record",
+  "related_record_ids": ["sample-meeting-record"],
+  "what_changed": "The initial publication now includes a public evidence record and a plain-language document summary.",
+  "updates": [
+    {"timestamp": "2026-08-07T14:00:00Z", "summary": "Published the initial document context and linked source record.", "sources": ["/stories/sample-pdf-record/", "/records/sample-meeting-record/"], "pinned": true},
+    {"timestamp": "2026-08-07T16:00:00Z", "summary": "Added a note explaining the evidence ledger and public source boundary.", "sources": ["/stories/sample-pdf-record/receipts/"]}
+  ],
+  "finalized": false
+}

@@ -141,7 +141,7 @@ This architecture is especially useful for:
 
 ### Easy setup and customization
 
-- Persistent seven-step Launch Desk generated only in demo mode
+- Persistent thirteen-step Launch Desk generated only in demo mode
 - Eight contrast-tested newspaper themes
 - Configurable density, reading measure, masthead alignment, headline style, panel shape, and reading surface
 - CMS-editable navigation labels, destinations, and order
@@ -216,7 +216,7 @@ Deploy the template once, then open:
 https://example.pages.dev/setup/
 ```
 
-TAHAI Press v1.8 replaces the long configuration form with a persistent seven-step first-day newsroom guide. It is designed for a publisher who should not need to understand JSON, repository layout, build systems, or deployment terminology.
+TAHAI Press v3 replaces the long configuration form with a persistent thirteen-step first-day newsroom guide. It is designed for a publisher who should not need to understand JSON, repository layout, build systems, or deployment terminology.
 
 Launch Desk walks through:
 
@@ -700,7 +700,7 @@ The local importer supports:
 Start with a dry run:
 
 ```bash
-npm run import -- --source imports/inbox --dry-run
+npm run import -- --input imports/inbox --dry-run
 ```
 
 Normal imports are conservative:
@@ -713,6 +713,7 @@ Normal imports are conservative:
 - stable content hashes are recorded;
 - original WordPress paths are retained as legacy URL candidates;
 - remote sites and remote media are not scraped automatically.
+- completed imports retain a private, byte-checked rollback transaction; failed records are quarantined for review.
 
 See [docs/MIGRATION-IMPORTS.md](docs/MIGRATION-IMPORTS.md).
 
@@ -859,6 +860,7 @@ The records under `content/articles/` demonstrate every supported article format
 | `npm run audit:performance` | Enforce static output performance budgets |
 | `npm run newsroom:health` | Generate the private newsroom-health dashboard under `.artifacts/` |
 | `npm run verify:dist` | Verify routes, metadata, files, indexing rules, and leakage boundaries |
+| `npm run verify:live -- --origin https://news.example.org --expected-commit <commit>` | Independently confirm the deployed build identity, integrity manifest, core assets, cache controls, and edge security headers |
 | `npm run smoke` | Serve and test the generated site over HTTP |
 | `npm run preview` | Start the local preview server on port 8788 |
 | `npm run release:proof` | Create SHA-256 deployment proof under `.artifacts/` |

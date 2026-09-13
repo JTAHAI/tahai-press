@@ -69,7 +69,7 @@ Shared components render publication metadata, contributor identity, sources, to
 
 ## Launch Desk architecture
 
-`/setup/` is a static, browser-local first-day newsroom. It presents seven bounded steps, stores progress and a short undo history in local storage, renders an in-browser publication preview, and exports an ordinary JSON launch package. The setup code has no network request, authentication layer, tracking script, or application database.
+`/setup/` is a static, browser-local first-day newsroom. It presents thirteen bounded steps, stores progress and a short undo history in local storage, renders an in-browser publication preview, and exports an ordinary JSON launch package. The setup code has no network request, authentication layer, tracking script, or application database.
 
 The launch package contains only publisher-approved configuration, a first draft article, an editorial-team record, and the known demonstration filenames to remove. Publishers can apply it in either of two ways:
 
@@ -125,7 +125,7 @@ WordPress WXR / Markdown / JSON / CSV / PDF folder
               existing validation and build
 ```
 
-The importer uses only Node.js built-ins. It does not fetch remote URLs, scrape live sites, authenticate to WordPress, download media, directly modify deployment output, or publish to Cloudflare. Imported source files and generated reports live in Git-ignored directories by default. Existing slugs are never replaced unless an operator explicitly selects overwrite behavior.
+The importer uses only Node.js built-ins. It does not fetch remote URLs, scrape live sites, authenticate to WordPress, download media, directly modify deployment output, or publish to Cloudflare. Imported source files, reports, rollback transactions, and rejected-record quarantine files live in Git-ignored directories by default. Existing slugs are never replaced unless an operator explicitly selects overwrite behavior. Each non-dry-run write is first recorded in a private transaction manifest with a byte-for-byte backup where needed; rollback verifies that a target has not changed since import unless an operator explicitly forces recovery.
 
 The original URL is stored in the import report and normalized article `legacy_urls`. Redirect generation remains a separate build stage so migration intake cannot silently change live routing behavior.
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.0-alpha.1 — Independent Press Baseline
+
+- Established the v3 development line on a clean sibling worktree from `origin/main`.
+- Moved navigation grouping into the authoritative renderer and removed the post-build HTML hardener.
+- Locked GitHub Actions to manual dispatch-only workflows and added workflow-trigger audit coverage.
+- Advanced the repository version identity to `3.0.0-alpha.1` while preserving the historical release record below.
+
 ## 2.3.0 — Publishing Console
 
 - Added a schema-safe Publishing Console route for site structure, article workflow, collections, and release review.

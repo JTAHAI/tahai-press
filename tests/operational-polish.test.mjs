@@ -20,7 +20,7 @@ function build() {
 
 test('Operational Polish package exposes one-command operational health checks', () => {
   const pkg = JSON.parse(read('package.json'));
-  assert.equal(pkg.version, '2.3.2');
+  assert.equal(pkg.version, '3.0.0-alpha.1');
   for (const command of ['audit:media', 'audit:performance', 'newsroom:health']) assert.ok(pkg.scripts[command]);
   assert.match(pkg.scripts.check, /audit:media/);
   assert.match(pkg.scripts.check, /audit:performance/);
@@ -44,7 +44,7 @@ test('performance budgets protect the homepage, styles, scripts, search, file co
   const content = loadContent();
   const report = performanceHealth({ dist: DIST, budgets: content.site.operations.performance_budgets });
   assert.equal(report.passed, true);
-  assert.equal(report.checks.length, 6);
+  assert.equal(report.checks.length, 8);
   assert.ok(report.largest_files.length > 0);
   assert.ok(report.metrics.homepage_html_bytes > 0);
 });

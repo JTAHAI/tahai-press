@@ -18,7 +18,7 @@ test('GitHub Pages project site is a formal newspaper-style product page with of
   assert.match(page, /No public-facing platform credit is required/);
   assert.match(page, /Launch Desk · Version 1\.8/);
   assert.match(page, /https:\/\/tahai-press\.tahai\.net\/setup\//);
-  assert.match(page, /From untouched demo to first story in seven clear steps/);
+  assert.match(page, /From untouched demo to first story in thirteen clear steps/);
   assert.match(page, /tahai-press-logo\.png/);
   const retiredName = ['Open', 'Publication', 'Starter'].join(' ');
   assert.equal(page.includes(retiredName), false);

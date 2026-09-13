@@ -105,3 +105,18 @@ test('homepage module order and navigation are controlled entirely by site data'
   assert.doesNotMatch(snapshot.home, /Coverage hubs that fit the publication/);
   assert.doesNotMatch(snapshot.home, /Apache 2\.0 · Publisher freedom/);
 });
+
+test('homepage builder accepts the complete reader-facing module vocabulary', () => {
+  const snapshot = buildSnapshot((site) => {
+    site.homepage.modules = [
+      { type: 'lead_story', enabled: true }, { type: 'secondary_headlines', enabled: true, count: 2 },
+      { type: 'category_strip', enabled: true, heading: 'Sections' }, { type: 'coverage_hub', enabled: true },
+      { type: 'public_record_desk', enabled: true }, { type: 'featured_investigation', enabled: true },
+      { type: 'editors_note', enabled: true, body: 'A note from the editor.' }, { type: 'recently_updated', enabled: true },
+      { type: 'document_spotlight', enabled: true }, { type: 'crossword_promotion', enabled: true },
+      { type: 'submission_callout', enabled: true }, { type: 'accessibility_notice', enabled: true },
+      { type: 'custom_text_panel', enabled: true, heading: 'Community', body: 'A custom panel.' }
+    ];
+  });
+  for (const text of ['Sections', 'Public record desk', 'Featured investigation', 'A note from the editor.', 'Most recently updated', 'Crossword', 'Community']) assert.match(snapshot.home, new RegExp(text));
+});

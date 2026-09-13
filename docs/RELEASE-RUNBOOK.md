@@ -16,6 +16,7 @@ Merge the reviewed branch into `main`. Cloudflare Pages deploys `main` as produc
 
 - Production deployment is green.
 - `/.well-known/publication-health.json` returns `ok: true`.
+- Run `npm run verify:live -- --origin https://news.example.org --expected-commit <commit>` to confirm the public build identity, core-file hashes, cache behavior, and edge response headers.
 - The affected public route loads.
 - The article appears in the archive when it should.
 - Draft or archived material does not appear.

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tahai.net/tahai-press/schemas/evidence-record.schema.json",
+  "title": "TAHAI Press Public Evidence Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "title", "status", "record_type", "sensitivity", "public_release_confirmed", "rights_confirmed", "redactions", "source_materials"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 180 },
+    "status": { "enum": ["draft", "published", "archived"] },
+    "record_type": { "enum": ["document", "dataset", "image", "transcript", "correspondence", "other"] },
+    "linked_article": { "type": "string" },
+    "published_at": { "type": "string", "format": "date-time" },
+    "sensitivity": { "enum": ["public", "redacted"] },
+    "public_release_confirmed": { "type": "boolean" },
+    "rights_confirmed": { "type": "boolean" },
+    "redactions": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["scope", "reason"], "properties": { "scope": { "type": "string", "minLength": 1 }, "reason": { "type": "string", "minLength": 1 } } } },
+    "source_materials": { "type": "array", "minItems": 1, "maxItems": 100, "items": { "type": "object", "additionalProperties": false, "required": ["id", "title", "url"], "properties": { "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "title": { "type": "string", "minLength": 1, "maxLength": 240 }, "url": { "type": "string" }, "publisher": { "type": "string", "maxLength": 1000 }, "retrieved_at": { "type": "string", "format": "date-time" }, "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" }, "media_type": { "type": "string", "maxLength": 1000 }, "description": { "type": "string", "maxLength": 1000 } } } }
+  }
+}

@@ -28,7 +28,8 @@ test('PDF template is document-first and retains direct fallbacks', () => {
   const html = article('sample-pdf-record');
   assert.match(html, /article article-pdf/);
   assert.match(html, /document-section document-section-primary/);
-  assert.match(html, /<iframe[^>]+sample-document\.pdf/);
+  assert.match(html, /<canvas[^>]+data-pdf-canvas/);
+  assert.doesNotMatch(html, /<iframe/);
   assert.match(html, /data-pdf-fullscreen/);
   assert.match(html, />Full screen<\/span>/);
   assert.match(html, /Download PDF/);

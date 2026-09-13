@@ -191,9 +191,9 @@ test('scheduled publishing promotes only due articles and retains future entries
   }
 });
 
-test('scheduled publishing workflow remains free-tier GitHub automation with narrow write scope', () => {
+test('scheduled publishing workflow remains manual-only with narrow write scope', () => {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'scheduled-publishing.yml'), 'utf8');
-  assert.match(workflow, /cron: "17 \* \* \* \*"/);
+  assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /permissions:\s*\n\s+contents: write/);
   assert.match(workflow, /npm run publish:due -- --write/);
   assert.match(workflow, /git add content\/articles/);

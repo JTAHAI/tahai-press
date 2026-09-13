@@ -132,7 +132,11 @@ if (!fs.existsSync(DIST)) {
   process.exit(1);
 }
 
-const pages = walk(DIST).filter((file) => file.endsWith('.html')).map(checkPage);
+const pages = walk(DIST)
+  .filter((file) => file.endsWith('.html'))
+  // Email source is a downloadable provider-neutral export, not a browser page.
+  .filter((file) => !/[/\\]newsletters[/\\][^/\\]+[/\\]email\.html$/i.test(file))
+  .map(checkPage);
 const errors = pages.flatMap((page) => page.errors.map((message) => `${page.file}: ${message}`));
 const warnings = pages.flatMap((page) => page.warnings.map((message) => `${page.file}: ${message}`));
 const report = {

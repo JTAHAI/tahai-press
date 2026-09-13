@@ -131,15 +131,7 @@ This division keeps first-draft work fast while preserving professional layout c
 
 ## Scheduled publication
 
-Choose **Scheduled** in Pages CMS and provide a future `published_at` time. The included GitHub Actions workflow runs hourly and changes due entries to **Published**.
-
-The workflow:
-
-1. checks out the repository;
-2. runs `npm run publish:due -- --write`;
-3. validates the changed records;
-4. commits only `content/articles/` when an article becomes due;
-5. allows the normal Cloudflare Pages Git integration to deploy the commit.
+Choose **Scheduled** in Pages CMS and provide a future `published_at` time. The included scheduled command can promote due entries when a publisher runs it locally or from an explicitly invoked workflow.
 
 No external scheduler, database, API key, or paid service is required. GitHub Actions schedules are not guaranteed to run at an exact minute, so use ordinary immediate publishing for time-critical breaking news.
 
@@ -156,7 +148,7 @@ The public build independently enforces the required image-description and publi
 
 ## Accessibility Edition checks
 
-The v1.4 checker expands the original readiness list without making the editor feel like a technical audit console. Findings remain grouped into three plain-language levels and identify a specific action.
+The checker expands the original readiness list without making the editor feel like a technical audit console. Findings remain grouped into three plain-language levels and identify a specific action.
 
 Additional checks include:
 
@@ -178,9 +170,7 @@ The full public build remains the final authority. It validates document summari
 
 Quick Story now asks for an article classification so the exported draft arrives at the full editorial desk with the basic reader label already selected. Series membership, related coverage, methodology, disclosure, corrections, and update history remain in Pages CMS, where an editor can review them with the complete article record before publication.
 
-
 For the complete local-draft, import, privacy, and handoff contract, see [CONTRIBUTOR-COMPOSER.md](CONTRIBUTOR-COMPOSER.md).
-
 
 ## Writer Desk v2.3
 

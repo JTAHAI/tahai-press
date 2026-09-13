@@ -1,0 +1,9 @@
+{
+  "id": "public-records-brief",
+  "title": "Public Records Brief",
+  "subject": "Public Records Brief: reporting and source documents",
+  "preview_text": "A source-first reading list from the independent press.",
+  "description": "A provider-neutral, tracking-free issue prepared for email delivery.",
+  "story_ids": ["sample-written-story", "sample-pdf-record", "sample-pdf-story"],
+  "status": "published"
+}

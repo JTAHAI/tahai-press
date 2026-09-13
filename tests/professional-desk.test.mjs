@@ -106,6 +106,15 @@ test('build creates professional section fronts, series fronts, trust panels, hi
   assert.match(article, /data-copy-target="citation-sample-pdf-record"/);
 });
 
+test('every public story receives a no-JavaScript Receipts Mode route without private editor notes', () => {
+  build();
+  const receipts = fs.readFileSync(path.join(DIST, 'stories', 'sample-pdf-record', 'receipts', 'index.html'), 'utf8');
+  assert.match(receipts, /Receipts Mode/);
+  assert.match(receipts, /public evidence only/);
+  assert.match(receipts, /Supporting document/);
+  assert.doesNotMatch(receipts, /private_editor_notes/);
+});
+
 test('professional metadata enters static search and standards-based article structured data', () => {
   build();
   const search = JSON.parse(fs.readFileSync(path.join(DIST, 'search-index.json'), 'utf8'));

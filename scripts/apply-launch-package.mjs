@@ -37,6 +37,14 @@ if (!payload.first_article?.slug || !payload.first_article?.title) {
   console.error('Launch package is missing a valid first_article.');
   process.exit(1);
 }
+if (payload.first_record && (!payload.first_record.slug || !payload.first_record.title)) {
+  console.error('Launch package first_record must include a slug and title when supplied.');
+  process.exit(1);
+}
+if (payload.first_record && payload.first_record.slug === payload.first_article.slug) {
+  console.error('Launch package first_record must not overwrite the first_article.');
+  process.exit(1);
+}
 if (payload.site_config.template_mode !== false) {
   console.error('Launch package must disable template_mode before it can be applied.');
   process.exit(1);
@@ -70,6 +78,7 @@ for (const filename of payload.demo_article_files || []) {
 
 fs.writeFileSync(path.join(contentRoot, 'site.json'), `${JSON.stringify(payload.site_config, null, 2)}\n`, 'utf8');
 fs.writeFileSync(path.join(articleRoot, `${payload.first_article.slug}.json`), `${JSON.stringify(payload.first_article, null, 2)}\n`, 'utf8');
+if (payload.first_record) fs.writeFileSync(path.join(articleRoot, `${payload.first_record.slug}.json`), `${JSON.stringify(payload.first_record, null, 2)}\n`, 'utf8');
 
 if (payload.author_record?.slug) {
   fs.mkdirSync(authorRoot, { recursive: true });
@@ -80,4 +89,5 @@ console.log('TAHAI Press Launch Desk package applied.');
 console.log(`Backup: ${path.relative(ROOT, backupRoot)}`);
 console.log(`Publication: ${payload.site_config.title}`);
 console.log(`First story: content/articles/${payload.first_article.slug}.json (Draft)`);
+if (payload.first_record) console.log(`First record: content/articles/${payload.first_record.slug}.json (Draft)`);
 console.log('Next: npm run validate && npm test && npm run build:cloudflare');

@@ -1,8 +1,6 @@
 name: Scheduled publishing
 
 on:
-  schedule:
-    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:

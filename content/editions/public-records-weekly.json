@@ -1,0 +1,21 @@
+{
+  "id": "public-records-weekly",
+  "title": "Public Records Weekly",
+  "volume": "1",
+  "issue": "1",
+  "date": "2026-08-07",
+  "template": "records-packet",
+  "cover_kicker": "Independent press · public documents",
+  "editor_note": "This edition gathers the reporting context and public record that belong together. Canonical articles and records remain the source of authority.",
+  "sections": [
+    {
+      "title": "Reporting and records",
+      "story_ids": ["sample-written-story", "sample-pdf-record", "sample-pdf-story"],
+      "record_ids": ["sample-meeting-record"]
+    }
+  ],
+  "credits": "Edited for the TAHAI Press demonstration newsroom.",
+  "corrections_note": "Corrections remain on the canonical articles and records linked in this edition.",
+  "inserts": ["Use the source links and Receipts Mode pages for the complete public evidence ledger."],
+  "status": "published"
+}

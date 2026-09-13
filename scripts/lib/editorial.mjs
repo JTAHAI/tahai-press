@@ -12,7 +12,16 @@ export const STORY_BLOCK_TYPES = Object.freeze([
   'gallery',
   'timeline',
   'callout',
-  'document'
+  'document',
+  'numbered_findings',
+  'source_list',
+  'data_table',
+  'correction_notice',
+  'update_notice',
+  'related_coverage',
+  'editor_note',
+  'definition_box',
+  'methodology_box'
 ]);
 
 export const IMAGE_LAYOUTS = Object.freeze(['standard', 'wide', 'full', 'left', 'right']);
@@ -205,6 +214,25 @@ function renderBlock(block = {}, index = 0) {
     if (!href) return '';
     const external = /^https?:\/\//i.test(href);
     return `<aside class="story-block story-block-document" aria-labelledby="${headingId}"><div class="story-block-document-mark" aria-hidden="true">PDF</div><div><p class="eyebrow">Supporting record</p><h2 id="${headingId}">${escapeHtml(block.heading || block.label || 'Open source document')}</h2>${block.description ? `<p>${escapeHtml(block.description)}</p>` : ''}<a class="button button-secondary" href="${escapeHtml(href)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(block.label || 'Open document')}${external ? '<span class="visually-hidden"> (opens in a new tab)</span>' : ''}</a></div></aside>`;
+  }
+  if (type === 'numbered_findings' || type === 'source_list' || type === 'related_coverage') {
+    const items = (block.items || []).filter((item) => String(item || '').trim());
+    if (!items.length) return '';
+    const label = type === 'source_list' ? 'Sources' : type === 'related_coverage' ? 'Continue reading' : 'Findings';
+    const tag = type === 'numbered_findings' ? 'ol' : 'ul';
+    return `<section class="story-block story-block-${type}" aria-labelledby="${headingId}"><p class="eyebrow">${label}</p><h2 id="${headingId}">${escapeHtml(block.heading || label)}</h2><${tag}>${items.map((item) => `<li>${renderMarkdown(String(item))}</li>`).join('')}</${tag}></section>`;
+  }
+  if (type === 'data_table') {
+    const columns = (block.columns || []).filter((column) => String(column || '').trim());
+    const rows = (block.rows || []).map((row) => Array.isArray(row) ? row : String(row || '').split('|').map((cell) => cell.trim())).filter((row) => row.length);
+    if (!columns.length || !rows.length) return '';
+    return `<section class="story-block story-block-data-table" aria-labelledby="${headingId}"><h2 id="${headingId}">${escapeHtml(block.heading || 'Data table')}</h2>${block.description ? `<p>${escapeHtml(block.description)}</p>` : ''}<div class="table-scroll"><table><thead><tr>${columns.map((column) => `<th scope="col">${escapeHtml(column)}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${columns.map((_, index) => `<td>${escapeHtml(String(row[index] || ''))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+  }
+  if (['correction_notice', 'update_notice', 'editor_note', 'definition_box', 'methodology_box'].includes(type)) {
+    const labels = { correction_notice: 'Correction', update_notice: 'Update', editor_note: 'Editor’s note', definition_box: 'Background', methodology_box: 'Methodology' };
+    const label = labels[type];
+    if (!String(block.body || '').trim()) return '';
+    return `<aside class="story-block story-block-${type} callout-${type === 'correction_notice' ? 'important' : type === 'update_notice' ? 'note' : 'context'}" aria-labelledby="${headingId}"><p class="eyebrow">${label}</p><h2 id="${headingId}">${escapeHtml(block.heading || label)}</h2><div class="prose">${renderMarkdown(block.body)}</div></aside>`;
   }
   return '';
 }

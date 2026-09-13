@@ -27,7 +27,7 @@ const built = (relative) => fs.readFileSync(path.join(DIST, relative), 'utf8');
 
 test('v2.0 package exposes the open publishing foundation', () => {
   const pkg = readJson(path.join(ROOT, 'package.json'));
-  assert.equal(pkg.version, '2.3.2');
+  assert.equal(pkg.version, '3.0.0-alpha.1');
   assert.equal(pkg.scripts['newsroom:promote'], 'node scripts/promote-newsroom-draft.mjs');
   assert.equal(fs.existsSync(path.join(ROOT, 'docs', 'FOSS-FOUNDATION.md')), true);
   assert.equal(fs.existsSync(path.join(ROOT, 'docs', 'V2-ROADMAP.md')), true);

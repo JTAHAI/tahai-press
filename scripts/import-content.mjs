@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import { ROOT } from './lib/content.mjs';
-import { importContent, IMPORT_TYPES, CONFLICT_MODES } from './lib/importers.mjs';
+import { importContent, rollbackImportTransaction, IMPORT_TYPES, CONFLICT_MODES } from './lib/importers.mjs';
 
 function help() {
   console.log(`TAHAI Press importer
@@ -18,6 +18,10 @@ Options:
   --output <path>                               Article output (default: content/articles)
   --media-output <path>                         PDF output (default: public/uploads/documents)
   --report <path>                               JSON report path
+  --transaction-dir <path>                      Private reversible-import transaction directory
+  --quarantine-dir <path>                       Private rejected-record quarantine directory
+  --rollback <transaction.json>                 Restore a completed import transaction
+  --force-rollback                              Permit rollback after a target was modified
   --status <draft|published|archived|preserve>  Imported status (default: draft)
   --author <slug>                               Default author (default: editorial-team)
   --category <slug>                             Default category (default: community-reporting)
@@ -31,6 +35,7 @@ Options:
 Safety defaults:
   Imports are drafts, noindexed, and have all publication-review gates turned off.
   Existing article slugs are skipped unless another conflict policy is explicit.
+  Every non-dry-run import writes a private transaction manifest; rollback verifies bytes before changing anything.
 `);
 }
 
@@ -38,7 +43,7 @@ function argsFrom(argv) {
   const options = {};
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
-    if (token === '--dry-run' || token === '--write-dry-run-report' || token === '--mark-reviewed' || token === '--help') options[token.slice(2).replaceAll('-', '_')] = true;
+    if (token === '--dry-run' || token === '--write-dry-run-report' || token === '--mark-reviewed' || token === '--force-rollback' || token === '--help') options[token.slice(2).replaceAll('-', '_')] = true;
     else if (token.startsWith('--')) {
       const value = argv[index + 1];
       if (!value || value.startsWith('--')) throw new Error(`${token} requires a value`);
@@ -53,6 +58,13 @@ try {
   const args = argsFrom(process.argv.slice(2));
   if (args.help) {
     help();
+    process.exit(0);
+  }
+  if (args.rollback) {
+    if (args.input) throw new Error('--rollback cannot be combined with --input');
+    const result = rollbackImportTransaction(args.rollback, { force: Boolean(args.force_rollback) });
+    console.log(JSON.stringify(result, null, 2));
+    console.log('Rollback complete.');
     process.exit(0);
   }
   if (!args.input) throw new Error('--input is required');
@@ -70,6 +82,8 @@ try {
     outputDirectory: args.output,
     mediaDirectory: args.media_output,
     reportFile,
+    transactionDirectory: args.transaction_dir,
+    quarantineDirectory: args.quarantine_dir,
     dryRun: Boolean(args.dry_run),
     writeDryRunReport: Boolean(args.write_dry_run_report),
     conflictMode,

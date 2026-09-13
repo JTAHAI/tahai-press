@@ -12,6 +12,7 @@ import { TAHAI_PRESS_PROVENANCE, humansText, sourceProvenanceComment } from './l
 import { accessibilityStatement } from './lib/accessibility.mjs';
 import { ensureResponsiveMediaVariants, mediaAssetManifest } from './lib/media-pipeline.mjs';
 import { themePresetList } from './lib/site-config.mjs';
+import { loadPublishedTheme } from './lib/themes.mjs';
 import { launchReadiness } from './lib/launch-readiness.mjs';
 import { renderEditorialImage, renderStoryBlocks, storyBlocksPlainText } from './lib/editorial.mjs';
 import { ARTICLE_CLASSIFICATION_KEYS, articleCitation, classificationInfo, publicationHistory, seriesForArticles } from './lib/professional-desk.mjs';
@@ -20,9 +21,12 @@ import { readerReachConfig, serviceWorkerSource } from './lib/reader-reach.mjs';
 import { cmsBranch, cmsRepository, SVELTIA_CMS_LICENSE, SVELTIA_CMS_SCRIPT, SVELTIA_CMS_VERSION, sveltiaCmsConfig } from './lib/open-publishing.mjs';
 import { stableStringify, WORKFLOW_STATES, workflowTransitions } from './lib/publishing-console.mjs';
 import { mediaHealth } from './lib/operations.mjs';
+import { buildApi, buildAtom, renderNewsletter } from './lib/syndication.mjs';
+import { cloudflareHeadersText } from './lib/edge-security.mjs';
 
-const { site, articles, authors, categories, hubs, crosswords } = loadContent();
+const { site, articles, authors, categories, hubs, crosswords, records, editions, newsletters, datasets, maps, developing } = loadContent();
 const packageInfo = readJson(path.join(ROOT, 'package.json'));
+const assetVersion = packageInfo.version;
 const deployment = deploymentContext();
 const gitCmsRepository = cmsRepository(process.env, packageInfo);
 const gitCmsBranch = cmsBranch(process.env);
@@ -34,6 +38,7 @@ const activeCrosswords = crosswords.filter((item) => item.active !== false).sort
 const routeManifest = [];
 const accessibility = accessibilityStatement(site);
 const readerReach = readerReachConfig(site);
+const appliedTheme = loadPublishedTheme(site.theme_package);
 const mediaReport = await mediaHealth({ site, articles, authors });
 const PROJECT_REPOSITORY = 'https://github.com/JTAHAI/tahai-press';
 const DEVELOPER_SITE = 'https://tahai.net';
@@ -42,6 +47,19 @@ const DEMO_SITE = 'https://tahai-press.tahai.net';
 fs.rmSync(DIST, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 fs.mkdirSync(DIST, { recursive: true });
 fs.cpSync(path.join(ROOT, 'public'), DIST, { recursive: true, force: true });
+if (appliedTheme) {
+  const themeOutput = path.join(DIST, 'assets', 'themes');
+  fs.mkdirSync(themeOutput, { recursive: true });
+  fs.writeFileSync(path.join(themeOutput, `${appliedTheme.id}.css`), appliedTheme.css, 'utf8');
+}
+// PDF.js is copied as same-origin, generated output. It is dynamically imported only
+// by the document reader; ordinary reader pages never request either module.
+const pdfjsSource = path.join(ROOT, 'node_modules', 'pdfjs-dist', 'build');
+const pdfjsOutput = path.join(DIST, 'assets', 'pdfjs');
+if (fs.existsSync(path.join(pdfjsSource, 'pdf.min.mjs')) && fs.existsSync(path.join(pdfjsSource, 'pdf.worker.min.mjs'))) {
+  fs.mkdirSync(pdfjsOutput, { recursive: true });
+  for (const file of ['pdf.min.mjs', 'pdf.worker.min.mjs']) fs.copyFileSync(path.join(pdfjsSource, file), path.join(pdfjsOutput, file));
+} else console.warn('PDF.js is unavailable in this dependency-free fixture; direct PDF and HTML-summary fallbacks remain available.');
 fs.mkdirSync(path.join(DIST, 'admin'), { recursive: true });
 fs.writeFileSync(path.join(DIST, 'admin', 'config.yml'), gitCmsConfig, 'utf8');
 if (!templateMode(site)) {
@@ -147,6 +165,9 @@ const navItems = (Array.isArray(site.navigation?.items) ? site.navigation.items 
   return true;
 });
 
+const PUBLISHER_ROUTES = new Set(['/studio/', '/media-desk/', '/publisher/', '/setup/']);
+const READER_ROUTES = new Set(['/edition/', '/saved/', '/puzzles/']);
+
 function isExternalNavigation(href = '') {
   return /^https?:\/\//i.test(String(href));
 }
@@ -157,13 +178,69 @@ function isCurrent(route, href) {
   return route === href || route.startsWith(href);
 }
 
+function navEntry(route, item, className = '') {
+  const safeHref = safeUrl(item?.href || '');
+  if (!safeHref || !item?.label) return null;
+  const external = isExternalNavigation(safeHref);
+  return {
+    href: safeHref,
+    label: item.label,
+    current: isCurrent(route, safeHref),
+    external,
+    markup: `<a class="${className}" href="${escapeHtml(safeHref)}"${isCurrent(route, safeHref) ? ' aria-current="page"' : ''}${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(item.label)}${external ? newTabNote() : ''}</a>`
+  };
+}
+
 function navLinks(route, className = '') {
-  return navItems.map(({ href, label }) => {
-    const safeHref = safeUrl(href || '');
-    if (!safeHref || !label) return '';
-    const external = isExternalNavigation(safeHref);
-    return `<a class="${className}" href="${escapeHtml(safeHref)}"${isCurrent(route, safeHref) ? ' aria-current="page"' : ''}${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(label)}${external ? newTabNote() : ''}</a>`;
-  }).filter(Boolean).join('\n');
+  return navItems.map((item) => navEntry(route, item, className)?.markup).filter(Boolean).join('\n');
+}
+
+function partitionNavigation(route) {
+  const entries = navItems.map((item) => navEntry(route, item)).filter(Boolean);
+  const primary = [];
+  const publisher = [];
+  const reader = [];
+  const overflow = [];
+  for (const item of entries) {
+    if (PUBLISHER_ROUTES.has(item.href)) publisher.push(item);
+    else if (READER_ROUTES.has(item.href)) reader.push(item);
+    else if (primary.length < 7) primary.push(item);
+    else overflow.push(item);
+  }
+  return { primary, publisher, reader, overflow };
+}
+
+function renderNavigationMenu(label, items, menuClass) {
+  if (!items.length) return '';
+  const isCurrent = items.some((item) => item.current);
+  const links = items.map((item) => `<a class="desktop-nav-menu-link" href="${escapeHtml(item.href)}"${item.current ? ' aria-current="page"' : ''}${item.external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(item.label)}${item.external ? newTabNote() : ''}</a>`).join('\n');
+  return `<details class="desktop-nav-menu ${menuClass}" data-navigation-menu${isCurrent ? ' data-current-menu="true"' : ''}>
+    <summary${isCurrent ? ' aria-current="page"' : ''}>${label}<span aria-hidden="true">▾</span></summary>
+    <div class="desktop-nav-menu-panel">${links}</div>
+  </details>`;
+}
+
+function renderDesktopNavigation(route) {
+  const { primary, publisher, reader, overflow } = partitionNavigation(route);
+  const primaryLinks = primary.map((item) => item.markup).join('\n');
+  return `<div class="desktop-navigation" data-desktop-navigation>
+    <nav class="desktop-nav" aria-label="Primary navigation">${primaryLinks}</nav>
+    <nav class="desktop-nav-utilities" aria-label="Additional navigation">
+      ${renderNavigationMenu('Publisher tools', publisher, 'desktop-nav-publisher')}
+      ${renderNavigationMenu('Reader desk', reader, 'desktop-nav-reader')}
+      ${renderNavigationMenu('More', overflow, 'desktop-nav-more')}
+    </nav>
+  </div>`;
+}
+
+function renderMobileNavigation(route) {
+  return `<details class="mobile-nav">
+    <summary>${icon('menu')}<span>Menu</span></summary>
+    <nav aria-label="Mobile navigation">
+      ${navLinks(route, 'mobile-nav-link')}
+      <a class="mobile-nav-contact" href="${escapeHtml(site.contact_url || '/contact/')}">Contact the publication</a>
+    </nav>
+  </details>`;
 }
 
 function brandMark() {
@@ -185,6 +262,21 @@ function safeThemeColor(value, fallback) {
 
 function themeVariables() {
   const theme = site.theme || {};
+  const packageMapping = appliedTheme ? `
+    --brand:var(--theme-link, ${safeThemeColor(theme.brand, '#17324d')});
+    --brand-deep:var(--theme-text, ${safeThemeColor(theme.brand_deep, '#0d2236')});
+    --brand-soft:var(--theme-surface, ${safeThemeColor(theme.brand_soft, '#dce7ef')});
+    --accent:var(--theme-accent, ${safeThemeColor(theme.accent, '#9a4c20')});
+    --accent-dark:var(--theme-accent, ${safeThemeColor(theme.accent_dark, '#6d3213')});
+    --highlight:var(--theme-focus, ${safeThemeColor(theme.highlight, '#c49a42')});
+    --surface:var(--theme-surface, ${safeThemeColor(theme.surface, '#f4f0e8')});
+    --surface-deep:var(--theme-surface, ${safeThemeColor(theme.surface_deep, '#e9e0d2')});
+    --paper:var(--theme-background, ${safeThemeColor(theme.paper, '#fffefb')});
+    --ink:var(--theme-text, #17201f);
+    --ink-soft:var(--theme-muted-text, #394441);
+    --serif:var(--theme-headline-font, Georgia, serif);
+    --sans:var(--theme-body-font, ui-sans-serif, system-ui, sans-serif);
+    --reading-measure:var(--theme-reading-measure, 68ch);` : '';
   return `<style>:root{
     --brand:${safeThemeColor(theme.brand, '#17324d')};
     --brand-deep:${safeThemeColor(theme.brand_deep, '#0d2236')};
@@ -194,9 +286,11 @@ function themeVariables() {
     --highlight:${safeThemeColor(theme.highlight, '#c49a42')};
     --surface:${safeThemeColor(theme.surface, '#f4f0e8')};
     --surface-deep:${safeThemeColor(theme.surface_deep, '#e9e0d2')};
-    --paper:${safeThemeColor(theme.paper, '#fffefb')};
+    --paper:${safeThemeColor(theme.paper, '#fffefb')};${packageMapping}
   }</style>`;
 }
+
+function themeStylesheet() { return appliedTheme ? `<link rel="stylesheet" href="/assets/themes/${escapeHtml(appliedTheme.id)}.css">` : ''; }
 
 function renderReadingTools() {
   if (!accessibility.readerToolsEnabled) return '';
@@ -254,10 +348,13 @@ ${sourceProvenanceComment()}
   <link rel="canonical" href="${escapeHtml(canonical)}">
   ${head.html}
   <link rel="stylesheet" href="/assets/styles.css">
-  <script src="/assets/pdf-reader.js" defer></script>
+  ${themeStylesheet()}
+  <link rel="stylesheet" href="/assets/navigation.css?v=${assetVersion}">
+  ${article && ['pdf', 'mixed'].includes(article.article_type) ? '<script src="/assets/pdf-reader.js" defer></script>' : ''}
   <script src="/assets/search.js" defer></script>
   <script src="/assets/crossword.js" defer></script>
   <script src="/assets/media-gallery.js" defer></script>
+  <script src="/assets/navigation.js?v=${assetVersion}" defer></script>
   <script src="/assets/professional-desk.js" defer></script>
   ${accessibility.readerToolsEnabled ? '<script src="/assets/reading-tools.js" defer></script>' : ''}
   ${readerReach.enabled ? `<script src="/assets/reader-reach.js" defer data-reader-reach data-offline-enabled="${readerReach.offlineEnabled ? 'true' : 'false'}"></script>` : ''}
@@ -265,7 +362,7 @@ ${sourceProvenanceComment()}
   ${scripts.map((src) => `<script src="${escapeHtml(src)}" defer></script>`).join('\n  ')}
   ${themeVariables()}
 </head>
-<body class="${escapeHtml(`${pageClass} density-${site.layout?.density || 'balanced'} reading-${site.layout?.reading_width || 'standard'} masthead-${site.layout?.masthead_alignment || 'center'} headlines-${site.layout?.headline_style || 'serif'} panels-${site.layout?.panel_style || 'square'} surface-${site.layout?.reader_surface || 'paper'}${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}`)}">
+<body class="${escapeHtml(`${pageClass} ${appliedTheme ? `theme-${appliedTheme.id}` : ''} density-${site.layout?.density || 'balanced'} reading-${site.layout?.reading_width || 'standard'} masthead-${site.layout?.masthead_alignment || 'center'} headlines-${site.layout?.headline_style || 'serif'} panels-${site.layout?.panel_style || 'square'} surface-${site.layout?.reader_surface || 'paper'}${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}`)}"${noindex ? ' data-pagefind-ignore' : ''}>
   <a class="skip-link" href="#main">Skip to content</a>
   ${templateNotice}
   ${templateMode(site) ? `<div class="publication-bar">
@@ -286,18 +383,12 @@ ${sourceProvenanceComment()}
         ${brandMark()}
         <span class="brand-copy"><strong>${escapeHtml(site.title)}</strong><small>${escapeHtml(site.tagline)}</small></span>
       </a>
-      <div class="masthead-actions">${templateMode(site) ? `<a class="header-contact launch-start-link" href="/setup/">${icon('edit')}<span>Start here <strong data-launch-progress>0/7</strong></span></a>` : ''}${renderReadingTools()}${readerReach.enabled && readerReach.savedArticlesEnabled ? `<a class="header-contact" href="/saved/">${icon('bookmark')}<span>Saved <span class="saved-count-badge" data-saved-count>0</span></span></a>` : ''}${readerReach.enabled && readerReach.offlineEnabled ? `<button class="header-contact header-install js-only" type="button" data-install-publication hidden>${icon('install')}<span>Install</span></button>` : ''}<a class="header-contact" href="${escapeHtml(site.contact_url || '/contact/')}">${icon('mail')}<span>Contact</span></a>${templateMode(site) ? `<a class="header-contact" href="${PROJECT_REPOSITORY}" target="_blank" rel="noopener noreferrer">${icon('github')}<span>GitHub</span>${newTabNote()}</a>` : ''}</div>
+      <div class="masthead-actions">${templateMode(site) ? `<a class="header-contact launch-start-link" href="/setup/">${icon('edit')}<span>Start here <strong data-launch-progress>0/13</strong></span></a>` : ''}${renderReadingTools()}${readerReach.enabled && readerReach.savedArticlesEnabled ? `<a class="header-contact" href="/saved/">${icon('bookmark')}<span>Saved <span class="saved-count-badge" data-saved-count>0</span></span></a>` : ''}${readerReach.enabled && readerReach.offlineEnabled ? `<button class="header-contact header-install js-only" type="button" data-install-publication hidden>${icon('install')}<span>Install</span></button>` : ''}<a class="header-contact" href="${escapeHtml(site.contact_url || '/contact/')}">${icon('mail')}<span>Contact</span></a>${templateMode(site) ? `<a class="header-contact" href="${PROJECT_REPOSITORY}" target="_blank" rel="noopener noreferrer">${icon('github')}<span>GitHub</span>${newTabNote()}</a>` : ''}</div>
     </div>
     <div class="navigation-wrap">
       <div class="shell navigation-inner">
-        <nav class="desktop-nav" aria-label="Primary navigation">${navLinks(route)}</nav>
-        <details class="mobile-nav">
-          <summary>${icon('menu')}<span>Menu</span></summary>
-          <nav aria-label="Mobile navigation">
-            ${navLinks(route, 'mobile-nav-link')}
-            <a class="mobile-nav-contact" href="${escapeHtml(site.contact_url || '/contact/')}">Contact the publication</a>
-          </nav>
-        </details>
+        ${renderDesktopNavigation(route)}
+        ${renderMobileNavigation(route)}
         <p class="navigation-promise">${escapeHtml(site.navigation?.note || site.navigation_note || 'Static-first. Editor-friendly. Open source.')}</p>
       </div>
     </div>
@@ -416,10 +507,11 @@ ${sourceProvenanceComment()}
   <link rel="canonical" href="${escapeHtml(canonical)}">
   ${head.html}
   <link rel="stylesheet" href="/assets/styles.css">
+  ${themeStylesheet()}
   ${accessibility.readerToolsEnabled ? '<script src="/assets/reading-tools.js" defer></script>' : ''}
   ${themeVariables()}
 </head>
-<body class="reader-view${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}">
+<body class="reader-view${appliedTheme ? ` theme-${appliedTheme.id}` : ''}${accessibility.defaultLinkUnderlines ? ' default-link-underlines' : ''}">
   <a class="skip-link" href="#main">Skip to article</a>
   <header class="reader-view-header">
     <div class="reader-view-header-inner">
@@ -587,18 +679,24 @@ function renderPdfDocument(article, pdf, { primary = false } = {}) {
     <div class="pdf-reader" id="${readerId}" data-pdf-reader data-pdf-source="${directUrl}" data-default-view="${defaultView}">
       <div class="pdf-toolbar" role="toolbar" aria-label="PDF preview controls">
         <div class="pdf-toolbar-status"><span class="pdf-status-dot" aria-hidden="true"></span><span data-pdf-status aria-live="polite">PDF preview</span></div>
+        <div class="pdf-toolbar-group" role="group" aria-label="Page navigation">
+          <button class="pdf-control" type="button" data-pdf-previous disabled><span>Previous</span></button>
+          <span class="pdf-page-count" data-pdf-page-count>Page 0 of 0</span>
+          <button class="pdf-control" type="button" data-pdf-next disabled><span>Next</span></button>
+        </div>
         <div class="pdf-toolbar-group pdf-view-controls" role="group" aria-label="Page fit">
           <button class="pdf-control" type="button" data-pdf-view="FitH" aria-pressed="${defaultView === 'FitH'}">${icon('fitWidth')}<span>Fit width</span></button>
           <button class="pdf-control" type="button" data-pdf-view="Fit" aria-pressed="${defaultView === 'Fit'}">${icon('fitPage')}<span>Fit page</span></button>
         </div>
+        <div class="pdf-toolbar-group" role="group" aria-label="Zoom controls"><button class="pdf-control" type="button" data-pdf-zoom-out><span>Zoom out</span></button><button class="pdf-control" type="button" data-pdf-zoom-in><span>Zoom in</span></button></div>
         <div class="pdf-toolbar-group pdf-toolbar-actions" role="group" aria-label="Preview actions">
           <button class="pdf-control" type="button" data-pdf-fullscreen aria-controls="${readerId}" aria-pressed="false">${icon('expand')}<span>Full screen</span></button>
           <a class="pdf-control" href="${directUrl}" target="_blank" rel="noopener noreferrer">${icon('open')}<span>Open</span>${newTabNote()}</a>
         </div>
       </div>
-      <div class="pdf-frame pdf-stage" id="${frameId}" data-pdf-stage tabindex="-1" role="region" aria-label="Embedded PDF preview: ${escapeHtml(title)}">
-        <div class="pdf-loading" data-pdf-loading><span class="pdf-loading-spinner" aria-hidden="true"></span><p>Preparing the browser PDF preview…</p></div>
-        <iframe src="${previewUrl}" data-pdf-frame title="${escapeHtml(title)} PDF preview" aria-describedby="${summaryId} ${supportId}" loading="${primary ? 'eager' : 'lazy'}" referrerpolicy="strict-origin-when-cross-origin" allow="fullscreen"></iframe>
+      <div class="pdf-frame pdf-stage" id="${frameId}" data-pdf-stage tabindex="-1" role="region" aria-label="Embedded PDF preview: ${escapeHtml(title)}" aria-describedby="${summaryId} ${supportId}">
+        <div class="pdf-loading" data-pdf-loading><span class="pdf-loading-spinner" aria-hidden="true"></span><p>Preparing the accessible PDF preview…</p></div>
+        <canvas data-pdf-canvas hidden></canvas>
       </div>
       <div class="pdf-mobile-actions" aria-label="Mobile PDF actions">
         <a class="pdf-action" href="${directUrl}" target="_blank" rel="noopener noreferrer">${icon('open')}<span>Open in browser</span>${newTabNote()}</a>${download}
@@ -796,11 +894,49 @@ const publicationSeries = seriesForArticles(published);
 const featured = published.find((article) => article.featured) || published[0];
 const latest = published.filter((article) => article.slug !== featured?.slug).slice(0, 6);
 const activeHubs = hubs.filter((hub) => hub.active !== false);
+const publicEditions = editions.filter((edition) => edition.status === 'published').map((edition) => ({
+  ...edition,
+  sections: Array.isArray(edition.sections) ? edition.sections.map((section) => ({
+    title: String(section.title || 'Untitled section'),
+    story_ids: Array.isArray(section.story_ids) ? section.story_ids : [],
+    record_ids: Array.isArray(section.record_ids) ? section.record_ids : []
+  })) : []
+}));
+const publicNewsletters = newsletters.filter((newsletter) => newsletter.status === 'published');
 
 function renderHomeModule(module) {
   const type = module.type;
   if (module.enabled === false) return '';
   if (['setup', 'license', 'product'].includes(type) && !templateMode(site)) return '';
+  if (type === 'lead_story') return renderHomeModule({ ...module, type: 'featured' });
+  if (type === 'secondary_headlines') return renderHomeModule({ ...module, type: 'latest', heading: module.heading || 'More headlines', count: module.count || 3 });
+  if (type === 'coverage_hub') return renderHomeModule({ ...module, type: 'hubs' });
+  if (type === 'submission_callout') return renderHomeModule({ ...module, type: 'submit' });
+  if (type === 'category_strip') {
+    return `<section class="section shell" aria-labelledby="category-strip-heading"><div class="section-heading"><div><p class="eyebrow">Browse by desk</p><h2 id="category-strip-heading">${escapeHtml(module.heading || 'Categories')}</h2></div></div><div class="topic-chip-list">${categories.map((category) => `<a class="topic-chip" href="/categories/${escapeHtml(category.slug)}/">${escapeHtml(category.name)}</a>`).join('')}</div></section>`;
+  }
+  if (type === 'public_record_desk' || type === 'featured_investigation') {
+    const classification = type === 'public_record_desk' ? 'public-record' : 'investigation';
+    const items = published.filter((article) => classificationInfo(article.classification).key === classification).slice(0, Math.max(1, Math.min(12, Number(module.count || 3))));
+    const label = type === 'public_record_desk' ? 'Public record desk' : 'Featured investigation';
+    return `<section class="section shell" aria-labelledby="${type}-heading"><div class="section-heading"><div><p class="eyebrow">${label}</p><h2 id="${type}-heading">${escapeHtml(module.heading || label)}</h2></div></div>${items.length ? `<div class="story-grid">${items.map((article) => articleCard(article)).join('')}</div>` : '<div class="empty-state"><p>Published coverage will appear here.</p></div>'}</section>`;
+  }
+  if (type === 'editors_note' || type === 'custom_text_panel') {
+    const label = type === 'editors_note' ? 'From the editor' : 'Information';
+    const heading = module.heading || (type === 'editors_note' ? 'Editor’s note' : 'Community notice');
+    const body = module.body || module.text || site.editorial_promise || site.description;
+    return `<section class="section shell"><aside class="story-block story-block-callout callout-context"><p class="eyebrow">${label}</p><h2>${escapeHtml(heading)}</h2><div class="prose">${renderMarkdown(String(body))}</div></aside></section>`;
+  }
+  if (type === 'recently_updated') {
+    const items = [...published].sort((a, b) => new Date(b.updated_at || b.published_at) - new Date(a.updated_at || a.published_at)).slice(0, Math.max(1, Math.min(12, Number(module.count || 5))));
+    return `<section class="section shell" aria-labelledby="recently-updated-heading"><div class="section-heading"><div><p class="eyebrow">Revision ledger</p><h2 id="recently-updated-heading">${escapeHtml(module.heading || 'Most recently updated')}</h2></div></div><div class="story-grid">${items.map((article) => articleCard(article)).join('')}</div></section>`;
+  }
+  if (type === 'document_spotlight') {
+    const item = published.find((article) => ['pdf', 'mixed'].includes(article.article_type));
+    return item ? `<section class="section shell" aria-labelledby="document-spotlight-heading"><div class="section-heading"><div><p class="eyebrow">Document spotlight</p><h2 id="document-spotlight-heading">${escapeHtml(module.heading || 'Read the record')}</h2></div></div>${articleCard(item)}</section>` : '';
+  }
+  if (type === 'crossword_promotion') return `<section class="section shell"><aside class="story-block story-block-callout callout-note"><p class="eyebrow">Reader break</p><h2>${escapeHtml(module.heading || 'Crossword')}</h2><p>Take a short break with a publication-owned crossword—no account or tracking required.</p><a class="button button-secondary" href="/puzzles/">Open the crossword ${icon('arrow')}</a></aside></section>`;
+  if (type === 'accessibility_notice') return `<section class="section shell"><aside class="story-block story-block-callout callout-context"><p class="eyebrow">Accessibility</p><h2>${escapeHtml(module.heading || 'Designed for more readers')}</h2><p>${escapeHtml(module.body || 'Use the reader controls to adjust text, spacing, contrast, and motion. Contact the editor when an alternative format would help.')}</p></aside></section>`;
   if (type === 'intro') {
     return `<section class="home-intro">
   <div class="shell home-intro-grid">
@@ -822,7 +958,7 @@ function renderHomeModule(module) {
 </section>`;
   }
   if (type === 'setup') {
-    return `<section class="section shell easy-setup-frontispiece" aria-labelledby="easy-setup-heading"><div class="easy-setup-copy"><p class="eyebrow">Make it easy. Make it fast.</p><h2 id="easy-setup-heading">Launch a publication in seven short, guided steps.</h2><p>Launch Desk remembers progress on this device, supplies safe defaults, previews every change, creates the first-story draft, and prepares one clean launch package. No screen asks for more than the next decision.</p><div class="button-row"><a class="button" href="/setup/">Start or resume setup <span class="launch-progress-pill" data-launch-progress>0/7</span> ${icon('arrow')}</a><a class="button button-secondary" href="https://pagescms.org" target="_blank" rel="noopener noreferrer">Open Pages CMS${newTabNote()}</a></div></div><ol class="setup-step-list"><li><strong>Start here</strong><span>See the whole ten-minute path.</span></li><li><strong>Identity</strong><span>Name, web address, and contact.</span></li><li><strong>Appearance</strong><span>Choose a tested newspaper look.</span></li><li><strong>Front page</strong><span>Keep only the sections readers need.</span></li><li><strong>Editor</strong><span>Confirm GitHub, Pages CMS, and Cloudflare.</span></li><li><strong>First story</strong><span>Replace a guided example draft.</span></li><li><strong>Launch</strong><span>Back up, preview, remove the demo, and apply.</span></li></ol></section>`;
+    return `<section class="section shell easy-setup-frontispiece" aria-labelledby="easy-setup-heading"><div class="easy-setup-copy"><p class="eyebrow">Make it easy. Make it fast.</p><h2 id="easy-setup-heading">Launch a publication in thirteen short, guided steps.</h2><p>Launch Desk remembers progress on this device, supplies safe defaults, previews every change, creates first drafts and records, and prepares one clean launch package. No screen asks for more than the next decision.</p><div class="button-row"><a class="button" href="/setup/">Start or resume setup <span class="launch-progress-pill" data-launch-progress>0/13</span> ${icon('arrow')}</a><a class="button button-secondary" href="https://pagescms.org" target="_blank" rel="noopener noreferrer">Open Pages CMS${newTabNote()}</a></div></div><ol class="setup-step-list"><li><strong>Identity</strong><span>Name, web address, and contact.</span></li><li><strong>Appearance</strong><span>Choose a tested newspaper look.</span></li><li><strong>Front page</strong><span>Keep only the sections readers need.</span></li><li><strong>Trust</strong><span>Set the mission and editorial promises.</span></li><li><strong>First publication</strong><span>Prepare a story and public record.</span></li><li><strong>Ownership</strong><span>Back up and plan recovery.</span></li><li><strong>Launch</strong><span>Preview, connect, and apply.</span></li></ol></section>`;
   }
   if (type === 'license') {
     return `<section class="section shell license-frontispiece" aria-labelledby="license-heading"><div><p class="eyebrow">Apache 2.0 · Publisher freedom</p><h2 id="license-heading">Keep the license in the source. Keep your public pages entirely your own.</h2></div><div class="license-frontispiece-copy"><p>TAHAI Press is released under the Apache License, Version 2.0. When redistributing the software or a modified source distribution, retain the license and required notices and identify material changes as the license requires.</p><p><strong>No public-facing platform credit is required.</strong> A publisher does not have to display a TAHAI Press banner, “Powered by” line, footer note, logo, backlink, hidden link, or other visible attribution on a website built with this system.</p><p><a class="text-link" href="${PROJECT_REPOSITORY}/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Read the Apache 2.0 license ${icon('arrow')}${newTabNote()}</a></p></div></section>`;
@@ -1109,8 +1245,8 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
 <section class="section shell launch-desk" data-launch-desk>
   <noscript><p class="setup-noscript"><strong>Launch Desk requires JavaScript.</strong> The publication remains readable without it. Use Pages CMS or edit <code>content/site.json</code> when scripting is unavailable.</p></noscript>
   <header class="launch-desk-header">
-    <div><p class="eyebrow">Start here</p><h2 data-current-step-title tabindex="-1">Step 1</h2><p data-progress-text>0 of 7 launch steps complete</p></div>
-    <progress data-progress-bar max="7" value="0">0 of 7</progress>
+    <div><p class="eyebrow">Start here</p><h2 data-current-step-title tabindex="-1">Step 1</h2><p data-progress-text>0 of 13 launch steps complete</p></div>
+    <progress data-progress-bar max="13" value="0">0 of 13</progress>
     <div class="launch-desk-utilities" aria-label="Setup utilities"><button class="button button-quiet" type="button" data-undo-change disabled>Undo last change</button><button class="button button-quiet" type="button" data-download-backup>Download backup</button><button class="button button-quiet" type="button" data-reset-launch>Reset</button></div>
   </header>
   <div class="launch-desk-layout">
@@ -1122,10 +1258,16 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       <li><button type="button" data-step-jump="5"><span>5</span><strong>Connect the editor</strong><small>GitHub and Cloudflare</small></button></li>
       <li><button type="button" data-step-jump="6"><span>6</span><strong>Write the first story</strong><small>Replace the example</small></button></li>
       <li><button type="button" data-step-jump="7"><span>7</span><strong>Review and launch</strong><small>Backup and apply</small></button></li>
+      <li><button type="button" data-step-jump="8"><span>8</span><strong>Mission and structure</strong><small>Purpose and beats</small></button></li>
+      <li><button type="button" data-step-jump="9"><span>9</span><strong>Trust policies</strong><small>Standards and corrections</small></button></li>
+      <li><button type="button" data-step-jump="10"><span>10</span><strong>Existing content</strong><small>Import safely</small></button></li>
+      <li><button type="button" data-step-jump="11"><span>11</span><strong>First public record</strong><small>Evidence-led publishing</small></button></li>
+      <li><button type="button" data-step-jump="12"><span>12</span><strong>Ownership and recovery</strong><small>Backups and transfer</small></button></li>
+      <li><button type="button" data-step-jump="13"><span>13</span><strong>Final readiness</strong><small>Deploy when ready</small></button></li>
     </ol></nav>
     <form class="launch-step-workspace" novalidate>
       <section class="launch-step" data-launch-step="1" data-step-title="Start here" aria-labelledby="launch-step-1-title">
-        <p class="eyebrow">Step 1 of 7 · about one minute</p><h2 id="launch-step-1-title" tabindex="-1">You will make seven small decisions.</h2>
+        <p class="eyebrow">Step 1 of 13 · about one minute</p><h2 id="launch-step-1-title" tabindex="-1">You will make thirteen small decisions.</h2>
         <p class="launch-step-lede">Launch Desk remembers where you stopped. Safe answers are filled in automatically, advanced controls stay out of the way, and the last change can always be undone.</p>
         <ol class="launch-path"><li><strong>Name the publication.</strong><span>Add the web address and contact email.</span></li><li><strong>Choose a tested look.</strong><span>Every built-in theme meets the project contrast rules.</span></li><li><strong>Keep the front page simple.</strong><span>Use recommended sections, then change only what matters.</span></li><li><strong>Confirm the free publishing path.</strong><span>GitHub stores files, Pages CMS edits them, and Cloudflare publishes them.</span></li><li><strong>Replace one example story.</strong><span>Start from useful sample text instead of a blank page.</span></li><li><strong>Preview and back up.</strong><span>Nothing is applied without a final review.</span></li><li><strong>Remove the demo and launch.</strong><span>Create one package or apply it directly to a local repository.</span></li></ol>
         <aside class="launch-help"><strong>No new accounts are required.</strong><p>TAHAI Press uses the GitHub and Cloudflare accounts already needed for the site. Pages CMS signs in through GitHub and remains free.</p></aside>
@@ -1133,7 +1275,7 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       </section>
 
       <section class="launch-step" data-launch-step="2" data-step-title="Name the publication" aria-labelledby="launch-step-2-title" hidden>
-        <p class="eyebrow">Step 2 of 7 · about two minutes</p><h2 id="launch-step-2-title" tabindex="-1">What should readers call this publication?</h2>
+        <p class="eyebrow">Step 2 of 13 · about two minutes</p><h2 id="launch-step-2-title" tabindex="-1">What should readers call this publication?</h2>
         <p class="launch-step-lede">Only the name, web address, and contact email are required. Everything else has a useful default.</p>
         <div class="setup-grid launch-essential-fields"><label for="setup-title">Publication name<input id="setup-title" name="title" required maxlength="100" autocomplete="organization" placeholder="The Community Ledger"><small>The name shown in the masthead and browser title.</small></label><label for="setup-editor-email">Public contact email<input id="setup-editor-email" name="editor_email" type="email" autocomplete="email" placeholder="editor@yourdomain.org"><small>Used for corrections, accessibility feedback, and submissions.</small></label><label class="field-wide" for="setup-site-url">Live web address<input id="setup-site-url" name="site_url" type="url" inputmode="url" placeholder="https://news.example.org"><small>Use the final custom domain or the Cloudflare <code>pages.dev</code> address.</small></label></div>
         <button class="recommended-button" type="button" data-use-recommended>Use recommended wording and remove the demo logo</button>
@@ -1143,7 +1285,7 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       </section>
 
       <section class="launch-step" data-launch-step="3" data-step-title="Choose the look" aria-labelledby="launch-step-3-title" hidden>
-        <p class="eyebrow">Step 3 of 7 · about one minute</p><h2 id="launch-step-3-title" tabindex="-1">Choose one accessible newspaper style.</h2>
+        <p class="eyebrow">Step 3 of 13 · about one minute</p><h2 id="launch-step-3-title" tabindex="-1">Choose one accessible newspaper style.</h2>
         <p class="launch-step-lede">Classic Broadsheet is the recommended starting point. All eight presets pass TAHAI Press contrast checks.</p>
         <label class="launch-feature-field" for="setup-theme-preset">Newspaper theme<select id="setup-theme-preset" name="theme_preset">${themePresetList().map((preset) => `<option value="${escapeHtml(preset.id)}">${escapeHtml(preset.label)}</option>`).join('')}</select></label>
         <button class="recommended-button" type="button" data-use-recommended>Use the recommended accessible appearance</button>
@@ -1152,17 +1294,17 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       </section>
 
       <section class="launch-step" data-launch-step="4" data-step-title="Shape the front page" aria-labelledby="launch-step-4-title" hidden>
-        <p class="eyebrow">Step 4 of 7 · about two minutes</p><h2 id="launch-step-4-title" tabindex="-1">Keep only what helps a reader find the news.</h2>
+        <p class="eyebrow">Step 4 of 13 · about two minutes</p><h2 id="launch-step-4-title" tabindex="-1">Keep only what helps a reader find the news.</h2>
         <p class="launch-step-lede">The recommended front page uses a lead story, latest stories, coverage sections, reader tools, and a clear contact path. Demo-only sections disappear at launch.</p>
         <button class="recommended-button" type="button" data-use-recommended>Use the recommended front page and menu</button>
-        <details class="launch-advanced" open><summary>Front-page sections</summary><p>Turn sections on or off. Use the arrow buttons to change reading order.</p><ol class="module-order-list" data-module-list></ol></details>
+        <details class="launch-advanced" open><summary>Front-page sections</summary><p>Turn sections on or off. Use the arrow buttons to change reading order, remove a section, or add a reader-facing module.</p><ol class="module-order-list" data-module-list></ol><div class="button-row"><label for="setup-add-home-module">Add a section<select id="setup-add-home-module" data-add-home-module><option value="lead_story">Lead story</option><option value="secondary_headlines">Secondary headlines</option><option value="latest">Latest stories</option><option value="category_strip">Category strip</option><option value="coverage_hub">Coverage hub</option><option value="public_record_desk">Public-record desk</option><option value="featured_investigation">Featured investigation</option><option value="editors_note">Editor’s note</option><option value="recently_updated">Most recently updated</option><option value="document_spotlight">Document spotlight</option><option value="crossword_promotion">Crossword promotion</option><option value="submission_callout">Submission callout</option><option value="accessibility_notice">Accessibility notice</option><option value="custom_text_panel">Custom text panel</option></select></label><button class="button button-secondary" type="button" data-add-home-module>Add section</button></div></details>
         <details class="launch-advanced"><summary>Edit the menu</summary><label for="setup-navigation">One link per line: <strong>Label | /path/</strong><textarea id="setup-navigation" name="navigation" rows="7" spellcheck="false" aria-describedby="navigation-help"></textarea><small id="navigation-help">The recommended menu already covers the common newsroom pages.</small></label></details>
         <details class="field-help"><summary>Why is reading order different from visual layout?</summary><p>Screen readers and keyboard users follow the document order. Launch Desk preserves that order even when the newspaper design places sections side by side.</p></details>
         <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Connect the editor ${icon('arrow')}</button></div>
       </section>
 
       <section class="launch-step" data-launch-step="5" data-step-title="Connect the editor" aria-labelledby="launch-step-5-title" hidden>
-        <p class="eyebrow">Step 5 of 7 · about one minute</p><h2 id="launch-step-5-title" tabindex="-1">Confirm the free publishing path.</h2>
+        <p class="eyebrow">Step 5 of 13 · about one minute</p><h2 id="launch-step-5-title" tabindex="-1">Confirm the free publishing path.</h2>
         <p class="launch-step-lede">GitHub stores the publication, Pages CMS provides the browser editor, and Cloudflare Pages publishes each approved change.</p>
         <div class="launch-connection-cards"><article><span>1</span><h3>GitHub</h3><p>The repository must be visible to the publisher and connected to Pages CMS.</p><a class="text-link" href="${PROJECT_REPOSITORY}" target="_blank" rel="noopener noreferrer">Open the repository${newTabNote()}</a></article><article><span>2</span><h3>Pages CMS</h3><p>Sign in with GitHub, choose the repository, and confirm that Publication settings and Articles appear.</p><a class="text-link" href="https://pagescms.org" target="_blank" rel="noopener noreferrer">Open Pages CMS${newTabNote()}</a></article><article><span>3</span><h3>Cloudflare Pages</h3><p>Connect the <code>main</code> branch, run <code>npm run build:cloudflare</code>, and publish the <code>dist</code> directory.</p></article></div>
         <div class="launch-confirmations"><label class="setup-toggle" for="launch-editor-ready"><input id="launch-editor-ready" name="editor_ready" type="checkbox"> I can open the repository in Pages CMS.</label><label class="setup-toggle" for="launch-deployment-ready"><input id="launch-deployment-ready" name="deployment_ready" type="checkbox"> Cloudflare Pages is connected to the repository's main branch.</label></div>
@@ -1171,7 +1313,7 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       </section>
 
       <section class="launch-step" data-launch-step="6" data-step-title="Write the first story" aria-labelledby="launch-step-6-title" hidden>
-        <p class="eyebrow">Step 6 of 7 · about two minutes</p><h2 id="launch-step-6-title" tabindex="-1">Replace the example instead of starting from a blank page.</h2>
+        <p class="eyebrow">Step 6 of 13 · about two minutes</p><h2 id="launch-step-6-title" tabindex="-1">Replace the example instead of starting from a blank page.</h2>
         <p class="launch-step-lede">This creates a draft, not an immediate public story. Review sources, image rights, and accessibility in Pages CMS before changing its status to Published.</p>
         <button class="recommended-button" type="button" data-use-recommended>Use a welcoming first-story example</button>
         <div class="setup-grid launch-article-fields"><label class="field-wide" for="launch-article-title">Headline<input id="launch-article-title" name="article_title" maxlength="160" required></label><label class="field-wide" for="launch-article-excerpt">Two-sentence summary<textarea id="launch-article-excerpt" name="article_excerpt" rows="3" maxlength="500" required></textarea></label><label class="field-wide" for="launch-article-body">Article text<textarea id="launch-article-body" name="article_body" rows="10" required></textarea><small>Use <code>##</code> for a section heading. The generated file remains a draft.</small></label><label for="launch-article-author">Author record<input id="launch-article-author" name="article_author" value="editorial-team"></label><label for="launch-article-category">Category record<input id="launch-article-category" name="article_category" value="community-reporting"></label></div>
@@ -1182,10 +1324,55 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
       </section>
 
       <section class="launch-step" data-launch-step="7" data-step-title="Review and launch" aria-labelledby="launch-step-7-title" hidden>
-        <p class="eyebrow">Step 7 of 7 · final review</p><h2 id="launch-step-7-title" tabindex="-1">Preview first. Back up. Then remove the demonstration.</h2>
+        <p class="eyebrow">Step 7 of 13 · early review</p><h2 id="launch-step-7-title" tabindex="-1">Preview the foundation before adding newsroom commitments.</h2>
         <p class="launch-step-lede">The launch package turns off demo mode, removes the sample stories, preserves a backup, and adds the first-story draft. Nothing is published until the repository change is committed.</p>
         <ul class="launch-checklist" data-launch-checklist></ul>
         <div class="launch-license-note"><h3>Your publication does not owe a public platform credit.</h3><p>Keep the Apache 2.0 license and required notices in redistributed source. No TAHAI Press banner, logo, footer credit, backlink, hidden link, or “Powered by” notice is required on the publisher's public pages.</p></div>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Set the mission ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="8" data-step-title="Mission and newsroom structure" aria-labelledby="launch-step-8-title" hidden>
+        <p class="eyebrow">Step 8 of 13 · about one minute</p><h2 id="launch-step-8-title" tabindex="-1">State the purpose readers can hold you to.</h2>
+        <p class="launch-step-lede">A short mission makes editorial choices easier. It can be refined later, but it should be plain about whom you serve and what reporting you will do.</p>
+        <label class="field-wide" for="launch-mission">Publication mission<textarea id="launch-mission" name="mission" rows="4" maxlength="600" placeholder="We report on our community, public decisions, and the records behind them."></textarea></label>
+        <label class="setup-toggle" for="launch-mission-ready"><input id="launch-mission-ready" name="mission_ready" type="checkbox"> This mission describes the publication in plain language.</label>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Set editorial commitments ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="9" data-step-title="Editorial trust and policies" aria-labelledby="launch-step-9-title" hidden>
+        <p class="eyebrow">Step 9 of 13 · about one minute</p><h2 id="launch-step-9-title" tabindex="-1">Make the trust commitments visible from day one.</h2>
+        <p class="launch-step-lede">The publication already supports sources, corrections, updates, methodology, and accessibility feedback. Confirm the editorial team will use them before publishing.</p>
+        <div class="launch-confirmations"><label class="setup-toggle" for="launch-standards-ready"><input id="launch-standards-ready" name="standards_ready" type="checkbox"> We will distinguish reporting, analysis, and opinion and correct mistakes visibly.</label><label class="setup-toggle" for="launch-accessibility-ready"><input id="launch-accessibility-ready" name="accessibility_ready" type="checkbox"> We will provide useful image descriptions and HTML summaries for public documents.</label></div>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Plan the import ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="10" data-step-title="Existing-content import" aria-labelledby="launch-step-10-title" hidden>
+        <p class="eyebrow">Step 10 of 13 · about one minute</p><h2 id="launch-step-10-title" tabindex="-1">Bring existing work in safely, not all at once.</h2>
+        <p class="launch-step-lede">Migration Studio always starts as a dry run. Unsupported material is quarantined with a reason; it is never silently discarded or published.</p>
+        <details class="launch-advanced" open><summary>Choose a safe first import</summary><p>Use <code>npm run import:help</code> to see supported WordPress, Markdown, JSON, CSV, and PDF-folder formats. Begin with a copy and review the generated plan before applying it.</p></details>
+        <label class="setup-toggle" for="launch-import-ready"><input id="launch-import-ready" name="import_ready" type="checkbox"> I will run an import dry run before changing existing content.</label>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Prepare the first record ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="11" data-step-title="First public record" aria-labelledby="launch-step-11-title" hidden>
+        <p class="eyebrow">Step 11 of 13 · about one minute</p><h2 id="launch-step-11-title" tabindex="-1">Publish evidence with context, not just a file.</h2>
+        <p class="launch-step-lede">A public record should retain its original file, an accessible HTML summary, source context, and any necessary rights information. The PDF-led article workflow blocks incomplete published summaries.</p>
+        <div class="setup-grid"><label class="field-wide" for="launch-record-title">Record title<input id="launch-record-title" name="record_title" maxlength="180" placeholder="Public record: meeting agenda"></label><label class="field-wide" for="launch-record-summary">Plain-language record summary<textarea id="launch-record-summary" name="record_summary" rows="3" maxlength="600" placeholder="Explain what the record is, who published it, and why it matters."></textarea></label></div>
+        <label class="setup-toggle" for="launch-record-ready"><input id="launch-record-ready" name="record_ready" type="checkbox"> I will add the original file and an HTML summary before publishing this public-record draft.</label>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Protect publisher ownership ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="12" data-step-title="Ownership, backup, and recovery" aria-labelledby="launch-step-12-title" hidden>
+        <p class="eyebrow">Step 12 of 13 · about one minute</p><h2 id="launch-step-12-title" tabindex="-1">Keep the files, the history, and a safe copy.</h2>
+        <p class="launch-step-lede">Your articles, media, redirects, and configuration remain ordinary files. This launch flow downloads a pre-launch backup; Git records revisions, and the repository can be transferred without a TAHAI account.</p>
+        <label class="setup-toggle" for="launch-ownership-ready"><input id="launch-ownership-ready" name="ownership_ready" type="checkbox"> I downloaded or stored a backup and understand that Git is the revision ledger.</label>
+        <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button><button class="button" type="button" data-next-step>Final readiness ${icon('arrow')}</button></div>
+      </section>
+
+      <section class="launch-step" data-launch-step="13" data-step-title="Final readiness" aria-labelledby="launch-step-13-title" hidden>
+        <p class="eyebrow">Step 13 of 13 · final review</p><h2 id="launch-step-13-title" tabindex="-1">Preview first. Back up. Then remove the demonstration.</h2>
+        <p class="launch-step-lede">The launch package turns off demo mode, removes the sample stories, preserves a backup, and adds the first-story draft. Nothing is published until the repository change is committed.</p>
+        <ul class="launch-checklist" data-final-launch-checklist></ul>
         <div class="launch-final-actions"><button class="button" type="button" data-download-launch>Remove demo and prepare launch package</button><button class="button button-secondary" type="button" data-apply-local>Apply to a local repository</button><button class="button button-quiet" type="button" data-download-config>Download only site.json</button><button class="button button-quiet" type="button" data-copy-config>Copy settings</button></div>
         <p class="launch-apply-note">The local-repository button is shown only in browsers that support secure folder access. The download works everywhere.</p>
         <div class="launch-step-actions"><button class="button button-secondary" type="button" data-back-step>Back</button></div>
@@ -1206,7 +1393,7 @@ const setupBody = `<section class="page-hero setup-hero"><div class="shell narro
 <script id="setup-initial-config" type="application/json">${jsonForHtml(site)}</script>
 <script id="setup-theme-presets" type="application/json">${jsonForHtml(presetMap)}</script>
 <script id="setup-sample-article" type="application/json">${jsonForHtml(setupSampleArticle)}</script>`;
-writeRoute('/setup/', layout({ route: '/setup/', title: 'Launch Desk', description: 'A seven-step first-day newsroom guide for configuring and launching TAHAI Press.', canonical: absoluteUrl('/setup/'), noindex: true, pageClass: 'setup-page launch-desk-page', scripts: ['/assets/setup-wizard.js'], body: setupBody }), { sitemap: false });
+writeRoute('/setup/', layout({ route: '/setup/', title: 'Launch Desk', description: 'A thirteen-step first-day newsroom guide for configuring and launching TAHAI Press.', canonical: absoluteUrl('/setup/'), noindex: true, pageClass: 'setup-page launch-desk-page', scripts: ['/assets/setup-wizard.js'], body: setupBody }), { sitemap: false });
 }
 
 writePaginatedArchive({
@@ -1222,18 +1409,28 @@ writePaginatedArchive({
 const topics = uniqueTopics(published);
 const searchIndex = createSearchIndex({ articles: published, authors, categories, hubs });
 fs.writeFileSync(path.join(DIST, 'search-index.json'), `${JSON.stringify({ schema_version: 1, generated_from: 'published-content', count: searchIndex.length, entries: searchIndex }, null, 2)}\n`, 'utf8');
+const searchSynonymsPath = path.join(ROOT, 'content', 'search-synonyms.json');
+const searchSynonyms = fs.existsSync(searchSynonymsPath) ? readJson(searchSynonymsPath) : { schema_version: 1, groups: [] };
+fs.writeFileSync(path.join(DIST, 'search-synonyms.json'), `${JSON.stringify(searchSynonyms, null, 2)}\n`, 'utf8');
 
-const searchBody = `<section class="page-hero page-hero-search"><div class="shell page-hero-grid"><div><p class="eyebrow">Search</p><h1>Find a story, topic, contributor, or source document.</h1><p class="lede">Search runs entirely in the browser against a small static index. No query is sent to a database or third-party search service.</p></div><span class="hero-illustration" aria-hidden="true">${icon('search')}</span></div></section>
+const knowledgeGroups = Array.isArray(searchSynonyms.groups) ? searchSynonyms.groups : [];
+const knowledgeBody = `<section class="page-hero page-hero-search"><div class="shell page-hero-grid"><div><p class="eyebrow">Knowledge Desk</p><h1>Search language, labels, and coverage structure.</h1><p class="lede">This desk explains the publication’s search groups and offers fast links back to search. It stays static and browser-only.</p></div><span class="hero-illustration" aria-hidden="true">${icon('source')}</span></div></section>
+<section class="section shell discovery-grid">${knowledgeGroups.length ? knowledgeGroups.map((group) => `<article class="discovery-card"><span class="eyebrow">Search synonym group</span><h2>${escapeHtml(group.label)}</h2><p>${escapeHtml((group.terms || []).join(', '))}</p><strong>${(group.terms || []).length} terms</strong></article>`).join('\n') : '<p>No search synonym groups are configured.</p>'}</section>
+<section class="section shell"><div class="section-heading"><div><p class="eyebrow">Next step</p><h2>Use the search desk</h2></div><a class="section-link" href="/search/">Open search ${icon('arrow')}</a></div><p class="lede">The knowledge desk is a companion index for people who want to understand how the browser search groups the archive.</p></section>`;
+writeRoute('/knowledge/', layout({ route: '/knowledge/', title: 'Knowledge Desk', description: `Search language and coverage structure for ${site.title}.`, canonical: absoluteUrl('/knowledge/'), pageClass: 'search-page', body: knowledgeBody }));
+
+const searchBody = `<section class="page-hero page-hero-search"><div class="shell page-hero-grid"><div><p class="eyebrow">Search</p><h1>Find a story, topic, contributor, or source document.</h1><p class="lede">Search runs entirely in the browser against a small static index. No query is sent to a database or third-party search service. See the <a href="/knowledge/">Knowledge Desk</a> for search language and coverage structure.</p></div><span class="hero-illustration" aria-hidden="true">${icon('search')}</span></div></section>
 <section class="section shell search-layout" data-publication-search data-index-url="/search-index.json" data-result-limit="${Number(site.discovery?.search_result_limit || 50)}">
   <form class="search-form" role="search" data-search-form>
     <div class="search-field"><label for="publication-search">Search the publication</label><div class="search-input-wrap">${icon('search')}<input id="publication-search" name="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-describedby="publication-search-help" placeholder="Try a name, place, phrase, or document topic" data-search-input><span class="visually-hidden" id="publication-search-help">Results update as you type. Use the Search button to move focus to the result summary.</span></div></div>
     <div class="search-filter"><label for="publication-search-type">Format</label><select id="publication-search-type" name="type" data-search-type><option value="">All formats</option><option value="standard">Written stories</option><option value="pdf">PDF records</option><option value="mixed">Stories + PDFs</option><option value="external">External documents</option></select></div>
     <div class="search-filter"><label for="publication-search-category">Category</label><select id="publication-search-category" name="category" data-search-category><option value="">All categories</option>${categories.map((item) => `<option value="${escapeHtml(item.slug)}">${escapeHtml(item.name)}</option>`).join('\n')}</select></div>
-    <button class="button" type="submit">Search ${icon('arrow')}</button>
+    <div class="search-actions"><button class="button" type="submit">Search ${icon('arrow')}</button><button class="button button-secondary" type="button" data-search-reset>Reset</button></div>
   </form>
+  <p class="search-summary" data-search-summary aria-live="polite" aria-atomic="true">Search suggestions will appear here.</p>
   <p class="search-status" id="publication-search-status" data-search-status role="status" aria-live="polite" aria-atomic="true" tabindex="-1">Enter a search term or choose a format.</p>
   <div class="search-results" data-search-results aria-labelledby="publication-search-status" aria-busy="true"></div>
-  <noscript><div class="search-noscript"><h2>JavaScript is required for instant search.</h2><p>You can still browse by <a href="/categories/">category</a>, <a href="/topics/">topic</a>, <a href="/authors/">contributor</a>, <a href="/archive/">date</a>, or the <a href="/stories/">complete story archive</a>.</p></div></noscript>
+  <noscript><div class="search-noscript"><h2>JavaScript is required for instant search.</h2><p>You can still browse by <a href="/categories/">category</a>, <a href="/topics/">topic</a>, <a href="/authors/">contributor</a>, <a href="/archive/">date</a>, the <a href="/knowledge/">Knowledge Desk</a>, or the <a href="/stories/">complete story archive</a>.</p></div></noscript>
 </section>`;
 writeRoute('/search/', layout({ route: '/search/', title: 'Search', description: `Search published stories and documents from ${site.title}.`, canonical: absoluteUrl('/search/'), pageClass: 'search-page', body: searchBody }));
 
@@ -1503,6 +1700,9 @@ for (const article of published) {
     body: articleBody
   }), { sitemap: !article.noindex, lastmod: machineDate(article.updated_at || article.published_at) });
 
+  const receiptsBody = `<article class="receipts-mode shell"><nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><a href="/stories/${escapeHtml(article.slug)}/">${escapeHtml(article.title)}</a><span aria-hidden="true">/</span><span aria-current="page">Receipts</span></nav><header class="page-hero"><p class="eyebrow">Receipts Mode · public evidence only</p><h1>${escapeHtml(article.title)}</h1><p class="lede">This reader record lists public supporting material, reporting context, and visible update history. It makes no automated assessment of truth or credibility.</p></header><section class="receipts-section"><h2>Permanent article citation</h2><p><a href="${escapeHtml(article.canonical_url || absoluteUrl(`/stories/${article.slug}/`))}">${escapeHtml(article.canonical_url || absoluteUrl(`/stories/${article.slug}/`))}</a></p></section>${sourceLinks.length ? `<section class="receipts-section"><h2>Public sources and supporting links</h2>${renderSources(sourceLinks)}</section>` : '<section class="receipts-section"><h2>Public sources and supporting links</h2><p>No separate public source links have been attached to this article.</p></section>'}${['pdf', 'mixed'].includes(article.article_type) && pdf ? `<section class="receipts-section"><h2>Supporting document</h2><p><a href="${escapeHtml(pdf)}">${escapeHtml(article.pdf_title || 'Open the original PDF')}</a></p>${renderDocumentAccessibleSummary(article, { compact: true })}</section>` : ''}${article.methodology ? `<section class="receipts-section"><h2>Methodology</h2><div class="prose">${renderMarkdown(article.methodology)}</div></section>` : ''}${renderPublicationHistory(article)}${article.disclosure ? `<section class="receipts-section"><h2>Disclosure</h2><div class="prose">${renderMarkdown(article.disclosure)}</div></section>` : ''}<section class="receipts-section"><h2>Questions and right of reply</h2><p>${escapeHtml(article.right_of_reply_note || 'No public right-of-reply record has been published for this article.')}</p></section></article>`;
+  writeRoute(`/stories/${article.slug}/receipts/`, layout({ route: `/stories/${article.slug}/receipts/`, title: `Receipts: ${article.title}`, description: `Public supporting material for ${article.title}.`, canonical: absoluteUrl(`/stories/${article.slug}/receipts/`), pageClass: 'receipts-page', article, author, categoryNames, tags: article.tags || [], body: receiptsBody }), { sitemap: !article.noindex, lastmod: machineDate(article.updated_at || article.published_at) });
+
   if (accessibility.simplifiedReadingEnabled) {
     const readerBody = `<article class="reader-article">
       <header class="reader-article-header"><p class="eyebrow">Simplified reading view</p><h1>${escapeHtml(article.title)}</h1><p class="article-deck">${escapeHtml(article.excerpt)}</p>${renderArticleByline(article, author, hub)}</header>
@@ -1521,11 +1721,102 @@ for (const article of published) {
   }
 }
 
+const publicRecords = records.filter((record) => record.status === 'published').sort((left, right) => String(right.published_at || '').localeCompare(String(left.published_at || '')) || left.id.localeCompare(right.id));
+const recordCards = publicRecords.map((record) => `<article class="story-card"><p class="eyebrow">Public evidence record · ${escapeHtml(record.record_type)}</p><h2><a href="/records/${escapeHtml(record.id)}/">${escapeHtml(record.title)}</a></h2><p>${escapeHtml(`${record.source_materials.length} public source${record.source_materials.length === 1 ? '' : 's'}${record.sensitivity === 'redacted' ? ' · redaction notice included' : ''}`)}</p></article>`).join('');
+writeRoute('/records/', layout({ route: '/records/', title: 'Public Evidence Records', description: `Browse publisher-cleared evidence ledgers from ${site.title}.`, canonical: absoluteUrl('/records/'), pageClass: 'records-index-page', body: `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Evidence desk</p><h1>Public evidence records</h1><p class="lede">Each ledger identifies publisher-cleared public source material and any declared redaction. These records do not score truth or replicate source files.</p></div></section><section class="section shell story-grid">${recordCards || '<p>No public evidence records have been published.</p>'}</section>` }));
+for (const record of publicRecords) {
+  const linkedArticle = articles.find((article) => article.slug === record.linked_article && published.includes(article));
+  const sources = record.source_materials.map((source) => `<li><a href="${escapeHtml(safeUrl(source.url))}"${String(source.url).startsWith('/') ? '' : ' target="_blank" rel="noopener noreferrer"'}>${escapeHtml(source.title)}${String(source.url).startsWith('/') ? '' : newTabNote()}</a>${source.publisher ? ` <span>· ${escapeHtml(source.publisher)}</span>` : ''}${source.retrieved_at ? ` <span>· retrieved ${escapeHtml(formatDate(source.retrieved_at, site.locale, site.timezone))}</span>` : ''}${source.sha256 ? ` <code>SHA-256 ${escapeHtml(source.sha256)}</code>` : ''}${source.description ? `<p>${escapeHtml(source.description)}</p>` : ''}</li>`).join('');
+  const redactions = record.redactions.length ? `<section class="receipts-section"><h2>Declared redactions</h2><ul>${record.redactions.map((item) => `<li><strong>${escapeHtml(item.scope)}</strong>: ${escapeHtml(item.reason)}</li>`).join('')}</ul></section>` : '';
+  const recordBody = `<article class="receipts-mode shell"><nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><a href="/records/">Public evidence records</a><span aria-hidden="true">/</span><span aria-current="page">${escapeHtml(record.title)}</span></nav><header class="page-hero"><p class="eyebrow">Public evidence record · ${escapeHtml(record.record_type)}</p><h1>${escapeHtml(record.title)}</h1><p class="lede">This is a publisher-cleared public metadata ledger. It does not assign a truth score, create a custody claim, or duplicate source files.</p></header>${linkedArticle ? `<section class="receipts-section"><h2>Related publication</h2><p><a href="/stories/${escapeHtml(linkedArticle.slug)}/">${escapeHtml(linkedArticle.title)}</a> · <a href="/stories/${escapeHtml(linkedArticle.slug)}/receipts/">Receipts Mode</a></p></section>` : ''}<section class="receipts-section"><h2>Public source materials</h2><ul class="source-list">${sources}</ul></section>${redactions}<section class="receipts-section"><h2>Release boundary</h2><p>Public release and rights were confirmed by the publisher before this ledger was published. Source URLs remain authoritative; this record intentionally contains no copied private material.</p></section></article>`;
+  writeRoute(`/records/${record.id}/`, layout({ route: `/records/${record.id}/`, title: record.title, description: `Public evidence record: ${record.title}.`, canonical: absoluteUrl(`/records/${record.id}/`), pageClass: 'record-page', body: recordBody }), { lastmod: machineDate(record.published_at || '') });
+}
+
+const publicRecordMap = new Map(publicRecords.map((record) => [record.id, record]));
+const editionCards = publicEditions.map((edition) => `<article class="story-card"><p class="eyebrow">${escapeHtml(edition.template.replaceAll('-', ' '))} · Volume ${escapeHtml(edition.volume || '—')} · Issue ${escapeHtml(edition.issue || '—')}</p><h2><a href="/editions/${escapeHtml(edition.id)}/">${escapeHtml(edition.title)}</a></h2><p>${escapeHtml(edition.editor_note || 'A print-ready selection of canonical reporting and records.')}</p></article>`).join('');
+writeRoute('/editions/', layout({ route: '/editions/', title: 'Editions', description: `Print-ready editions from ${site.title}.`, canonical: absoluteUrl('/editions/'), pageClass: 'editions-index-page', body: `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Edition desk</p><h1>Canonical reporting, arranged for print.</h1><p class="lede">Editions link to the authoritative articles and records. They do not duplicate or supersede the underlying reporting.</p></div></section><section class="section shell story-grid">${editionCards || '<p>No editions have been published.</p>'}</section>` }));
+for (const edition of publicEditions) {
+  const sections = edition.sections.map((section, sectionIndex) => {
+    const stories = section.story_ids.map((id) => publishedArticleMap.get(id)).filter(Boolean);
+    const sectionRecords = section.record_ids.map((id) => publicRecordMap.get(id)).filter(Boolean);
+    return `<section class="edition-section"><header><p class="edition-folio">Section ${String(sectionIndex + 1).padStart(2, '0')}</p><h2>${escapeHtml(section.title)}</h2></header><ol class="edition-story-list">${stories.map((article, index) => `<li class="edition-story"><p class="edition-number">${String(index + 1).padStart(2, '0')}</p><div><h3><a href="/stories/${escapeHtml(article.slug)}/">${escapeHtml(article.title)}</a></h3><p class="edition-deck">${escapeHtml(article.excerpt)}</p><p class="byline"><a href="/stories/${escapeHtml(article.slug)}/receipts/">Receipts Mode and canonical article</a></p></div></li>`).join('')}${sectionRecords.map((record) => `<li class="edition-story"><p class="edition-number">R</p><div><p class="eyebrow">Public evidence record</p><h3><a href="/records/${escapeHtml(record.id)}/">${escapeHtml(record.title)}</a></h3><p class="edition-deck">${escapeHtml(`${record.source_materials.length} public source materials · ${record.record_type}`)}</p></div></li>`).join('')}</ol></section>`;
+  }).join('');
+  const editionBody = `<article class="edition shell"><header class="edition-masthead"><p class="edition-folio">${escapeHtml(edition.cover_kicker || site.masthead_kicker || site.tagline)}</p><h1>${escapeHtml(edition.title)}</h1><p>Volume ${escapeHtml(edition.volume || '—')} · Issue ${escapeHtml(edition.issue || '—')} · ${escapeHtml(formatDate(edition.date, site.locale, site.timezone))}</p><div class="edition-actions"><button class="button js-only" type="button" data-print-edition>${icon('print')} Print edition</button><a class="button button-secondary" href="/editions/">All editions</a></div></header><section class="edition-editor-note"><h2>From the editor</h2><p>${escapeHtml(edition.editor_note || '')}</p></section><nav class="edition-contents" aria-label="Edition contents"><h2>Contents</h2><ol>${edition.sections.map((section) => `<li>${escapeHtml(section.title)}</li>`).join('')}</ol></nav>${sections}${edition.inserts?.length ? `<aside class="edition-inserts"><h2>Inserts and source notes</h2><ul>${edition.inserts.map((insert) => `<li>${escapeHtml(insert)}</li>`).join('')}</ul></aside>` : ''}<footer class="edition-footer"><p>${escapeHtml(edition.credits || site.editorial_promise || site.description)}</p><p>${escapeHtml(edition.corrections_note || 'Corrections remain on the linked canonical publications.')}</p><p class="edition-folio">${escapeHtml(absoluteUrl(`/editions/${edition.id}/`))}</p></footer></article>`;
+  writeRoute(`/editions/${edition.id}/`, layout({ route: `/editions/${edition.id}/`, title: edition.title, description: edition.editor_note || `Print-ready edition from ${site.title}.`, canonical: absoluteUrl(`/editions/${edition.id}/`), pageClass: 'edition-page edition-canonical-page', body: editionBody }), { lastmod: machineDate(edition.date) });
+}
+
+const newsletterCards = publicNewsletters.map((newsletter) => `<article class="story-card"><p class="eyebrow">Tracking-free email edition</p><h2><a href="/newsletters/${escapeHtml(newsletter.id)}/">${escapeHtml(newsletter.title)}</a></h2><p>${escapeHtml(newsletter.preview_text || newsletter.description || '')}</p></article>`).join('');
+writeRoute('/newsletters/', layout({ route: '/newsletters/', title: 'Newsletter archive', description: `Provider-neutral newsletter editions from ${site.title}.`, canonical: absoluteUrl('/newsletters/'), pageClass: 'newsletter-index-page', body: `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Newsletter desk</p><h1>Prepared for email, never sent by this site.</h1><p class="lede">These browser-readable archives have matching email-safe HTML and plain-text exports. They contain no tracking pixels, remote fonts, scripts, or email provider lock-in.</p></div></section><section class="section shell story-grid">${newsletterCards || '<p>No newsletters have been published.</p>'}</section>` }));
+for (const newsletter of publicNewsletters) {
+  const rendered = renderNewsletter({ newsletter, site, articleMap: publishedArticleMap });
+  fs.mkdirSync(path.join(DIST, 'newsletters', newsletter.id), { recursive: true });
+  fs.writeFileSync(path.join(DIST, 'newsletters', newsletter.id, 'email.html.txt'), rendered.html, 'utf8');
+  fs.writeFileSync(path.join(DIST, 'newsletters', newsletter.id, 'email.txt'), `${rendered.text}\n`, 'utf8');
+  writeRoute(`/newsletters/${newsletter.id}/`, layout({ route: `/newsletters/${newsletter.id}/`, title: newsletter.title, description: rendered.preview, canonical: absoluteUrl(`/newsletters/${newsletter.id}/`), pageClass: 'newsletter-page', body: `<article class="shell prose"><p class="eyebrow">Newsletter archive</p><h1>${escapeHtml(newsletter.title)}</h1><p class="lede">${escapeHtml(rendered.preview)}</p><p><a class="button" href="/newsletters/${escapeHtml(newsletter.id)}/email.html.txt" download>Download email-safe HTML</a> <a class="button button-secondary" href="/newsletters/${escapeHtml(newsletter.id)}/email.txt">Plain-text edition</a></p><section><h2>Included canonical reporting</h2><ul>${rendered.articles.map((article) => `<li><a href="/stories/${escapeHtml(article.slug)}/">${escapeHtml(article.title)}</a> — ${escapeHtml(article.excerpt)}</li>`).join('')}</ul></section><p>Before sending, replace the provider-neutral unsubscribe placeholder with the recipient email provider’s approved unsubscribe mechanism.</p></article>` }));
+}
+
+const editionBuilderData = {
+  templates: ['daily', 'community-weekly', 'investigative-special', 'records-packet', 'arts', 'developing-bulletin'],
+  stories: published.map((article) => ({ id: article.slug, title: article.title, type: 'story', excerpt: article.excerpt })),
+  records: publicRecords.map((record) => ({ id: record.id, title: record.title, type: 'record', excerpt: `${record.source_materials.length} public source materials` }))
+};
+const editionBuilderBody = `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Local Edition Builder</p><h1>Arrange canonical reporting into a print-ready edition.</h1><p class="lede">Selections and ordering stay in this browser until you download an ordinary edition JSON file for review and commit. The builder does not publish, send email, or change source files.</p></div></section><section class="section shell"><noscript><p>This local builder needs JavaScript to arrange and export an edition. Existing editions remain printable without JavaScript at <a href="/editions/">/editions/</a>.</p></noscript><form class="edition-builder" data-edition-builder><div class="studio-grid"><label for="edition-builder-title">Edition title</label><input id="edition-builder-title" name="title" required maxlength="160" value="New edition"><label for="edition-builder-template">Template</label><select id="edition-builder-template" name="template">${editionBuilderData.templates.map((template) => `<option value="${template}">${escapeHtml(template.replaceAll('-', ' '))}</option>`).join('')}</select><label for="edition-builder-date">Issue date</label><input id="edition-builder-date" name="date" type="date" required value="${new Date().toISOString().slice(0, 10)}"></div><p class="fine-print">Add published stories or public evidence records. Use the arrow keys after focusing a selected item to reorder it.</p><div class="edition-builder-grid"><section aria-labelledby="edition-builder-source"><h2 id="edition-builder-source">Canonical source material</h2><div data-edition-source></div></section><section aria-labelledby="edition-builder-selection"><h2 id="edition-builder-selection">Edition order</h2><ol data-edition-selection aria-live="polite"></ol><p data-edition-builder-status role="status" aria-live="polite">Choose reporting to begin.</p></section></div><div class="button-row"><button class="button" type="button" data-edition-export>Download edition JSON</button><button class="button button-secondary" type="button" data-edition-print>Print preview</button></div></form><script type="application/json" id="edition-builder-data">${jsonForHtml(editionBuilderData)}</script></section>`;
+writeRoute('/edition-builder/', layout({ route: '/edition-builder/', title: 'Edition Builder', description: 'Local canonical-edition arrangement and export.', canonical: absoluteUrl('/edition-builder/'), noindex: true, pageClass: 'edition-builder-page', scripts: ['/assets/edition-builder.js'], body: editionBuilderBody }), { sitemap: false });
+
+function embedCard({ eyebrow, title, description, href }) {
+  return `<article class="shell embed-card"><p class="eyebrow">${escapeHtml(eyebrow)}</p><h1><a href="${escapeHtml(href)}">${escapeHtml(title)}</a></h1><p>${escapeHtml(description)}</p><p><a href="${escapeHtml(href)}">Read the canonical publication</a></p></article>`;
+}
+const embedExamples = [];
+for (const article of published) {
+  const route = `/embeds/articles/${article.slug}/`;
+  embedExamples.push({ label: article.title, route });
+  writeRoute(route, layout({ route, title: article.title, description: article.excerpt, canonical: absoluteUrl(route), noindex: true, pageClass: 'embed-page', body: embedCard({ eyebrow: article.classification || 'Reporting', title: article.title, description: article.excerpt, href: `/stories/${article.slug}/` }) }), { sitemap: false });
+}
+for (const record of publicRecords) {
+  const route = `/embeds/records/${record.id}/`;
+  embedExamples.push({ label: record.title, route });
+  writeRoute(route, layout({ route, title: record.title, description: `Public evidence record from ${site.title}.`, canonical: absoluteUrl(route), noindex: true, pageClass: 'embed-page', body: embedCard({ eyebrow: 'Public evidence record', title: record.title, description: `${record.source_materials.length} publisher-cleared public source materials.`, href: `/records/${record.id}/` }) }), { sitemap: false });
+}
+for (const edition of publicEditions) {
+  const route = `/embeds/editions/${edition.id}/`;
+  embedExamples.push({ label: edition.title, route });
+  writeRoute(route, layout({ route, title: edition.title, description: edition.editor_note || '', canonical: absoluteUrl(route), noindex: true, pageClass: 'embed-page', body: embedCard({ eyebrow: 'Print edition', title: edition.title, description: edition.editor_note || 'A canonical print-ready edition.', href: `/editions/${edition.id}/` }) }), { sitemap: false });
+}
+const embedIndexBody = `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Safe embeds</p><h1>Same-origin reading cards with no third-party script.</h1><p class="lede">Copy an iframe snippet for a public article, record, or edition. Embed routes expose only a title, public summary, and canonical link; they never expose publisher tools or private data.</p></div></section><section class="section shell"><ul class="embed-example-list">${embedExamples.map((example) => `<li><strong>${escapeHtml(example.label)}</strong><code>&lt;iframe src=&quot;${escapeHtml(absoluteUrl(example.route))}&quot; title=&quot;${escapeHtml(example.label)}&quot; loading=&quot;lazy&quot;&gt;&lt;/iframe&gt;</code></li>`).join('')}</ul></section>`;
+writeRoute('/embeds/', layout({ route: '/embeds/', title: 'Safe embeds', description: 'Same-origin static publication embeds.', canonical: absoluteUrl('/embeds/'), noindex: true, pageClass: 'embeds-index-page', body: embedIndexBody }), { sitemap: false });
+
+const publicDatasets = datasets.filter((dataset) => dataset.status === 'published');
+writeRoute('/data/', layout({ route: '/data/', title: 'Data Desk', description: `Accessible data publishing from ${site.title}.`, canonical: absoluteUrl('/data/'), pageClass: 'data-index-page', body: `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Data Desk</p><h1>Every number comes with its table, source, and limits.</h1><p class="lede">Data pages are static, printable, and readable without JavaScript. Downloadable sources and definitions stay beside the publication summary.</p></div></section><section class="section shell story-grid">${publicDatasets.map((dataset) => `<article class="story-card"><p class="eyebrow">Dataset · ${escapeHtml(dataset.date_coverage)}</p><h2><a href="/data/${escapeHtml(dataset.id)}/">${escapeHtml(dataset.title)}</a></h2><p>${escapeHtml(dataset.summary)}</p></article>`).join('') || '<p>No datasets have been published.</p>'}</section>` }));
+for (const dataset of publicDatasets) {
+  const table = `<table><caption>${escapeHtml(dataset.title)}</caption><thead><tr>${dataset.columns.map((column) => `<th scope="col">${escapeHtml(column)}</th>`).join('')}</tr></thead><tbody>${dataset.rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  const dataBody = `<article class="shell prose data-desk-record"><p class="eyebrow">Static data record</p><h1>${escapeHtml(dataset.title)}</h1><p class="lede">${escapeHtml(dataset.summary)}</p><p><a class="button" href="${escapeHtml(dataset.download_path)}" download>Download source CSV</a></p><section><h2>Accessible table</h2>${table}</section><section><h2>Methodology</h2><p>${escapeHtml(dataset.methodology)}</p><h2>Definitions and units</h2><p><strong>Units:</strong> ${escapeHtml(dataset.units)}<br><strong>Definitions:</strong> ${escapeHtml(dataset.definitions)}</p><h2>Limitations</h2><p>${escapeHtml(dataset.limitations)}</p><h2>Source</h2><p><a href="${escapeHtml(dataset.source_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(dataset.source)}${newTabNote()}</a> · ${escapeHtml(dataset.date_coverage)}</p></section></article>`;
+  writeRoute(`/data/${dataset.id}/`, layout({ route: `/data/${dataset.id}/`, title: dataset.title, description: dataset.summary, canonical: absoluteUrl(`/data/${dataset.id}/`), pageClass: 'data-page', body: dataBody }));
+}
+const publicMaps = maps.filter((map) => map.status === 'published');
+writeRoute('/maps/', layout({ route: '/maps/', title: 'Maps Desk', description: `Accessible location records from ${site.title}.`, canonical: absoluteUrl('/maps/'), pageClass: 'maps-index-page', body: `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Maps Desk</p><h1>Location facts remain readable without a map.</h1><p class="lede">These static location records use explicit publisher-supplied addresses and descriptions. No location is inferred from article text.</p></div></section><section class="section shell story-grid">${publicMaps.map((map) => `<article class="story-card"><p class="eyebrow">Location record</p><h2><a href="/maps/${escapeHtml(map.id)}/">${escapeHtml(map.title)}</a></h2><p>${escapeHtml(map.summary)}</p></article>`).join('') || '<p>No map records have been published.</p>'}</section>` }));
+for (const map of publicMaps) {
+  const mapBody = `<article class="shell prose maps-desk-record"><p class="eyebrow">Static map fallback</p><h1>${escapeHtml(map.title)}</h1><p class="lede">${escapeHtml(map.summary)}</p><p>No location is inferred from article text; every fact below comes from the explicit location record.</p><section><h2>Locations</h2><ol class="location-list">${map.locations.map((location) => `<li><strong>${escapeHtml(location.name)}</strong><br>${escapeHtml(location.address)}<br><span>${escapeHtml(location.description)}</span></li>`).join('')}</ol></section><section><h2>Methodology and limitations</h2><p>${escapeHtml(map.methodology)}</p><p>${escapeHtml(map.limitations)}</p><h2>Source and attribution</h2><p><a href="${escapeHtml(map.source_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(map.source)}${newTabNote()}</a> · ${escapeHtml(map.attribution)}</p></section></article>`;
+  writeRoute(`/maps/${map.id}/`, layout({ route: `/maps/${map.id}/`, title: map.title, description: map.summary, canonical: absoluteUrl(`/maps/${map.id}/`), pageClass: 'maps-page', body: mapBody }));
+}
+const publicDeveloping = developing.filter((coverage) => coverage.status === 'developing' || coverage.status === 'finalized');
+writeRoute('/developing/', layout({ route: '/developing/', title: 'Developing coverage', description: `Static developing coverage from ${site.title}.`, canonical: absoluteUrl('/developing/'), pageClass: 'developing-index-page', body: `<section class="page-hero"><div class="shell narrow"><p class="eyebrow">Developing coverage</p><h1>Timestamped updates, without a live server.</h1><p class="lede">Each timeline preserves updates, source links, what changed, corrections, and a clear finalization state.</p></div></section><section class="section shell story-grid">${publicDeveloping.map((coverage) => `<article class="story-card"><p class="eyebrow">${escapeHtml(coverage.status)}</p><h2><a href="/developing/${escapeHtml(coverage.id)}/">${escapeHtml(coverage.title)}</a></h2><p>${escapeHtml(coverage.summary)}</p></article>`).join('') || '<p>No developing coverage has been published.</p>'}</section>` }));
+for (const coverage of publicDeveloping) {
+  const relatedStory = publishedArticleMap.get(coverage.related_story_id);
+  const timeline = [...coverage.updates].sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp))).map((update) => `<li${update.pinned ? ' class="pinned-update"' : ''}><time datetime="${escapeHtml(update.timestamp)}">${escapeHtml(formatDate(update.timestamp, site.locale, site.timezone))}</time>${update.pinned ? '<strong> Pinned update</strong>' : ''}<p>${escapeHtml(update.summary)}</p><p>${(update.sources || []).map((source) => `<a href="${escapeHtml(source)}">Source</a>`).join(' · ')}</p></li>`).join('');
+  const developingBody = `<article class="shell prose developing-record"><p class="eyebrow">${escapeHtml(coverage.status)} · ${coverage.finalized ? 'Finalized' : 'Updates continue'}</p><h1>${escapeHtml(coverage.title)}</h1><p class="lede">${escapeHtml(coverage.summary)}</p><section><h2>What changed</h2><p>${escapeHtml(coverage.what_changed)}</p></section><section><h2>Timeline</h2><ol class="developing-timeline">${timeline}</ol></section><section><h2>Related canonical reporting</h2><p>${relatedStory ? `<a href="/stories/${escapeHtml(relatedStory.slug)}/">${escapeHtml(relatedStory.title)}</a>` : 'No related story is published.'}</p><ul>${coverage.related_record_ids.map((id) => publicRecordMap.get(id)).filter(Boolean).map((record) => `<li><a href="/records/${escapeHtml(record.id)}/">${escapeHtml(record.title)}</a></li>`).join('')}</ul></section></article>`;
+  writeRoute(`/developing/${coverage.id}/`, layout({ route: `/developing/${coverage.id}/`, title: coverage.title, description: coverage.summary, canonical: absoluteUrl(`/developing/${coverage.id}/`), pageClass: 'developing-page', body: developingBody }));
+}
+
 const newestPublicationDate = machineDate(published[0]?.updated_at || published[0]?.published_at || '');
 const sitemapEntries = routeManifest.map((entry) => ({ ...entry, lastmod: entry.lastmod || newestPublicationDate }));
 fs.writeFileSync(path.join(DIST, 'sitemap.xml'), buildSitemap(sitemapEntries), 'utf8');
 fs.writeFileSync(path.join(DIST, 'feed.xml'), buildRss({ site, articles: published, authors, categories }), 'utf8');
+fs.writeFileSync(path.join(DIST, 'atom.xml'), buildAtom({ site, articles: published, authors }), 'utf8');
 fs.writeFileSync(path.join(DIST, 'feed.json'), `${jsonForHtml(buildJsonFeed({ site, articles: published, authors }))}\n`, 'utf8');
+const apiRoot = path.join(DIST, 'api', 'v1');
+fs.mkdirSync(apiRoot, { recursive: true });
+const apiDocuments = buildApi({ site, articles: published, authors, categories, hubs: activeHubs, records: publicRecords, editions: publicEditions, routeManifest: sitemapEntries, generatedVersion: packageInfo.version });
+for (const [name, document] of Object.entries(apiDocuments)) fs.writeFileSync(path.join(apiRoot, `${name}.json`), `${JSON.stringify(document, null, 2)}\n`, 'utf8');
 const manifestIcons = templateMode(site)
   ? [{ src: '/assets/tahai-press-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: '/assets/tahai-press-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' }]
   : [{ src: String(site.logo || '').startsWith('/') ? site.logo : '/assets/favicon.svg', sizes: 'any', purpose: 'any maskable' }];
@@ -1641,6 +1932,14 @@ fs.writeFileSync(path.join(wellKnown, 'publication-readiness.json'), `${JSON.str
 }, null, 2)}
 `);
 
+const indexingBlocked = deployment.isPreview || templateMode(site);
+const robotsText = indexingBlocked
+  ? `User-agent: *\nDisallow: /\n# Template or preview deployment: indexing intentionally blocked.\n`
+  : `User-agent: *\nAllow: /\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`;
+fs.writeFileSync(path.join(DIST, 'robots.txt'), robotsText, 'utf8');
+
+const headersText = cloudflareHeadersText({ indexingBlocked });
+fs.writeFileSync(path.join(DIST, '_headers'), headersText, 'utf8');
 fs.writeFileSync(path.join(wellKnown, 'publication-health.json'), `${JSON.stringify({
   ok: true,
   output: 'static',
@@ -1662,15 +1961,9 @@ fs.writeFileSync(path.join(wellKnown, 'publication-health.json'), `${JSON.string
   template_mode: templateMode(site),
   accessibility_statement: accessibility.enabled,
   accessibility_route: accessibility.enabled ? '/accessibility/' : '',
-  indexing_blocked: deployment.isPreview || templateMode(site),
+  indexing_blocked: indexingBlocked,
   sitemap_url_count: sitemapEntries.filter((entry) => entry.include !== false).length,
   feed_item_count: Math.min(published.length, Number(site.seo?.feed_limit || 50))
 }, null, 2)}\n`);
-
-const indexingBlocked = deployment.isPreview || templateMode(site);
-const robotsText = indexingBlocked
-  ? `User-agent: *\nDisallow: /\n# Template or preview deployment: indexing intentionally blocked.\n`
-  : `User-agent: *\nAllow: /\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`;
-fs.writeFileSync(path.join(DIST, 'robots.txt'), robotsText, 'utf8');
 
 console.log(`TAHAI Press built ${published.length} published article(s), ${routeManifest.length} routes, and ${activeCrosswords.length} CMS-managed crossword(s) into ${path.relative(ROOT, DIST)}/ (${deployment.environment}:${deployment.branch}).`);
