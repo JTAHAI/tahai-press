@@ -20,7 +20,7 @@
   "hub": "primary-coverage",
   "featured": false,
   "featured_image": "/uploads/images/media-pipeline-demo.png",
-  "featured_image_alt": "A TAHAI Press media pipeline fixture card showing responsive image handoff, build-time variants, and a manifest-backed workflow.",
+  "featured_image_alt": "Three clean editorial image cards show a photograph, a crop, and responsive delivery to desktop and mobile screens.",
   "pdf_file": "",
   "pdf_url": "",
   "pdf_title": "",
@@ -50,7 +50,7 @@
     "/news/sample-written-story/",
     "https://legacy.example.org/2026/07/sample-written-story/"
   ],
-  "featured_image_caption": "The sample article now uses a raster image so the responsive media pipeline is exercised in the built site.",
+  "featured_image_caption": "A clean raster fixture demonstrates responsive image delivery without relying on text inside the artwork.",
   "featured_image_credit": "TAHAI Press demonstration asset",
   "featured_image_rights": "Included with the open-source demonstration.",
   "featured_image_aspect": "landscape",

@@ -131,3 +131,16 @@ test('Media Desk styles preserve responsive controls, visible focus, and print-s
   assert.match(css, /@media \(max-width: 480px\)[\s\S]*?\.media-actions/);
   assert.match(css, /@media print[\s\S]*?\.media-desk-page/);
 });
+
+test('featured media establishes an isolated clipping boundary for artwork and responsive variants', () => {
+  const css = read('public/assets/styles.css');
+  assert.match(css, /\.article-featured-image\s*\{[^}]*overflow:\s*clip[^}]*isolation:\s*isolate/);
+  assert.match(css, /\.article-featured-image img\s*\{[^}]*max-width:\s*100%[^}]*object-fit:\s*contain/);
+});
+
+test('footer navigation reserves usable columns and keeps labels on whole words', () => {
+  const css = read('public/assets/styles.css');
+  assert.match(css, /\.footer-grid\s*\{[^}]*grid-template-columns:\s*minmax\(16rem, 1fr\) minmax\(0, 1\.65fr\)/);
+  assert.match(css, /\.footer-structured-links\s*\{[^}]*repeat\(3, minmax\(9rem, 1fr\)\)/);
+  assert.match(css, /\.footer-column h2,[\s\S]*?\.footer-column a\s*\{[^}]*overflow-wrap:\s*normal[^}]*word-break:\s*normal/);
+});
