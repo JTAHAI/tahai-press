@@ -15,7 +15,7 @@ function safeFilePath(value) {
     && !value.includes('\\');
 }
 function paths(repositoryRoot, artifactRoot) {
-  const root = artifactRoot || path.join(repositoryRoot, '.artifacts', 'recovery');
+  const root = artifactRoot || path.join(repositoryRoot, '.launch-backups', 'recovery');
   return { root, archive: path.join(root, 'publisher-safety-copy.zip'), manifest: path.join(root, 'publisher-safety-copy.json'), transactions: path.join(root, 'transactions') };
 }
 function walk(directory) {

@@ -4,7 +4,7 @@
 
 The implementation baseline is `origin/main` at `d707835a54a0aec7ae006e125a15d8689f9f1296`, in sibling worktree `D:\dev\tahai-press-v3` on `feature/v3-independent-press`, plus the locally verified alpha changes that are committed with this phase.
 
-The development identity is `3.0.0-alpha.1`. It is not a claim that GA features or release artifacts exist.
+The release identity is `3.0.0`. It is not a claim that every optional service is configured.
 
 ## Verified baseline facts
 
@@ -12,7 +12,7 @@ The development identity is `3.0.0-alpha.1`. It is not a claim that GA features 
 - `npm audit --json` reports no vulnerabilities.
 - `npm test` passes 177 tests.
 - The release-equivalent command chain builds 51 routes and passes generated-output, accessibility, reader, performance, media, and HTTP smoke checks.
-- `.github/workflows` contains only manual `workflow_dispatch` triggers and the repository test enforces that rule.
+- `.github/workflows` retains manual controls and schedules the narrow due-publication check.
 
 ## Non-authoritative historical material
 

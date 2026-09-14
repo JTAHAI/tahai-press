@@ -23,7 +23,7 @@ function packageEntries(entries) {
   return [...withoutChecksums, { path: 'checksums.sha256', content: checksumLines(withoutChecksums) }];
 }
 
-export function validateThemeEntries(entries, { compatibility = '3.0.0-alpha.1' } = {}) {
+export function validateThemeEntries(entries, { compatibility = '3.0.0' } = {}) {
   const errors = [];
   const warnings = [];
   const names = [...entries.keys()];
@@ -75,7 +75,7 @@ export function createThemePackage({ id, name, description, palette, structure =
     'space-1': palette.space, 'space-2': `calc(${palette.space} * 2)`, 'card-radius': palette.radius, 'rule-width': palette.rule, 'image-treatment': palette.image, 'print-background': '#ffffff'
   };
   const tokens = `:root {\n${Object.entries(tokenValues).map(([key, value]) => `  --theme-${key}: ${value};`).join('\n')}\n}\n`;
-  const manifest = { schema_version: THEME_SCHEMA_VERSION, id, name, version: '1.0.0', author: 'TAHAI Press', license: 'Apache-2.0', description, compatibility: '>=3.0.0-alpha.1 <4.0.0', capabilities: LAYOUT_CONTRACTS, entry_points: ['styles/tokens.css', 'styles/components.css', 'styles/layouts.css', 'styles/reader-surfaces.css', 'styles/print.css'], preview: 'assets/preview.webp', asset_budgets: { package_bytes: 262144, file_bytes: 65536 }, structure };
+  const manifest = { schema_version: THEME_SCHEMA_VERSION, id, name, version: '1.0.0', author: 'TAHAI Press', license: 'Apache-2.0', description, compatibility: '>=3.0.0 <4.0.0', capabilities: LAYOUT_CONTRACTS, entry_points: ['styles/tokens.css', 'styles/components.css', 'styles/layouts.css', 'styles/reader-surfaces.css', 'styles/print.css'], preview: 'assets/preview.webp', asset_budgets: { package_bytes: 262144, file_bytes: 65536 }, structure };
   const layouts = Object.fromEntries(['homepage', 'article', 'section', 'archive', 'records', 'search', 'navigation', 'footer'].map((route) => [route, { contract: route === 'section' ? 'section-front' : route === 'archive' ? 'archive-list' : route === 'records' ? 'records-collection' : route === 'navigation' ? 'primary-navigation' : route === 'footer' ? 'footer' : route === 'homepage' ? 'homepage-lead' : route, structure }]));
   const entries = [
     { path: 'theme.json', content: json(manifest) }, { path: 'styles/tokens.css', content: tokens },

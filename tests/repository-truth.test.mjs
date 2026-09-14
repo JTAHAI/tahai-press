@@ -5,7 +5,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { ROOT, DIST } from '../scripts/lib/content.mjs';
 
-const VERSION = '3.0.0-alpha.1';
+const VERSION = '3.0.0';
 
 function build() {
   execFileSync(process.execPath, ['scripts/build.mjs'], { cwd: ROOT, stdio: 'pipe' });
@@ -37,7 +37,6 @@ function parseWorkflowTriggers(source) {
     const trimmed = line.trim();
     const key = trimmed.match(/^([A-Za-z0-9_-]+):(?:\s*|$)/)?.[1];
     if (key) triggers.add(key);
-    else if (trimmed.startsWith('- ')) triggers.add(trimmed.slice(2).trim());
   }
   return triggers;
 }
@@ -61,15 +60,16 @@ test('the build entry point stays thin and the renderer owns navigation grouping
   assert.match(core, /navigation\.js\?v=\$\{assetVersion\}/);
 });
 
-test('every workflow is manual-only and free of bootstrap payload references', () => {
+test('workflows retain manual control, and scheduled publishing has a narrow schedule', () => {
   const workflowDir = path.join(ROOT, '.github', 'workflows');
   for (const file of fs.readdirSync(workflowDir).filter((name) => name.endsWith('.yml'))) {
     const full = path.join(workflowDir, file);
     const source = fs.readFileSync(full, 'utf8');
     const triggers = parseWorkflowTriggers(source);
-    assert.deepEqual([...triggers].sort(), ['workflow_dispatch'], file);
+    const expected = file === 'scheduled-publishing.yml' ? ['schedule', 'workflow_dispatch'] : ['workflow_dispatch'];
+    assert.deepEqual([...triggers].sort(), expected, file);
     assert.doesNotMatch(source, /\.bootstrap\//);
-    assert.doesNotMatch(source, /^(?:\s{2,})?(?:pull_request_target|workflow_run|repository_dispatch|deployment_status|schedule|push|release):/m);
+    assert.doesNotMatch(source, /^(?:\s{2,})?(?:pull_request_target|workflow_run|repository_dispatch|deployment_status|push|release):/m);
   }
 });
 

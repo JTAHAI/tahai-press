@@ -6,7 +6,7 @@
       "id": "classic-broadsheet",
       "name": "Classic Broadsheet",
       "version": "1.0.0",
-      "compatibility": ">=3.0.0-alpha.1 <4.0.0",
+      "compatibility": ">=3.0.0 <4.0.0",
       "license": "Apache-2.0",
       "capabilities": [
         "site-shell",
@@ -25,8 +25,8 @@
         "print-edition"
       ],
       "package": "official/classic-broadsheet.zip",
-      "bytes": 6539,
-      "sha256": "2a4285724e46fd194522703384d3a63939c59f857a1a46bc3197d515ef73583e",
+      "bytes": 6531,
+      "sha256": "f8b366c440ae255b2967512026711c6c1b46271253b47c0a954f3633773f4513",
       "trust": "official",
       "release_notes": "Initial Independent Press Edition theme package."
     },
@@ -34,7 +34,7 @@
       "id": "community-weekly",
       "name": "Community Weekly",
       "version": "1.0.0",
-      "compatibility": ">=3.0.0-alpha.1 <4.0.0",
+      "compatibility": ">=3.0.0 <4.0.0",
       "license": "Apache-2.0",
       "capabilities": [
         "site-shell",
@@ -53,8 +53,8 @@
         "print-edition"
       ],
       "package": "official/community-weekly.zip",
-      "bytes": 6583,
-      "sha256": "fb837b4d82ee5d3f6a708ca9d75c9a7a1e79e9c9f40b754e6aabf1a120a189f7",
+      "bytes": 6575,
+      "sha256": "5588d5ef8688448f7dcf51de8fbfe3352d419a18c8d19dc4aac8ae6e9ab318bf",
       "trust": "official",
       "release_notes": "Initial Independent Press Edition theme package."
     },
@@ -62,7 +62,7 @@
       "id": "civic-record",
       "name": "Civic Record",
       "version": "1.0.0",
-      "compatibility": ">=3.0.0-alpha.1 <4.0.0",
+      "compatibility": ">=3.0.0 <4.0.0",
       "license": "Apache-2.0",
       "capabilities": [
         "site-shell",
@@ -81,8 +81,8 @@
         "print-edition"
       ],
       "package": "official/civic-record.zip",
-      "bytes": 6561,
-      "sha256": "c0d7261a3801ab942288e1e7526db19fbbb1584a58e84ad53b84fc1f3366a8b7",
+      "bytes": 6553,
+      "sha256": "001a383d4c0264cb7218262a8bf9e03f286a4f5d518fe7182036f8920d2708c3",
       "trust": "official",
       "release_notes": "Initial Independent Press Edition theme package."
     },
@@ -90,7 +90,7 @@
       "id": "modern-daily",
       "name": "Modern Daily",
       "version": "1.0.0",
-      "compatibility": ">=3.0.0-alpha.1 <4.0.0",
+      "compatibility": ">=3.0.0 <4.0.0",
       "license": "Apache-2.0",
       "capabilities": [
         "site-shell",
@@ -109,8 +109,8 @@
         "print-edition"
       ],
       "package": "official/modern-daily.zip",
-      "bytes": 6570,
-      "sha256": "523ce1d6f1d71a974538e8cd119036ab66a68772078e56dcac0b883b6552d7f5",
+      "bytes": 6562,
+      "sha256": "65042ac5f4b7e75f0359824f647ef8f1525461157a9242461e37a68c9e7b62a6",
       "trust": "official",
       "release_notes": "Initial Independent Press Edition theme package."
     },
@@ -118,7 +118,7 @@
       "id": "investigative-journal",
       "name": "Investigative Journal",
       "version": "1.0.0",
-      "compatibility": ">=3.0.0-alpha.1 <4.0.0",
+      "compatibility": ">=3.0.0 <4.0.0",
       "license": "Apache-2.0",
       "capabilities": [
         "site-shell",
@@ -137,8 +137,8 @@
         "print-edition"
       ],
       "package": "official/investigative-journal.zip",
-      "bytes": 6600,
-      "sha256": "451b4ff9b9d6bbc6dd9f8ccc4c1b56da44d4c047a099463c9d63b8a734bcaa99",
+      "bytes": 6592,
+      "sha256": "35916be93153ca94defcd4ef04e4f740476b00c5ab104ee44399d709c19310ac",
       "trust": "official",
       "release_notes": "Initial Independent Press Edition theme package."
     },
@@ -146,7 +146,7 @@
       "id": "arts-culture",
       "name": "Arts and Culture",
       "version": "1.0.0",
-      "compatibility": ">=3.0.0-alpha.1 <4.0.0",
+      "compatibility": ">=3.0.0 <4.0.0",
       "license": "Apache-2.0",
       "capabilities": [
         "site-shell",
@@ -165,8 +165,8 @@
         "print-edition"
       ],
       "package": "official/arts-culture.zip",
-      "bytes": 6557,
-      "sha256": "b63f5642820c134198add674b173506479b580808d6f4af7ca13715be945a61c",
+      "bytes": 6549,
+      "sha256": "36527b7c52fa18a3ef1bbecb9580e481fc3a3d6261e77700506a81d54320b908",
       "trust": "official",
       "release_notes": "Initial Independent Press Edition theme package."
     },
@@ -174,7 +174,7 @@
       "id": "high-contrast",
       "name": "High Contrast",
       "version": "1.0.0",
-      "compatibility": ">=3.0.0-alpha.1 <4.0.0",
+      "compatibility": ">=3.0.0 <4.0.0",
       "license": "Apache-2.0",
       "capabilities": [
         "site-shell",
@@ -193,8 +193,8 @@
         "print-edition"
       ],
       "package": "official/high-contrast.zip",
-      "bytes": 6503,
-      "sha256": "258ed6a30fd7442bf7a51822788df7c74c2a9d83a913b3859602c4b92d101bc3",
+      "bytes": 6495,
+      "sha256": "ece452fec32962b10fc573551f75df8aa678b0814b1aded56368f7ab7d1796e9",
       "trust": "official",
       "release_notes": "Initial Independent Press Edition theme package."
     },
@@ -202,7 +202,7 @@
       "id": "warm-reading",
       "name": "Warm Reading Edition",
       "version": "1.0.0",
-      "compatibility": ">=3.0.0-alpha.1 <4.0.0",
+      "compatibility": ">=3.0.0 <4.0.0",
       "license": "Apache-2.0",
       "capabilities": [
         "site-shell",
@@ -221,8 +221,8 @@
         "print-edition"
       ],
       "package": "official/warm-reading.zip",
-      "bytes": 6508,
-      "sha256": "a136c531100b5d4d42c470a4f405bd97b1480ff58c074d018e427fa43c762baa",
+      "bytes": 6500,
+      "sha256": "43347ff595d4a87e6a90af83e10afb3bc5c7cc7ff754055186083972a4060d16",
       "trust": "official",
       "release_notes": "Initial Independent Press Edition theme package."
     }

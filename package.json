@@ -1,6 +1,6 @@
 {
   "name": "tahai-press",
-  "version": "3.0.0-alpha.1",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "description": "A database-free, static-first publishing platform for articles, public records, PDFs, community reporting, and independent publications. Built for GitHub, Pages CMS, and Cloudflare Pages.",
@@ -87,7 +87,7 @@
   ],
   "dependencies": {
     "pdfjs-dist": "6.2.108",
-    "sharp": "0.35.3"
+    "sharp": "0.35.4"
   },
   "devDependencies": {
     "pagefind": "1.5.2",

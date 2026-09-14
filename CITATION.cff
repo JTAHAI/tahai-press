@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "Please cite TAHAI Press using this metadata."
 title: "TAHAI Press"
-version: 3.0.0-alpha.1
+version: 3.0.0
 date-released: 2026-08-07
 license: Apache-2.0
 type: software

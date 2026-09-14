@@ -32,6 +32,7 @@ function buildSnapshot(mutator) {
     for (const entry of ['package.json', 'package-lock.json', '.node-version']) {
       fs.copyFileSync(path.join(ROOT, entry), path.join(temp, entry));
     }
+    fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(temp, 'node_modules'), 'junction');
     const tempSitePath = path.join(temp, 'content', 'site.json');
     const site = JSON.parse(fs.readFileSync(tempSitePath, 'utf8'));
     mutator(site);

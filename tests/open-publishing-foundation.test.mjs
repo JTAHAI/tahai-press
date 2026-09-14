@@ -27,7 +27,7 @@ const built = (relative) => fs.readFileSync(path.join(DIST, relative), 'utf8');
 
 test('v2.0 package exposes the open publishing foundation', () => {
   const pkg = readJson(path.join(ROOT, 'package.json'));
-  assert.equal(pkg.version, '3.0.0-alpha.1');
+  assert.equal(pkg.version, '3.0.0');
   assert.equal(pkg.scripts['newsroom:promote'], 'node scripts/promote-newsroom-draft.mjs');
   assert.equal(fs.existsSync(path.join(ROOT, 'docs', 'FOSS-FOUNDATION.md')), true);
   assert.equal(fs.existsSync(path.join(ROOT, 'docs', 'V2-ROADMAP.md')), true);
@@ -113,18 +113,16 @@ test('promotion destination remains inside content/articles', () => {
   assert.equal(promotionDestination(root, 'safe-story'), path.join(root, 'content', 'articles', 'safe-story.json'));
 });
 
-test('Publishing Console and Git Draft Desk build as private operational routes', () => {
+test('Publisher route is a data-free handoff and Git Draft Desk remains the authenticated editor route', () => {
   run('scripts/build.mjs');
   const publisher = built('publisher/index.html');
   const admin = built('admin/index.html');
   const config = built('admin/config.yml');
   const metadata = JSON.parse(built('.well-known/publication-build.json'));
 
-  assert.match(publisher, /TAHAI Publishing Console/);
-  assert.match(publisher, /Schema-safe Git editing for the newsroom model/);
-  assert.match(publisher, /data-publishing-console/);
-  assert.match(publisher, /\/assets\/publishing-console\.js/);
-  assert.match(publisher, /content\/inbox/);
+  assert.match(publisher, /Publish through the authenticated newsroom editor/);
+  assert.match(publisher, /Open Git Draft Desk/);
+  assert.doesNotMatch(publisher, /publishing-console-data|publishing-console\.js|content\/inbox/);
   assert.match(publisher, /<meta name="robots" content="noindex,nofollow,noarchive">/);
   assert.match(admin, /Git Draft Desk/);
   assert.match(admin, /@sveltia\/cms@0\.164\.2/);

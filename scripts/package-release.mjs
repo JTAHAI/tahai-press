@@ -5,7 +5,7 @@ import { ROOT, DIST } from './lib/content.mjs';
 import { writeDeterministicZip } from './lib/safe-zip.mjs';
 
 const OUTPUT = path.join(ROOT, '.artifacts', 'release-packages');
-const SOURCE_EXCLUDES = new Set(['.git', '.artifacts', 'dist', 'node_modules', 'release-proof', 'proof']);
+const SOURCE_EXCLUDES = new Set(['.git', '.artifacts', '.launch-backups', '.wrangler', 'dist', 'node_modules', 'release-proof', 'proof']);
 const ROOT_ARTIFACT = /^(?:SHA256SUMS\.txt|tahai-press_v.+_(?:clean-source|cloudflare-deploy)\.(?:zip|sha256)|TAHAI_PRESS_v.+_(?:clean-source|cloudflare-direct-upload)\.zip)$/i;
 
 function sha256(value) { return crypto.createHash('sha256').update(value).digest('hex'); }

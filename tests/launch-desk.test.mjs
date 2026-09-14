@@ -30,6 +30,7 @@ function buildPublisherModeSnapshot() {
     for (const entry of ['package.json', 'package-lock.json', '.node-version']) {
       fs.copyFileSync(path.join(ROOT, entry), path.join(temp, entry));
     }
+    fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(temp, 'node_modules'), 'junction');
     const sitePath = path.join(temp, 'content', 'site.json');
     const site = readJson(sitePath);
     site.template_mode = false;
@@ -55,7 +56,7 @@ function buildPublisherModeSnapshot() {
 
 test('current package preserves Launch Desk and a safe launch-package applicator', () => {
   const pkg = readJson(path.join(ROOT, 'package.json'));
-  assert.equal(pkg.version, '3.0.0-alpha.1');
+  assert.equal(pkg.version, '3.0.0');
   assert.equal(pkg.scripts['launch:apply'], 'node scripts/apply-launch-package.mjs');
   assert.equal(fs.existsSync(path.join(ROOT, 'scripts', 'apply-launch-package.mjs')), true);
 });
@@ -130,7 +131,7 @@ test('Launch package applicator backs up source files, disables demo mode, repla
     assert.equal(readJson(path.join(temp, 'content', 'articles', 'welcome-to-launch-test-ledger.json')).status, 'draft');
     assert.equal(readJson(path.join(temp, 'content', 'articles', 'launch-test-public-record.json')).classification, 'public_record');
     assert.equal(readJson(path.join(temp, 'content', 'authors', 'editorial-team.json')).name, 'Launch Test Ledger Editorial Team');
-    assert.equal(fs.readdirSync(path.join(temp, '.artifacts')).some((name) => name.startsWith('launch-backup-')), true);
+    assert.equal(fs.readdirSync(path.join(temp, '.launch-backups')).some((name) => name.startsWith('launch-')), true);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }

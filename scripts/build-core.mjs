@@ -14,7 +14,7 @@ import { ensureResponsiveMediaVariants, mediaAssetManifest } from './lib/media-p
 import { themePresetList } from './lib/site-config.mjs';
 import { loadPublishedTheme } from './lib/themes.mjs';
 import { launchReadiness } from './lib/launch-readiness.mjs';
-import { renderEditorialImage, renderStoryBlocks, storyBlocksPlainText } from './lib/editorial.mjs';
+import { articleMedia, renderEditorialImage, renderStoryBlocks, storyBlocksPlainText } from './lib/editorial.mjs';
 import { ARTICLE_CLASSIFICATION_KEYS, articleCitation, classificationInfo, publicationHistory, seriesForArticles } from './lib/professional-desk.mjs';
 import { publicCrossword } from './lib/crosswords.mjs';
 import { readerReachConfig, serviceWorkerSource } from './lib/reader-reach.mjs';
@@ -35,18 +35,42 @@ const authorMap = new Map(authors.map((item) => [item.slug, item]));
 const categoryMap = new Map(categories.map((item) => [item.slug, item]));
 const hubMap = new Map(hubs.map((item) => [item.slug, item]));
 const activeCrosswords = crosswords.filter((item) => item.active !== false).sort((a, b) => a.difficulty.localeCompare(b.difficulty) || a.rotation_order - b.rotation_order || a.slug.localeCompare(b.slug)).map(publicCrossword);
+const published = articles
+  .filter((article) => ['published', 'corrected'].includes(article.status))
+  .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
+const publicAuthors = authors.filter((author) => published.some((article) => article.author === author.slug));
 const routeManifest = [];
 const accessibility = accessibilityStatement(site);
 const readerReach = readerReachConfig(site);
 const appliedTheme = loadPublishedTheme(site.theme_package);
-const mediaReport = await mediaHealth({ site, articles, authors });
+const mediaReport = await mediaHealth({ site, articles: published, authors: publicAuthors });
+const publicMediaInventory = mediaReport.inventory.filter((item) => item.references.length > 0);
 const PROJECT_REPOSITORY = 'https://github.com/JTAHAI/tahai-press';
 const DEVELOPER_SITE = 'https://tahai.net';
 const DEMO_SITE = 'https://tahai-press.tahai.net';
 
 fs.rmSync(DIST, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 fs.mkdirSync(DIST, { recursive: true });
-fs.cpSync(path.join(ROOT, 'public'), DIST, { recursive: true, force: true });
+const publicUploadsRoot = path.join(ROOT, 'public', 'uploads');
+fs.cpSync(path.join(ROOT, 'public'), DIST, {
+  recursive: true,
+  force: true,
+  filter: (source) => source !== publicUploadsRoot && !source.startsWith(`${publicUploadsRoot}${path.sep}`)
+});
+const publicRoot = path.join(ROOT, 'public');
+for (const article of published) {
+  const localReferences = [article.pdf_file, ...articleMedia(article).map((media) => media.src)];
+  for (const block of article.story_blocks || []) if (block?.type === 'document') localReferences.push(block.url || block.file);
+  for (const reference of localReferences) {
+    const relative = String(reference || '').split(/[?#]/)[0].replace(/^\/+/, '');
+    if (!relative || relative.includes('..')) continue;
+    const source = path.resolve(publicRoot, relative);
+    if (!source.startsWith(`${publicRoot}${path.sep}`) || !fs.existsSync(source) || !fs.statSync(source).isFile()) continue;
+    const destination = path.resolve(DIST, relative);
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.copyFileSync(source, destination);
+  }
+}
 if (appliedTheme) {
   const themeOutput = path.join(DIST, 'assets', 'themes');
   fs.mkdirSync(themeOutput, { recursive: true });
@@ -67,11 +91,11 @@ if (!templateMode(site)) {
   fs.rmSync(path.join(DIST, 'assets', 'launch-progress.js'), { force: true });
 }
 
-const responsiveMediaVariants = await ensureResponsiveMediaVariants({ distRoot: DIST, inventory: mediaReport.inventory });
+const responsiveMediaVariants = await ensureResponsiveMediaVariants({ distRoot: DIST, inventory: publicMediaInventory });
 fs.mkdirSync(path.join(DIST, '.well-known'), { recursive: true });
 fs.writeFileSync(path.join(DIST, '.well-known', 'media-asset-manifest.json'), `${JSON.stringify(mediaAssetManifest({
   generatedAt: deployment.shortCommit || deployment.commit || 'local',
-  inventory: mediaReport.inventory,
+  inventory: publicMediaInventory,
   variants: responsiveMediaVariants
 }), null, 2)}\n`);
 
@@ -885,9 +909,6 @@ function writePaginatedArchive({ base, title, description, eyebrow, items, pageC
   }
 }
 
-const published = articles
-  .filter((article) => ['published', 'corrected'].includes(article.status))
-  .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
 const publishedArticleMap = new Map(published.map((article) => [article.slug, article]));
 const classificationGroups = new Map(ARTICLE_CLASSIFICATION_KEYS.map((key) => [key, published.filter((article) => classificationInfo(article.classification).key === key)]));
 const publicationSeries = seriesForArticles(published);
@@ -1229,8 +1250,7 @@ writeRoute('/publisher/', layout({
   canonical: absoluteUrl('/publisher/'),
   noindex: true,
   pageClass: 'publisher-console-page',
-  scripts: ['/assets/publishing-console.js'],
-  body: publisherStudioBody
+  body: `<section class="page-hero publisher-console-hero"><div class="shell narrow"><p class="eyebrow">Publisher workspace</p><h1>Publish through the authenticated newsroom editor.</h1><p class="lede">This public route deliberately contains no drafts, editorial records, or newsroom configuration. Use the authenticated Git Draft Desk to create and review publication files.</p><p><a class="button" href="/admin/">Open Git Draft Desk</a></p></div></section><section class="section shell"><h2>Public release boundary</h2><p>Only approved published or corrected articles, and their approved local media, are included in the reader site. Drafts, scheduled stories, review material, and unpublished uploads are excluded from public output.</p></section>`
 }), { sitemap: false });
 
 writeRoute('/admin/', cmsLayout(), { sitemap: false });
