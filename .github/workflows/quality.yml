@@ -39,7 +39,7 @@ jobs:
           echo "- Build command: `npm run ci`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload generated site and proof
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tahai-press-proof-${{ github.sha }}
           path: |
