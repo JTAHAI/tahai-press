@@ -8,7 +8,7 @@
 - `npm audit` reported 0 vulnerabilities.
 - Source suite passed: 177 tests.
 - Release-equivalent build passed: content validation, CMS validation, redirect validation, 177 tests, media audit, generated-site accessibility/reader/performance audits, output verification, HTTP smoke test, and release proof.
-- Active source identity is `3.0.1`; package and lockfile agree.
+- Active source identity is `3.0.2`; package and lockfile agree.
 - All source workflows are manually dispatched only, and a repository test rejects automatic triggers and bootstrap references.
 - On 2026-08-10, the remaining remote `Scheduled publishing` workflow was disabled through GitHub; no queued or in-progress runs existed after the v3 verification push.
 

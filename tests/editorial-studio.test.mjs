@@ -191,11 +191,13 @@ test('scheduled publishing promotes only due articles and retains future entries
   }
 });
 
-test('scheduled publishing workflow remains manual-only with narrow write scope', () => {
+test('scheduled publishing uses a narrow write scope and deploys only a published change', () => {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'scheduled-publishing.yml'), 'utf8');
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /permissions:\s*\n\s+contents: write/);
   assert.match(workflow, /npm run publish:due -- --write/);
   assert.match(workflow, /git add content\/articles/);
-  assert.doesNotMatch(workflow, /secrets\./);
+  assert.match(workflow, /if: needs\.publish-due\.outputs\.published == 'true'/);
+  assert.match(workflow, /CLOUDFLARE_API_TOKEN: \$\{\{ secrets\.CLOUDFLARE_API_TOKEN \}\}/);
+  assert.match(workflow, /npm run verify:live/);
 });

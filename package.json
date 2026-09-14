@@ -1,6 +1,6 @@
 {
   "name": "tahai-press",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "private": true,
   "type": "module",
   "description": "A database-free, static-first publishing platform for articles, public records, PDFs, community reporting, and independent publications. Built for GitHub, Pages CMS, and Cloudflare Pages.",
@@ -26,6 +26,7 @@
     "recovery": "node scripts/recovery.mjs",
     "verify:browsers": "npm run build && node scripts/browser-matrix.mjs",
     "verify:ga": "node scripts/verify-ga.mjs",
+    "ga:receipt": "node scripts/create-ga-receipt.mjs",
     "check": "npm run clean && npm run validate && npm test && npm run audit:media && npm run build && npm run audit:a11y && npm run audit:reader && npm run audit:performance && npm run newsroom:health && npm run verify:dist && npm run repo:check",
     "ci": "npm run check && npm run smoke && npm run release:proof",
     "preview": "node scripts/serve.mjs",

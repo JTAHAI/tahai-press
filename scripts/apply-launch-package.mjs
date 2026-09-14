@@ -1,18 +1,70 @@
+import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { ROOT, readJson } from './lib/content.mjs';
 import { containedPath, safeJsonFilename, safeSlug } from './lib/safe-paths.mjs';
 
 function argument(name) { const index = process.argv.indexOf(name); return index >= 0 ? process.argv[index + 1] : ''; }
-function json(value) { return `${JSON.stringify(value, null, 2)}\n`; }
+function json(value) { return JSON.stringify(value, null, 2) + '\n'; }
 function copyIfPresent(source, destination) { if (fs.existsSync(source)) { fs.mkdirSync(path.dirname(destination), { recursive: true }); fs.cpSync(source, destination, { recursive: true, force: true, dereference: false }); } }
 function replaceFile(file, content, rollback) {
   const before = fs.existsSync(file) ? fs.readFileSync(file) : null;
   rollback.push(() => before === null ? fs.rmSync(file, { force: true }) : fs.writeFileSync(file, before));
-  const temporary = `${file}.launch-${process.pid}.tmp`;
+  const temporary = file + '.launch-' + process.pid + '.tmp';
   fs.writeFileSync(temporary, content); fs.renameSync(temporary, file);
 }
 function removeFile(file, rollback) { if (fs.existsSync(file)) { const before = fs.readFileSync(file); rollback.push(() => fs.writeFileSync(file, before)); fs.rmSync(file, { force: true }); } }
+function removeArticleReferences(root, slugs, rollback) {
+  if (!slugs.length) return;
+  const names = new Set(slugs.map((filename) => path.basename(filename, '.json')));
+  const visit = (directory) => {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const full = path.join(directory, entry.name);
+      if (entry.isDirectory()) { if (path.basename(full) !== 'articles') visit(full); continue; }
+      if (!entry.name.endsWith('.json')) continue;
+      const source = fs.readFileSync(full, 'utf8');
+      const prune = (value) => {
+        if (Array.isArray(value)) return value.filter((item) => !(typeof item === 'string' && names.has(item))).map(prune);
+        if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, typeof item === 'string' && names.has(item) ? '' : prune(item)]));
+        return value;
+      };
+      const parsed = prune(JSON.parse(source));
+      if ((path.basename(path.dirname(full)) === 'newsletters' && Array.isArray(parsed.story_ids) && parsed.story_ids.length === 0)
+        || (path.basename(path.dirname(full)) === 'developing' && !parsed.related_story_id)) {
+        removeFile(full, rollback);
+        continue;
+      }
+      const updated = json(parsed);
+      if (updated !== json(JSON.parse(source))) replaceFile(full, updated, rollback);
+    }
+  };
+  visit(root);
+}
+
+function fileManifest(root) {
+  if (!fs.existsSync(root)) return [];
+  const files = [];
+  const visit = (directory) => {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const full = path.join(directory, entry.name);
+      if (entry.isSymbolicLink()) throw new Error('Backup source contains a symbolic link or junction: ' + full);
+      if (entry.isDirectory()) visit(full);
+      else if (entry.isFile()) files.push({ path: path.relative(root, full).replaceAll('\\', '/'), sha256: crypto.createHash('sha256').update(fs.readFileSync(full)).digest('hex') });
+    }
+  };
+  visit(root);
+  return files;
+}
+function verifyBackup(source, backup) {
+  if (JSON.stringify(fileManifest(backup)) !== JSON.stringify(fileManifest(source))) throw new Error('Backup verification failed for ' + (path.relative(ROOT, source) || '.') + '.');
+}
+function rollbackChanges(rollback) {
+  const failures = [];
+  for (const undo of rollback.reverse()) { try { undo(); } catch (error) { failures.push(error.message); } }
+  if (failures.length) throw new Error('Rollback could not restore all changed files: ' + failures.join(' | '));
+}
 
 function validate(payload) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload) || payload.schema_version !== 1 || payload.software !== 'TAHAI Press') throw new Error('This is not a supported TAHAI Press Launch Desk package.');
@@ -33,28 +85,58 @@ function validate(payload) {
   return { site: payload.site_config, firstArticle, firstRecord: normalizedRecord, author: normalizedAuthor, demoFiles };
 }
 
+function applyPlan(root, launch, rollback = []) {
+  const contentRoot = containedPath(root, 'content');
+  const articleRoot = containedPath(contentRoot, 'articles');
+  const authorRoot = containedPath(contentRoot, 'authors');
+  fs.mkdirSync(articleRoot, { recursive: true });
+  for (const filename of launch.demoFiles) removeFile(containedPath(articleRoot, filename), rollback);
+  removeArticleReferences(contentRoot, launch.demoFiles, rollback);
+  replaceFile(containedPath(contentRoot, 'site.json'), json(launch.site), rollback);
+  replaceFile(containedPath(articleRoot, launch.firstArticle.slug + '.json'), json(launch.firstArticle), rollback);
+  if (launch.firstRecord) replaceFile(containedPath(articleRoot, launch.firstRecord.slug + '.json'), json(launch.firstRecord), rollback);
+  if (launch.author) { fs.mkdirSync(authorRoot, { recursive: true }); replaceFile(containedPath(authorRoot, launch.author.slug + '.json'), json(launch.author), rollback); }
+}
+
+function validateProposedPublication(launch) {
+  const stagingRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'tahai-press-launch-stage-'));
+  try {
+    for (const entry of ['content', 'public', 'scripts']) copyIfPresent(containedPath(ROOT, entry), containedPath(stagingRoot, entry));
+    const modules = path.join(ROOT, 'node_modules');
+    if (fs.existsSync(modules)) fs.symlinkSync(modules, containedPath(stagingRoot, 'node_modules'), 'junction');
+    applyPlan(stagingRoot, launch);
+    const result = spawnSync(process.execPath, ['scripts/validate-content.mjs'], { cwd: stagingRoot, encoding: 'utf8', windowsHide: true });
+    if (result.status !== 0) throw new Error('Proposed publication failed content validation: ' + (result.stderr || result.stdout || 'unknown validation failure').trim());
+  } finally { fs.rmSync(stagingRoot, { recursive: true, force: true }); }
+}
+
 if (!process.argv.includes('--confirm')) { console.error('Launch application changes publication files. Run: npm run launch:apply -- --package <tahai-press-launch-package.json> --confirm'); process.exit(1); }
 const packageArg = argument('--package');
 if (!packageArg) { console.error('Missing --package <file>.'); process.exit(1); }
 const packagePath = path.resolve(process.cwd(), packageArg);
-if (!fs.existsSync(packagePath) || !fs.statSync(packagePath).isFile()) { console.error(`Launch package not found: ${packagePath}`); process.exit(1); }
+if (!fs.existsSync(packagePath) || !fs.statSync(packagePath).isFile()) { console.error('Launch package not found: ' + packagePath); process.exit(1); }
 
 try {
   const launch = validate(readJson(packagePath));
-  const contentRoot = containedPath(ROOT, 'content'); const articleRoot = containedPath(contentRoot, 'articles'); const authorRoot = containedPath(contentRoot, 'authors');
-  const backupRoot = containedPath(ROOT, '.launch-backups', `launch-${new Date().toISOString().replace(/[:.]/g, '-')}`);
-  const rollback = [];
+  validateProposedPublication(launch);
+  const contentRoot = containedPath(ROOT, 'content');
+  const uploadsRoot = containedPath(ROOT, 'public', 'uploads');
+  const backupRoot = containedPath(ROOT, '.launch-backups', 'launch-' + new Date().toISOString().replace(/[:.]/g, '-'));
   fs.mkdirSync(backupRoot, { recursive: true });
-  copyIfPresent(contentRoot, containedPath(backupRoot, 'content'));
-  copyIfPresent(containedPath(ROOT, 'public', 'uploads'), containedPath(backupRoot, 'public', 'uploads'));
+  const contentBackup = containedPath(backupRoot, 'content');
+  const uploadsBackup = containedPath(backupRoot, 'public', 'uploads');
+  copyIfPresent(contentRoot, contentBackup);
+  copyIfPresent(uploadsRoot, uploadsBackup);
+  verifyBackup(contentRoot, contentBackup);
+  verifyBackup(uploadsRoot, uploadsBackup);
   fs.writeFileSync(containedPath(backupRoot, 'launch-package.json'), json({ schema_version: 1, applied_at: new Date().toISOString(), source: path.basename(packagePath) }));
+  const rollback = [];
   try {
-    fs.mkdirSync(articleRoot, { recursive: true });
-    for (const filename of launch.demoFiles) removeFile(containedPath(articleRoot, filename), rollback);
-    replaceFile(containedPath(contentRoot, 'site.json'), json(launch.site), rollback);
-    replaceFile(containedPath(articleRoot, `${launch.firstArticle.slug}.json`), json(launch.firstArticle), rollback);
-    if (launch.firstRecord) replaceFile(containedPath(articleRoot, `${launch.firstRecord.slug}.json`), json(launch.firstRecord), rollback);
-    if (launch.author) { fs.mkdirSync(authorRoot, { recursive: true }); replaceFile(containedPath(authorRoot, `${launch.author.slug}.json`), json(launch.author), rollback); }
-  } catch (error) { for (const undo of rollback.reverse()) { try { undo(); } catch {} } throw error; }
-  console.log('TAHAI Press Launch Desk package applied.'); console.log(`Verified backup: ${path.relative(ROOT, backupRoot)}`); console.log(`Publication: ${launch.site.title}`); console.log(`First story: content/articles/${launch.firstArticle.slug}.json (Draft)`); if (launch.firstRecord) console.log(`First record: content/articles/${launch.firstRecord.slug}.json (Draft)`); console.log('Next: npm run validate && npm test && npm run build:cloudflare');
-} catch (error) { console.error(`Launch application failed: ${error.message}`); process.exitCode = 1; }
+    applyPlan(ROOT, launch, rollback);
+    if (process.env.TAHAI_PRESS_LAUNCH_TEST_FAIL_AFTER === 'apply') throw new Error('Injected post-apply failure.');
+  } catch (error) {
+    try { rollbackChanges(rollback); } catch (rollbackError) { throw new AggregateError([error, rollbackError], 'Launch application failed and restoration was incomplete: ' + rollbackError.message); }
+    throw error;
+  }
+  console.log('TAHAI Press Launch Desk package applied.'); console.log('Verified backup: ' + path.relative(ROOT, backupRoot)); console.log('Publication: ' + launch.site.title); console.log('First story: content/articles/' + launch.firstArticle.slug + '.json (Draft)'); if (launch.firstRecord) console.log('First record: content/articles/' + launch.firstRecord.slug + '.json (Draft)'); console.log('Next: npm run validate && npm test && npm run build:cloudflare');
+} catch (error) { console.error('Launch application failed: ' + error.message); process.exitCode = 1; }

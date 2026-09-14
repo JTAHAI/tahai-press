@@ -4,7 +4,7 @@
 
 The implementation baseline is `origin/main` at `d707835a54a0aec7ae006e125a15d8689f9f1296`, in sibling worktree `D:\dev\tahai-press-v3` on `feature/v3-independent-press`, plus the locally verified alpha changes that are committed with this phase.
 
-The release identity is `3.0.1`. It is not a claim that every optional service is configured.
+The release identity is `3.0.2`. It is not a claim that every optional service is configured.
 
 ## Verified baseline facts
 

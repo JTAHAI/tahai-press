@@ -26,14 +26,71 @@ function waitForServer(url, limit = 30) {
   });
 }
 function normalizeConsole(message) { return message.text().replace(/\s+/g, ' ').trim(); }
+const VIEWPORTS = [
+  { name: 'phone', width: 390, height: 844 },
+  { name: 'tablet', width: 768, height: 1024 },
+  { name: 'desktop', width: 1280, height: 900 }
+];
+
+async function verifyStoryLayout(browser, name, baseUrl, viewport) {
+  const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } });
+  const page = await context.newPage();
+  try {
+    await page.goto(`${baseUrl}stories/sample-written-story/`, { waitUntil: 'domcontentloaded' });
+    await page.locator('.article-featured-image img').waitFor();
+    const layout = await page.evaluate(() => {
+      const overflows = document.documentElement.scrollWidth > window.innerWidth;
+      const image = document.querySelector('.article-featured-image img');
+      const figure = document.querySelector('.article-featured-image');
+      const footer = document.querySelector('.site-footer');
+      const brokenWords = [];
+      for (const element of document.querySelectorAll('.footer-column h2, .footer-column a')) {
+        const node = [...element.childNodes].find((child) => child.nodeType === Node.TEXT_NODE && child.textContent.trim());
+        if (!node) continue;
+        const text = node.textContent;
+        for (const match of text.matchAll(/\S+/g)) {
+          const range = document.createRange();
+          range.setStart(node, match.index); range.setEnd(node, match.index + match[0].length);
+          if (range.getClientRects().length > 1) brokenWords.push(match[0]);
+        }
+      }
+      const imageRect = image.getBoundingClientRect();
+      const figureRect = figure.getBoundingClientRect();
+      return {
+        overflows,
+        imageContained: imageRect.width <= figureRect.width + 1 && imageRect.left >= figureRect.left - 1 && imageRect.right <= figureRect.right + 1,
+        imageStyle: { maxWidth: getComputedStyle(image).maxWidth, objectFit: getComputedStyle(image).objectFit },
+        footerOverflows: footer.scrollWidth > footer.clientWidth,
+        brokenWords
+      };
+    });
+    const zoomOverflow = viewport.name === 'desktop' ? await page.evaluate(() => {
+      document.documentElement.style.fontSize = '200%';
+      const footer = document.querySelector('.site-footer');
+      const image = document.querySelector('.article-featured-image img');
+      const figure = document.querySelector('.article-featured-image');
+      return footer.scrollWidth > footer.clientWidth || image.getBoundingClientRect().width > figure.getBoundingClientRect().width + 1;
+    }) : false;
+    layout.zoomOverflow = zoomOverflow;
+    if (layout.overflows || layout.footerOverflows || zoomOverflow || !layout.imageContained || layout.imageStyle.maxWidth !== '100%' || layout.imageStyle.objectFit !== 'contain' || layout.brokenWords.length) {
+      throw new Error(`${name} ${viewport.name} story layout failed: ${JSON.stringify(layout)}`);
+    }
+    await page.locator('.site-footer').scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(artifactDirectory, `${name}-${viewport.name}-footer.png`), fullPage: false });
+    return { viewport, ...layout };
+  } finally { await context.close(); }
+}
 
 async function verifyEngine(name, browserType, baseUrl) {
   const browser = await browserType.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
   const consoleErrors = [];
   page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(normalizeConsole(message)); });
   page.on('pageerror', (error) => consoleErrors.push(error.message));
   try {
+    const storyLayouts = [];
+    for (const viewport of VIEWPORTS) storyLayouts.push(await verifyStoryLayout(browser, name, baseUrl, viewport));
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.getByRole('heading', { level: 1 }).waitFor();
     const homeOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
@@ -61,8 +118,8 @@ async function verifyEngine(name, browserType, baseUrl) {
     await page.screenshot({ path: path.join(artifactDirectory, `${name}-records.png`), fullPage: false });
     if (homeOverflow || searchOverflow) throw new Error(`${name} rendered horizontal overflow on a core page.`);
     if (consoleErrors.length) throw new Error(`${name} console errors: ${consoleErrors.join(' | ')}`);
-    return { name, version: browser.version(), home_overflow: homeOverflow, search_overflow: searchOverflow, console_errors: consoleErrors, status: 'passed' };
-  } finally { await browser.close(); }
+    return { name, version: browser.version(), story_layouts: storyLayouts, home_overflow: homeOverflow, search_overflow: searchOverflow, console_errors: consoleErrors, status: 'passed' };
+  } finally { await context.close(); await browser.close(); }
 }
 
 fs.mkdirSync(artifactDirectory, { recursive: true });

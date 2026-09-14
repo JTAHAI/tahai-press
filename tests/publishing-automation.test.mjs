@@ -43,7 +43,7 @@ test('GitHub workflows use least privilege, cancellation, Node 22, and immutable
     assert.match(workflow, /permissions:\s*\n\s+contents: read/);
     assert.match(workflow, /cancel-in-progress: true/);
     assert.match(workflow, /node-version: 22/);
-    assert.match(workflow, /npm run ci/);
+    assert.match(workflow, name === 'production-readiness.yml' ? /npm run verify:ga/ : /npm run ci/);
     assert.match(workflow, /actions\/upload-artifact@v4/);
     assert.match(workflow, /if-no-files-found: error/);
     assert.doesNotMatch(workflow, /secrets\./);

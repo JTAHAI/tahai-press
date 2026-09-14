@@ -5,7 +5,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { ROOT, DIST } from '../scripts/lib/content.mjs';
 
-const VERSION = '3.0.1';
+const VERSION = '3.0.2';
 
 function build() {
   execFileSync(process.execPath, ['scripts/build.mjs'], { cwd: ROOT, stdio: 'pipe' });

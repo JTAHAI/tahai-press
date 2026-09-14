@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { ROOT, DIST, readJson } from '../scripts/lib/content.mjs';
+import { containedPath } from '../scripts/lib/safe-paths.mjs';
 
 const node = process.execPath;
 const setupAsset = path.join(ROOT, 'public', 'assets', 'setup-wizard.js');
@@ -56,7 +57,7 @@ function buildPublisherModeSnapshot() {
 
 test('current package preserves Launch Desk and a safe launch-package applicator', () => {
   const pkg = readJson(path.join(ROOT, 'package.json'));
-  assert.equal(pkg.version, '3.0.1');
+  assert.equal(pkg.version, '3.0.2');
   assert.equal(pkg.scripts['launch:apply'], 'node scripts/apply-launch-package.mjs');
   assert.equal(fs.existsSync(path.join(ROOT, 'scripts', 'apply-launch-package.mjs')), true);
 });
@@ -96,8 +97,10 @@ test('Launch Desk stays browser-local and progressively enhances direct reposito
 test('Launch package applicator backs up source files, disables demo mode, replaces sample stories, and creates the first draft', () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'tahai-launch-desk-'));
   try {
-    fs.cpSync(path.join(ROOT, 'scripts'), path.join(temp, 'scripts'), { recursive: true });
-    fs.cpSync(path.join(ROOT, 'content'), path.join(temp, 'content'), { recursive: true });
+    for (const entry of ['scripts', 'content', 'public']) {
+      fs.cpSync(path.join(ROOT, entry), path.join(temp, entry), { recursive: true });
+    }
+    fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(temp, 'node_modules'), 'junction');
     const site = readJson(path.join(ROOT, 'content', 'site.json'));
     site.title = 'Launch Test Ledger';
     site.short_title = 'Launch Test Ledger';
@@ -119,21 +122,40 @@ test('Launch package applicator backs up source files, disables demo mode, repla
       schema_version: 1, software: 'TAHAI Press', release: '2.0.0', remove_demo: true,
       demo_article_files: ['sample-written-story.json', 'sample-pdf-record.json', 'sample-pdf-story.json', 'sample-external-document.json'],
       site_config: site, first_article: article,
-      first_record: { ...article, slug: 'launch-test-public-record', title: 'Launch Test Public Record', article_type: 'pdf', classification: 'public_record', featured: false },
+      first_record: { ...article, slug: 'launch-test-public-record', title: 'Launch Test Public Record', article_type: 'standard', classification: 'public-record', featured: false },
       author_record: { slug: 'editorial-team', name: 'Launch Test Ledger Editorial Team', role: 'Editorial team', bio: 'Reporting and editing.', active: true }
     };
     const packagePath = path.join(temp, 'launch.json');
     fs.writeFileSync(packagePath, `${JSON.stringify(payload, null, 2)}\n`);
     const output = run('scripts/apply-launch-package.mjs', ['--package', packagePath, '--confirm'], temp);
     assert.match(output, /Launch Desk package applied/);
+    assert.match(output, /Verified backup/);
     assert.equal(readJson(path.join(temp, 'content', 'site.json')).template_mode, false);
     assert.equal(fs.existsSync(path.join(temp, 'content', 'articles', 'sample-written-story.json')), false);
     assert.equal(readJson(path.join(temp, 'content', 'articles', 'welcome-to-launch-test-ledger.json')).status, 'draft');
-    assert.equal(readJson(path.join(temp, 'content', 'articles', 'launch-test-public-record.json')).classification, 'public_record');
+    assert.equal(readJson(path.join(temp, 'content', 'articles', 'launch-test-public-record.json')).classification, 'public-record');
     assert.equal(readJson(path.join(temp, 'content', 'authors', 'editorial-team.json')).name, 'Launch Test Ledger Editorial Team');
     assert.equal(fs.readdirSync(path.join(temp, '.launch-backups')).some((name) => name.startsWith('launch-')), true);
+    const beforeFailure = fs.readFileSync(path.join(temp, 'content', 'site.json'), 'utf8');
+    assert.throws(
+      () => run('scripts/apply-launch-package.mjs', ['--package', packagePath, '--confirm'], temp, { TAHAI_PRESS_LAUNCH_TEST_FAIL_AFTER: 'apply' }),
+      /Injected post-apply failure/
+    );
+    assert.equal(fs.readFileSync(path.join(temp, 'content', 'site.json'), 'utf8'), beforeFailure);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test('launch destination paths reject symbolic-link and junction escapes', () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'tahai-safe-path-'));
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'tahai-safe-path-outside-'));
+  try {
+    fs.symlinkSync(outside, path.join(temp, 'linked'), 'junction');
+    assert.throws(() => containedPath(temp, 'linked', 'publication.json'), /symbolic link or junction/);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+    fs.rmSync(outside, { recursive: true, force: true });
   }
 });
 

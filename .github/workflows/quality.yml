@@ -26,6 +26,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install locked dependencies
+        run: npm ci
+
       - name: Run release proof
         run: npm run ci
 

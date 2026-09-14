@@ -20,7 +20,7 @@ const built = (relative) => fs.readFileSync(path.join(DIST, relative), 'utf8');
 
 test('v2.3 package exposes the browser-only Media Desk release', () => {
   const pkg = readJson(path.join(ROOT, 'package.json'));
-  assert.equal(pkg.version, '3.0.1');
+  assert.equal(pkg.version, '3.0.2');
   assert.equal(fs.existsSync(path.join(ROOT, 'docs', 'MEDIA-DESK.md')), true);
   assert.equal(fs.existsSync(path.join(ROOT, 'public', 'assets', 'media-desk.js')), true);
 });
@@ -140,7 +140,7 @@ test('featured media establishes an isolated clipping boundary for artwork and r
 
 test('footer navigation reserves usable columns and keeps labels on whole words', () => {
   const css = read('public/assets/styles.css');
-  assert.match(css, /\.footer-grid\s*\{[^}]*grid-template-columns:\s*minmax\(16rem, 1fr\) minmax\(0, 1\.65fr\)/);
-  assert.match(css, /\.footer-structured-links\s*\{[^}]*repeat\(3, minmax\(9rem, 1fr\)\)/);
+  assert.match(css, /\.footer-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1\.65fr\)/);
+  assert.match(css, /\.footer-structured-links\s*\{[^}]*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /\.footer-column h2,[\s\S]*?\.footer-column a\s*\{[^}]*overflow-wrap:\s*normal[^}]*word-break:\s*normal/);
 });

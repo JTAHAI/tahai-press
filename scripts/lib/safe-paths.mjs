@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 
 const WINDOWS_RESERVED = new Set(['con', 'prn', 'aux', 'nul', ...Array.from({ length: 9 }, (_, index) => `com${index + 1}`), ...Array.from({ length: 9 }, (_, index) => `lpt${index + 1}`)]);
@@ -18,5 +19,11 @@ export function containedPath(root, ...parts) {
   const base = path.resolve(root);
   const target = path.resolve(base, ...parts);
   if (target === base || !target.startsWith(`${base}${path.sep}`)) throw new Error('Destination escapes its allowed directory.');
+  const relative = path.relative(base, target);
+  let current = base;
+  for (const segment of relative.split(path.sep)) {
+    current = path.join(current, segment);
+    if (fs.existsSync(current) && fs.lstatSync(current).isSymbolicLink()) throw new Error(`Destination traverses a symbolic link or junction: ${current}`);
+  }
   return target;
 }

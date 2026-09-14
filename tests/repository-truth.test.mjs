@@ -5,7 +5,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { ROOT, DIST } from '../scripts/lib/content.mjs';
 
-const VERSION = '3.0.1';
+const VERSION = '3.0.2';
 
 function build() {
   execFileSync(process.execPath, ['scripts/build.mjs'], { cwd: ROOT, stdio: 'pipe' });
@@ -71,6 +71,21 @@ test('workflows retain manual control, and scheduled publishing has a narrow sch
     assert.doesNotMatch(source, /\.bootstrap\//);
     assert.doesNotMatch(source, /^(?:\s{2,})?(?:pull_request_target|workflow_run|repository_dispatch|deployment_status|push|release):/m);
   }
+});
+
+test('release workflows install locked dependencies and the scheduled publisher deploys only changed content', () => {
+  const workflowDir = path.join(ROOT, '.github', 'workflows');
+  for (const file of ['quality.yml', 'production-readiness.yml', 'scheduled-publishing.yml']) {
+    const source = fs.readFileSync(path.join(workflowDir, file), 'utf8');
+    assert.match(source, /run: npm ci/);
+  }
+  const scheduled = fs.readFileSync(path.join(workflowDir, 'scheduled-publishing.yml'), 'utf8');
+  assert.match(scheduled, /if: needs\.publish-due\.outputs\.published == 'true'/);
+  assert.match(scheduled, /CLOUDFLARE_API_TOKEN: \$\{\{ secrets\.CLOUDFLARE_API_TOKEN \}\}/);
+  assert.match(scheduled, /npm run verify:live/);
+  const production = fs.readFileSync(path.join(workflowDir, 'production-readiness.yml'), 'utf8');
+  assert.match(production, /run: npm run verify:ga/);
+  assert.match(production, /npm run ga:receipt/);
 });
 
 test('built output keeps cache-versioned nav assets and excludes recovery artifacts', () => {
