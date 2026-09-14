@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.1 — Reader layout repair
+
+- Replaced the malformed media-pipeline fixture with a clean, text-free raster illustration.
+- Contained featured media and repaired footer navigation sizing and word wrapping across responsive layouts.
+
 ## 3.0.0 — Independent Press Baseline
 
 - Established the v3 development line on a clean sibling worktree from `origin/main`.
