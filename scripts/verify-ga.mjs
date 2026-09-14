@@ -55,4 +55,9 @@ const report = { schemaVersion: 1, releaseIdentity: JSON.parse(fs.readFileSync(p
 fs.mkdirSync(path.dirname(artifact), { recursive: true });
 fs.writeFileSync(artifact, `${JSON.stringify(report, null, 2)}\n`);
 console.log(`GA gate ${report.passed ? 'passed' : 'failed'}: ${results.filter((result) => result.passed).length}/${checks.length} checks. Report: .artifacts/ga-gate-report.json`);
-if (!report.passed) process.exitCode = 1;
+if (!report.passed) {
+  const failed = results.at(-1);
+  const diagnostic = String(failed.stderr || failed.stdout || failed.launcherError || 'No process output captured.').replace(/(?:token|secret|password|authorization)\s*[:=]\s*\S+/gi, '[redacted]').replace(/Bearer\s+\S+/gi, 'Bearer [redacted]');
+  console.error('GA failure: id=' + failed.id + ' exit=' + (failed.exitCode ?? 'launcher-error') + '\n' + diagnostic.slice(-4000));
+  process.exitCode = 1;
+}

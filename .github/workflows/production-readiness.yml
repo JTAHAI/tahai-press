@@ -30,21 +30,29 @@ jobs:
         run: npm ci
 
       - name: Run clean GA gate
+        id: ga
+        continue-on-error: true
         run: npm run verify:ga
 
       - name: Create sanitized GA receipt
+        if: steps.ga.outcome == 'success'
         run: npm run ga:receipt
+
+      - name: Create sanitized failure diagnostics
+        if: steps.ga.outcome == 'failure'
+        run: node scripts/create-ga-failure-diagnostics.mjs
 
       - name: Write workflow summary
         if: always()
         run: |
-          echo "## TAHAI Press proof" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Commit: `${GITHUB_SHA}`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Branch or ref: `${GITHUB_REF_NAME}`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Result: `${{ job.status }}`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- GA command: `npm run verify:ga`" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '## TAHAI Press proof' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- Branch or ref: $GITHUB_REF_NAME" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "- GA outcome: ${{ steps.ga.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' '- GA command: npm run verify:ga' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload immutable release proof
+        if: steps.ga.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: tahai-press-production-${{ github.sha }}
@@ -58,3 +66,16 @@ jobs:
             .artifacts/ga-gate-report.json
           if-no-files-found: error
           retention-days: 30
+
+      - name: Upload sanitized failure diagnostics
+        if: steps.ga.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tahai-press-ga-failure-${{ github.sha }}
+          path: .artifacts/ga-failure-diagnostics.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Preserve GA failure exit status
+        if: steps.ga.outcome == 'failure'
+        run: exit 1
